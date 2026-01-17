@@ -62,9 +62,43 @@ cp -r knowledge-manager/.claude /your/antigravity/project/
 
 > **참고**: `.agent/skills/` 폴더는 Antigravity, Gemini CLI, Claude Code, OpenCode 등 Agent Skills 표준을 지원하는 모든 도구에서 호환됩니다.
 
-#### Step 2: MCP 서버 설정
+#### Step 2: 자동 설정 (권장)
 
-Antigravity에서 MCP 서버를 설정해야 합니다.
+복사 후 Antigravity에서 다음과 같이 요청하세요:
+
+**Windows:**
+```
+Knowledge Manager 설정을 도와줘.
+내 Obsidian vault는 C:/Users/내이름/Documents/MyVault 야.
+```
+
+**Mac:**
+```
+Knowledge Manager 설정을 도와줘.
+내 Obsidian vault는 /Users/내이름/Documents/MyVault 야.
+```
+
+**Linux:**
+```
+Knowledge Manager 설정을 도와줘.
+내 Obsidian vault는 /home/내이름/Documents/MyVault 야.
+```
+
+에이전트가 자동으로:
+1. MCP 설정 파일에 서버 추가
+   - Windows: `%USERPROFILE%\.gemini\antigravity\mcp_config.json`
+   - Mac/Linux: `~/.gemini/antigravity/mcp_config.json`
+2. `km-config.json` 생성
+3. 설정 완료 후 Refresh 방법 안내
+
+#### Step 2 (대안): 수동 설정
+
+자동 설정이 작동하지 않으면 수동으로 설정할 수 있습니다.
+
+<details>
+<summary>📋 수동 설정 방법 (클릭하여 펼치기)</summary>
+
+**MCP 서버 설정:**
 
 1. Antigravity에서 Agent 패널 열기
 2. 우측 상단 **⋯** (점 세 개) 클릭
@@ -96,12 +130,12 @@ Antigravity에서 MCP 서버를 설정해야 합니다.
 
 > **참고**: `OBSIDIAN_VAULT_PATH`를 실제 Obsidian vault 경로로 변경하세요.
 
-#### Step 3: 설정 새로고침
+**설정 새로고침:**
 
 1. **Manage MCP Servers** 창에서 **Refresh** 클릭
 2. playwright, obsidian 서버가 목록에 표시되는지 확인
 
-#### Step 4: km-config.json 생성
+**km-config.json 생성:**
 
 프로젝트 폴더에 `km-config.json` 파일을 생성하세요:
 
@@ -124,6 +158,16 @@ Antigravity에서 MCP 서버를 설정해야 합니다.
   }
 }
 ```
+
+</details>
+
+#### Step 3: 설정 확인
+
+설정이 완료되면:
+
+1. **Manage MCP Servers** 창에서 **Refresh** 클릭
+2. playwright, obsidian 서버가 목록에 표시되는지 확인
+3. 테스트: "https://example.com 이 페이지를 정리해줘"
 
 ---
 
@@ -343,9 +387,43 @@ cp -r knowledge-manager/.claude /your/antigravity/project/
 
 > **Note**: The `.agent/skills/` folder is compatible with all tools supporting the Agent Skills standard, including Antigravity, Gemini CLI, Claude Code, and OpenCode.
 
-#### Step 2: Configure MCP Servers
+#### Step 2: Automatic Setup (Recommended)
 
-You need to configure MCP servers in Antigravity.
+After copying, ask Antigravity:
+
+**Windows:**
+```
+Help me set up Knowledge Manager.
+My Obsidian vault is at C:/Users/MyName/Documents/MyVault.
+```
+
+**Mac:**
+```
+Help me set up Knowledge Manager.
+My Obsidian vault is at /Users/MyName/Documents/MyVault.
+```
+
+**Linux:**
+```
+Help me set up Knowledge Manager.
+My Obsidian vault is at /home/myname/Documents/MyVault.
+```
+
+The agent will automatically:
+1. Add MCP servers to config file
+   - Windows: `%USERPROFILE%\.gemini\antigravity\mcp_config.json`
+   - Mac/Linux: `~/.gemini/antigravity/mcp_config.json`
+2. Create `km-config.json`
+3. Guide you to refresh the configuration
+
+#### Step 2 (Alternative): Manual Setup
+
+If automatic setup doesn't work, you can configure manually.
+
+<details>
+<summary>📋 Manual Setup Instructions (click to expand)</summary>
+
+**Configure MCP Servers:**
 
 1. Open Agent panel in Antigravity
 2. Click **⋯** (three dots) in the top right
@@ -377,12 +455,12 @@ Add the following to `mcp_config.json`:
 
 > **Note**: Replace `OBSIDIAN_VAULT_PATH` with your actual Obsidian vault path.
 
-#### Step 3: Refresh Configuration
+**Refresh Configuration:**
 
 1. Click **Refresh** in the Manage MCP Servers window
 2. Verify that playwright and obsidian servers appear in the list
 
-#### Step 4: Create km-config.json
+**Create km-config.json:**
 
 Create a `km-config.json` file in your project folder:
 
@@ -405,6 +483,16 @@ Create a `km-config.json` file in your project folder:
   }
 }
 ```
+
+</details>
+
+#### Step 3: Verify Setup
+
+After setup is complete:
+
+1. Click **Refresh** in the Manage MCP Servers window
+2. Verify that playwright and obsidian servers appear in the list
+3. Test: "Summarize this page: https://example.com"
 
 ---
 
