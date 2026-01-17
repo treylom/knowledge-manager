@@ -1,0 +1,26 @@
+{
+  "name": "km",
+  "description": "Knowledge Manager - 웹, PDF, 소셜 미디어에서 콘텐츠를 추출하여 Obsidian/Notion에 저장하는 지식 관리 에이전트",
+  "version": "1.0.0",
+  "author": {
+    "name": "Your Name",
+    "url": "https://github.com/yourname"
+  },
+  "homepage": "https://github.com/yourname/knowledge-manager",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourname/knowledge-manager.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "knowledge-management",
+    "obsidian",
+    "notion",
+    "zettelkasten",
+    "web-scraping",
+    "note-taking"
+  ],
+  "engines": {
+    "claude-code": ">=1.0.33"
+  }
+}

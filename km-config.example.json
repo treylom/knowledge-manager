@@ -1,0 +1,68 @@
+{
+  "_readme": "이 파일을 km-config.json으로 복사하고 값을 수정하세요",
+  "_docs": "https://github.com/yourname/knowledge-manager#configuration",
+  "_tip": "셋업 위저드를 사용하면 자동 생성됩니다: /knowledge-manager setup",
+
+  "storage": {
+    "primary": "obsidian",
+    "_primary_help": "기본 저장소 선택: obsidian, notion, local 중 하나",
+
+    "obsidian": {
+      "enabled": true,
+      "vaultPath": "/path/to/your/obsidian/vault",
+      "_vaultPath_examples": {
+        "windows": "C:/Users/YourName/Documents/MyVault",
+        "mac": "/Users/YourName/Documents/MyVault",
+        "linux": "/home/yourname/Documents/MyVault"
+      },
+      "defaultFolder": "Zettelkasten",
+      "researchFolder": "Research",
+      "threadsFolder": "Threads"
+    },
+
+    "notion": {
+      "enabled": false,
+      "token": "",
+      "_token_help": "https://www.notion.so/my-integrations 에서 발급",
+      "defaultDatabaseId": ""
+    },
+
+    "local": {
+      "enabled": true,
+      "outputPath": "./km-notes",
+      "_help": "Obsidian 없이도 이 폴더에 Markdown 파일로 저장됩니다"
+    }
+  },
+
+  "browser": {
+    "provider": "playwright",
+    "_provider_help": "기본값 playwright 권장. 대부분의 웹사이트에서 작동합니다.",
+
+    "playwright": {
+      "_help": "기본 브라우저. 추가 설정 불필요."
+    }
+  },
+
+  "_advanced_browser_options": {
+    "_description": "소셜 미디어 스크래핑이 차단될 경우에만 사용",
+    "hyperbrowser": {
+      "provider": "hyperbrowser",
+      "apiKey": "YOUR_HYPERBROWSER_API_KEY",
+      "_apiKey_help": "https://hyperbrowser.ai 에서 발급"
+    }
+  },
+
+  "defaults": {
+    "detailLevel": 2,
+    "_detailLevel_help": "1=간략, 2=보통(기본), 3=상세",
+
+    "focusArea": "E",
+    "_focusArea_help": "T=이론중심, P=실용중심, E=균형(기본)",
+
+    "noteStructure": 2,
+    "_noteStructure_help": "1=단일노트, 2=챕터별분리(기본), 3=3-Tier계층, 4=완전원자화",
+
+    "connectionLevel": "normal",
+    "_connectionLevel_help": "min=최소연결, normal=적절한연결(기본), max=최대연결"
+  }
+}

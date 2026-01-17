@@ -1,0 +1,38 @@
+# Knowledge Manager 민감 설정 (절대 커밋 금지!)
+km-config.json
+.mcp.json
+
+# API 키/토큰
+*.key
+*.token
+.env
+.env.local
+.env.*.local
+
+# 백업 파일
+*.backup.*
+km-config.backup.*.json
+.mcp.backup.*.json
+
+# 출력 폴더 (선택적)
+km-output/
+
+# OS 파일
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node.js (MCP 서버 테스트용)
+node_modules/
+package-lock.json
+yarn.lock
+
+# 로그
+*.log
+npm-debug.log*

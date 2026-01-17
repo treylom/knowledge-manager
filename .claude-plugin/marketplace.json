@@ -1,0 +1,11 @@
+{
+  "name": "Knowledge Manager Marketplace",
+  "description": "Knowledge Manager 플러그인 마켓플레이스",
+  "plugins": [
+    {
+      "name": "km",
+      "description": "웹, PDF, 소셜 미디어에서 콘텐츠를 추출하여 Obsidian/Notion에 저장",
+      "path": "."
+    }
+  ]
+}

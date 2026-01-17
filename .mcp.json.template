@@ -1,0 +1,79 @@
+{
+  "_readme": "이 파일을 .mcp.json으로 복사하고 {{플레이스홀더}}를 실제 값으로 교체하세요",
+  "_tip": "셋업 위저드가 자동으로 설정해줍니다: /knowledge-manager setup",
+
+  "mcpServers": {
+    "_comment": "=== 필수 서버 ===",
+
+    "playwright": {
+      "_description": "[필수] 웹 콘텐츠 추출용 브라우저",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-playwright"]
+    },
+
+    "_comment_optional": "=== 선택 서버 (필요시 활성화) ===",
+
+    "obsidian": {
+      "_description": "[선택] Obsidian vault 연동",
+      "_skip": "Obsidian 사용 안 하면 이 블록 삭제",
+      "command": "npx",
+      "args": ["-y", "@huangyihe/obsidian-mcp"],
+      "env": {
+        "OBSIDIAN_VAULT_PATH": "{{YOUR_OBSIDIAN_VAULT_PATH}}"
+      }
+    },
+
+    "notion": {
+      "_description": "[선택] Notion 워크스페이스 연동",
+      "_skip": "Notion 사용 안 하면 이 블록 삭제",
+      "command": "npx",
+      "args": ["-y", "@notionhq/notion-mcp-server"],
+      "env": {
+        "NOTION_TOKEN": "{{YOUR_NOTION_TOKEN}}"
+      }
+    }
+  },
+
+  "_advanced_servers": {
+    "_description": "고급 옵션 - 소셜 미디어 스크래핑 차단 시에만 사용",
+
+    "hyperbrowser": {
+      "_description": "[고급] 클라우드 브라우저 - 스텔스 모드 지원",
+      "_setup": "https://hyperbrowser.ai 에서 API 키 발급",
+      "command": "npx",
+      "args": ["-y", "hyperbrowser-mcp"],
+      "env": {
+        "HYPERBROWSER_API_KEY": "{{YOUR_HYPERBROWSER_API_KEY}}"
+      }
+    }
+  },
+
+  "_examples": {
+    "_minimal": {
+      "_description": "최소 설정 (Playwright만)",
+      "mcpServers": {
+        "playwright": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-playwright"]
+        }
+      }
+    },
+
+    "_with_obsidian": {
+      "_description": "Playwright + Obsidian",
+      "mcpServers": {
+        "playwright": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-playwright"]
+        },
+        "obsidian": {
+          "command": "npx",
+          "args": ["-y", "@huangyihe/obsidian-mcp"],
+          "env": {
+            "OBSIDIAN_VAULT_PATH": "C:/Users/Example/Documents/MyVault"
+          }
+        }
+      }
+    }
+  }
+}
