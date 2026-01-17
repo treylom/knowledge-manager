@@ -47,6 +47,9 @@ cp km-config.example.json /your/project/
 
 Antigravity(Google)는 Agent Skills 표준을 지원합니다. `.agent/skills/` 폴더를 사용하면 스킬이 자동으로 인식됩니다.
 
+> **장점**: Antigravity는 강력한 **내장 브라우저 에이전트**가 있어서 Playwright MCP가 필요 없습니다!
+> Obsidian MCP만 설정하면 됩니다.
+
 #### Step 1: 저장소 클론 및 스킬 복사
 
 ```bash
@@ -113,10 +116,6 @@ Knowledge Manager 설정을 도와줘.
 ```json
 {
   "mcpServers": {
-    "playwright": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-playwright"]
-    },
     "obsidian": {
       "command": "npx",
       "args": ["-y", "@huangyihe/obsidian-mcp"],
@@ -129,11 +128,14 @@ Knowledge Manager 설정을 도와줘.
 ```
 
 > **참고**: `OBSIDIAN_VAULT_PATH`를 실제 Obsidian vault 경로로 변경하세요.
+>
+> **Playwright는 선택 사항입니다.** Antigravity 내장 브라우저가 웹 스크래핑을 처리합니다.
+> 스크린샷 캡처, DOM 조작 등 고급 기능이 필요한 경우에만 Playwright를 추가하세요.
 
 **설정 새로고침:**
 
 1. **Manage MCP Servers** 창에서 **Refresh** 클릭
-2. playwright, obsidian 서버가 목록에 표시되는지 확인
+2. obsidian 서버가 목록에 표시되는지 확인
 
 **km-config.json 생성:**
 
@@ -154,7 +156,7 @@ Knowledge Manager 설정을 도와줘.
     }
   },
   "browser": {
-    "provider": "playwright"
+    "provider": "antigravity"
   }
 }
 ```
@@ -166,7 +168,7 @@ Knowledge Manager 설정을 도와줘.
 설정이 완료되면:
 
 1. **Manage MCP Servers** 창에서 **Refresh** 클릭
-2. playwright, obsidian 서버가 목록에 표시되는지 확인
+2. obsidian 서버가 목록에 표시되는지 확인
 3. 테스트: "https://example.com 이 페이지를 정리해줘"
 
 ---
@@ -372,6 +374,9 @@ After copying, run `/knowledge-manager setup` to start the setup wizard.
 
 Antigravity (Google) supports the Agent Skills standard. The `.agent/skills/` folder is automatically recognized.
 
+> **Advantage**: Antigravity has a powerful **built-in browser agent**, so Playwright MCP is not required!
+> You only need to configure Obsidian MCP.
+
 #### Step 1: Clone and Copy Skills
 
 ```bash
@@ -438,10 +443,6 @@ Add the following to `mcp_config.json`:
 ```json
 {
   "mcpServers": {
-    "playwright": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-playwright"]
-    },
     "obsidian": {
       "command": "npx",
       "args": ["-y", "@huangyihe/obsidian-mcp"],
@@ -454,11 +455,14 @@ Add the following to `mcp_config.json`:
 ```
 
 > **Note**: Replace `OBSIDIAN_VAULT_PATH` with your actual Obsidian vault path.
+>
+> **Playwright is optional.** Antigravity's built-in browser handles web scraping.
+> Only add Playwright if you need advanced features like screenshot capture or DOM manipulation.
 
 **Refresh Configuration:**
 
 1. Click **Refresh** in the Manage MCP Servers window
-2. Verify that playwright and obsidian servers appear in the list
+2. Verify that obsidian server appears in the list
 
 **Create km-config.json:**
 
@@ -479,7 +483,7 @@ Create a `km-config.json` file in your project folder:
     }
   },
   "browser": {
-    "provider": "playwright"
+    "provider": "antigravity"
   }
 }
 ```
@@ -491,7 +495,7 @@ Create a `km-config.json` file in your project folder:
 After setup is complete:
 
 1. Click **Refresh** in the Manage MCP Servers window
-2. Verify that playwright and obsidian servers appear in the list
+2. Verify that obsidian server appears in the list
 3. Test: "Summarize this page: https://example.com"
 
 ---

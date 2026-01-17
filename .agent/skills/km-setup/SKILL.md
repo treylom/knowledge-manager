@@ -75,22 +75,21 @@ Vault path: _
 
 ## Step 3: MCP Server Configuration
 
-### For Antigravity
+### For Antigravity (Simplified!)
+
+**Antigravity has a built-in browser agent**, so playwright MCP is **optional**.
+Only Obsidian MCP is required if you want to save to Obsidian.
 
 **Config file location:** `~/.gemini/antigravity/mcp_config.json`
 
 ```javascript
-function configure_antigravity_mcp(vaultPath) {
+function configure_antigravity_mcp(vaultPath, options = {}) {
   // 1. Read existing config
   configPath = expand_path("~/.gemini/antigravity/mcp_config.json")
   existingConfig = Read(configPath) || { "mcpServers": {} }
 
-  // 2. Add required servers
+  // 2. Add required servers (Obsidian only for Antigravity)
   newServers = {
-    "playwright": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-playwright"]
-    },
     "obsidian": {
       "command": "npx",
       "args": ["-y", "@huangyihe/obsidian-mcp"],
@@ -100,20 +99,51 @@ function configure_antigravity_mcp(vaultPath) {
     }
   }
 
-  // 3. Merge with existing
+  // 3. Optionally add Playwright (for screenshots, batch processing, etc.)
+  if (options.includePlaywright) {
+    newServers["playwright"] = {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-playwright"]
+    }
+  }
+
+  // 4. Merge with existing
   existingConfig.mcpServers = {
     ...existingConfig.mcpServers,
     ...newServers
   }
 
-  // 4. Write back
+  // 5. Write back
   Write(configPath, JSON.stringify(existingConfig, null, 2))
 
   return true
 }
 ```
 
+#### Antigravity Browser Options
+
+Ask the user (only in Antigravity):
+
+```
+=================================================
+  Browser Configuration
+=================================================
+
+Antigravity has a powerful built-in browser agent.
+For most use cases, you don't need additional browser tools.
+
+Do you want to add Playwright MCP? (optional)
+
+  [1] No, use Antigravity's built-in browser (Recommended)
+  [2] Yes, add Playwright for advanced features
+      (screenshots, batch processing, DOM manipulation)
+
+Selection: _
+```
+
 ### For Claude Code
+
+Claude Code doesn't have a built-in browser, so Playwright is required.
 
 ```javascript
 function configure_claude_mcp(vaultPath) {
@@ -146,7 +176,8 @@ function create_km_config(options) {
       }
     },
     "browser": {
-      "provider": "playwright"
+      // Antigravity uses native browser by default
+      "provider": options.environment === "antigravity" ? "antigravity" : "playwright"
     },
     "defaults": {
       "detailLevel": 2
@@ -172,6 +203,13 @@ Configuration files created:
   [OK] ~/.gemini/antigravity/mcp_config.json (updated)
   [OK] ./km-config.json (created)
 
+MCP servers configured:
+  [OK] obsidian - For saving notes to your vault
+
+Browser configuration:
+  [OK] Using Antigravity's built-in browser agent
+       (No additional MCP needed!)
+
 IMPORTANT: To activate the MCP servers:
 
   1. Open Antigravity
@@ -179,12 +217,12 @@ IMPORTANT: To activate the MCP servers:
   3. Click [...] (three dots) > MCP Servers
   4. Click "Manage MCP Servers"
   5. Click "Refresh"
-  6. Verify that "playwright" and "obsidian" appear in the list
+  6. Verify that "obsidian" appears in the list
 
-Once refreshed, you can use Knowledge Manager:
+You can now use Knowledge Manager:
 
+  "이 페이지를 정리해줘: https://example.com/article"
   "Process this article: https://example.com/article"
-  "Save this to my Zettelkasten"
 
 =================================================
 ```
@@ -260,3 +298,13 @@ Cloud-synced vaults work fine:
 ```
 "vaultPath": "C:/Users/YourName/OneDrive/Documents/MyVault"
 ```
+
+---
+
+## Summary: MCP Requirements by Environment
+
+| Environment | Obsidian MCP | Playwright MCP | Browser |
+|-------------|--------------|----------------|---------|
+| **Antigravity** | Required (if using Obsidian) | Optional | Built-in |
+| **Claude Code** | Required (if using Obsidian) | Required | MCP |
+| **Claude Desktop** | Required (if using Obsidian) | Required | MCP |
