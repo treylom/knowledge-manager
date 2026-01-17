@@ -1,5 +1,7 @@
 # Knowledge Manager Agent
 
+> 📖 **English documentation is available at the bottom of this page.**
+
 Claude Code용 종합 지식 관리 에이전트. 다양한 소스에서 콘텐츠를 수집하고, Zettelkasten 원칙에 따라 분석하여, Obsidian 또는 Notion에 저장합니다.
 
 ## ✨ 특징
@@ -19,7 +21,7 @@ Claude Code 1.0.33 이상에서 플러그인으로 설치할 수 있습니다.
 
 ```bash
 # 마켓플레이스 추가
-/plugin marketplace add yourname/knowledge-manager
+/plugin marketplace add treylom/knowledge-manager
 
 # 플러그인 설치
 /plugin install knowledge-manager
@@ -31,7 +33,7 @@ Claude Code 1.0.33 이상에서 플러그인으로 설치할 수 있습니다.
 
 ```bash
 # 저장소 클론
-git clone https://github.com/yourname/knowledge-manager.git
+git clone https://github.com/treylom/knowledge-manager.git
 cd knowledge-manager
 
 # .claude 폴더를 프로젝트에 복사
@@ -43,19 +45,26 @@ cp km-config.example.json /your/project/
 
 ### 방법 3: Antigravity 설정
 
-Antigravity(Google)에서 사용하려면 MCP 서버를 수동으로 설정해야 합니다.
+Antigravity(Google)는 Agent Skills 표준을 지원합니다. `.agent/skills/` 폴더를 사용하면 스킬이 자동으로 인식됩니다.
 
-#### Step 1: 에이전트 파일 복사
+#### Step 1: 저장소 클론 및 스킬 복사
 
 ```bash
 # 저장소 클론
-git clone https://github.com/yourname/knowledge-manager.git
+git clone https://github.com/treylom/knowledge-manager.git
 
-# .claude 폴더를 Antigravity 프로젝트에 복사
+# .agent 폴더를 프로젝트에 복사 (Antigravity 스킬)
+cp -r knowledge-manager/.agent /your/antigravity/project/
+
+# .claude 폴더도 복사 (에이전트 및 명령어)
 cp -r knowledge-manager/.claude /your/antigravity/project/
 ```
 
-#### Step 2: MCP 설정 파일 열기
+> **참고**: `.agent/skills/` 폴더는 Antigravity, Gemini CLI, Claude Code, OpenCode 등 Agent Skills 표준을 지원하는 모든 도구에서 호환됩니다.
+
+#### Step 2: MCP 서버 설정
+
+Antigravity에서 MCP 서버를 설정해야 합니다.
 
 1. Antigravity에서 Agent 패널 열기
 2. 우측 상단 **⋯** (점 세 개) 클릭
@@ -64,8 +73,6 @@ cp -r knowledge-manager/.claude /your/antigravity/project/
 5. **View raw config** 클릭
 
 설정 파일 위치: `C:\Users\<사용자명>\.gemini\antigravity\mcp_config.json`
-
-#### Step 3: MCP 서버 추가
 
 `mcp_config.json`에 다음 내용을 추가하세요:
 
@@ -89,12 +96,12 @@ cp -r knowledge-manager/.claude /your/antigravity/project/
 
 > **참고**: `OBSIDIAN_VAULT_PATH`를 실제 Obsidian vault 경로로 변경하세요.
 
-#### Step 4: 설정 새로고침
+#### Step 3: 설정 새로고침
 
 1. **Manage MCP Servers** 창에서 **Refresh** 클릭
 2. playwright, obsidian 서버가 목록에 표시되는지 확인
 
-#### Step 5: km-config.json 생성
+#### Step 4: km-config.json 생성
 
 프로젝트 폴더에 `km-config.json` 파일을 생성하세요:
 
@@ -269,3 +276,284 @@ MIT License - 자유롭게 사용, 수정, 배포하세요.
 - [MCP Protocol](https://modelcontextprotocol.io)
 - [Obsidian](https://obsidian.md)
 - [Antigravity MCP 설정 가이드](https://composio.dev/blog/howto-mcp-antigravity)
+
+---
+
+# 🇺🇸 English Documentation
+
+## What is Knowledge Manager?
+
+A comprehensive knowledge management agent for Claude Code. It collects content from various sources, analyzes it using Zettelkasten principles, and saves it to Obsidian or Notion.
+
+## Features
+
+- **Multiple Input Sources**: Web pages, PDFs, social media (Threads/Instagram), Notion
+- **Smart Extraction**: AI-powered content analysis and atomic idea extraction
+- **Flexible Storage**: Obsidian, Notion, or local Markdown files
+- **Easy Setup**: Setup wizard guides you through everything
+
+---
+
+## Installation
+
+### Option 1: Claude Code Plugin (Recommended)
+
+Available for Claude Code 1.0.33 and above.
+
+```bash
+# Add marketplace
+/plugin marketplace add treylom/knowledge-manager
+
+# Install plugin
+/plugin install knowledge-manager
+```
+
+After installation, run `/km:setup` to start the setup wizard.
+
+### Option 2: Manual Copy (Claude Code / Claude Desktop)
+
+```bash
+# Clone repository
+git clone https://github.com/treylom/knowledge-manager.git
+cd knowledge-manager
+
+# Copy .claude folder to your project
+cp -r .claude /your/project/.claude
+cp km-config.example.json /your/project/
+```
+
+After copying, run `/knowledge-manager setup` to start the setup wizard.
+
+### Option 3: Antigravity Setup
+
+Antigravity (Google) supports the Agent Skills standard. The `.agent/skills/` folder is automatically recognized.
+
+#### Step 1: Clone and Copy Skills
+
+```bash
+# Clone repository
+git clone https://github.com/treylom/knowledge-manager.git
+
+# Copy .agent folder (Antigravity skills)
+cp -r knowledge-manager/.agent /your/antigravity/project/
+
+# Also copy .claude folder (agents and commands)
+cp -r knowledge-manager/.claude /your/antigravity/project/
+```
+
+> **Note**: The `.agent/skills/` folder is compatible with all tools supporting the Agent Skills standard, including Antigravity, Gemini CLI, Claude Code, and OpenCode.
+
+#### Step 2: Configure MCP Servers
+
+You need to configure MCP servers in Antigravity.
+
+1. Open Agent panel in Antigravity
+2. Click **⋯** (three dots) in the top right
+3. Select **MCP Servers**
+4. Click **Manage MCP Servers**
+5. Click **View raw config**
+
+Config file location: `C:\Users\<username>\.gemini\antigravity\mcp_config.json`
+
+Add the following to `mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-playwright"]
+    },
+    "obsidian": {
+      "command": "npx",
+      "args": ["-y", "@huangyihe/obsidian-mcp"],
+      "env": {
+        "OBSIDIAN_VAULT_PATH": "C:/Users/YourName/Documents/YourVault"
+      }
+    }
+  }
+}
+```
+
+> **Note**: Replace `OBSIDIAN_VAULT_PATH` with your actual Obsidian vault path.
+
+#### Step 3: Refresh Configuration
+
+1. Click **Refresh** in the Manage MCP Servers window
+2. Verify that playwright and obsidian servers appear in the list
+
+#### Step 4: Create km-config.json
+
+Create a `km-config.json` file in your project folder:
+
+```json
+{
+  "storage": {
+    "primary": "obsidian",
+    "obsidian": {
+      "enabled": true,
+      "vaultPath": "C:/Users/YourName/Documents/YourVault",
+      "defaultFolder": "Zettelkasten"
+    },
+    "local": {
+      "enabled": true,
+      "outputPath": "./km-notes"
+    }
+  },
+  "browser": {
+    "provider": "playwright"
+  }
+}
+```
+
+---
+
+## Requirements
+
+### Required
+
+| Item | Description |
+|------|-------------|
+| Claude Code / Antigravity | CLI, Desktop, or Antigravity |
+| Node.js 18+ | For running MCP servers |
+
+### Optional (Setup wizard will guide you)
+
+| Item | Purpose |
+|------|---------|
+| Obsidian | Local knowledge management app (free) |
+| Notion account | For team collaboration |
+
+---
+
+## Usage
+
+### In Claude Code
+
+```
+# Setup wizard (first time only)
+/knowledge-manager setup
+
+# Process web article
+/knowledge-manager https://example.com/article
+
+# Process PDF file
+/knowledge-manager /path/to/document.pdf
+
+# Process Threads post
+/knowledge-manager https://threads.net/@user/post/123
+```
+
+### If installed as plugin
+
+```
+# Setup wizard
+/km:setup
+
+# Process web article
+/km https://example.com/article
+```
+
+---
+
+## Storage
+
+### For Obsidian Users
+
+Notes are saved in Zettelkasten style in your Obsidian vault.
+
+```
+Your-Vault/
+├── Zettelkasten/
+│   └── AI-Research/
+│       └── MCP Protocol Overview - 2026-01-17.md
+├── Research/
+└── Threads/
+```
+
+### Without Obsidian
+
+Notes are saved as Obsidian-compatible Markdown files in a local folder.
+
+```
+km-notes/
+├── Zettelkasten/
+├── Research/
+└── Threads/
+```
+
+---
+
+## Troubleshooting
+
+### Claude Code: Check MCP Server Status
+
+```bash
+claude mcp list
+```
+
+### Antigravity: Check MCP Servers
+
+1. Agent panel → **⋯** → **MCP Servers**
+2. Check status of playwright and obsidian in server list
+3. Click **Refresh** if connection failed
+
+### Config File Locations
+
+| Environment | Config File |
+|-------------|-------------|
+| Claude Code CLI | `.mcp.json` in project folder |
+| Claude Desktop | `%APPDATA%\Claude\claude_desktop_config.json` |
+| Antigravity | `C:\Users\<username>\.gemini\antigravity\mcp_config.json` |
+
+---
+
+## Advanced Options
+
+### Hyperbrowser (for Social Media)
+
+If default Playwright gets blocked on social media scraping, consider using Hyperbrowser.
+
+1. Get API key from [hyperbrowser.ai](https://hyperbrowser.ai)
+2. Change `browser.provider` to `"hyperbrowser"` in `km-config.json`
+3. Add hyperbrowser server to MCP config:
+
+```json
+"hyperbrowser": {
+  "command": "npx",
+  "args": ["-y", "hyperbrowser-mcp"],
+  "env": {
+    "HYPERBROWSER_API_KEY": "your-api-key"
+  }
+}
+```
+
+### Environment Variable Support
+
+```bash
+export KM_OBSIDIAN_VAULT="/path/to/vault"
+export KM_NOTION_TOKEN="ntn_xxx"
+export KM_BROWSER_PROVIDER="playwright"
+```
+
+---
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes
+4. Push to the branch
+5. Open a Pull Request
+
+## License
+
+MIT License - Free to use, modify, and distribute.
+
+## Related Links
+
+- [Claude Code](https://code.claude.com)
+- [Claude Code Plugins](https://claude.com/blog/claude-code-plugins)
+- [MCP Protocol](https://modelcontextprotocol.io)
+- [Obsidian](https://obsidian.md)
+- [Antigravity MCP Setup Guide](https://composio.dev/blog/howto-mcp-antigravity)
