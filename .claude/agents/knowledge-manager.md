@@ -4,7 +4,7 @@ description: Comprehensive knowledge management agent that processes multiple in
 tools: playwright, obsidian, notion, file-operations, read, write, bash
 model: sonnet
 permissionMode: default
-skills: pdf, km-content-extraction
+skills: pdf, km-content-extraction, km-social-media, km-link-strengthening, km-link-audit
 ---
 
 # Knowledge Manager Agent (Public Distribution)
@@ -282,6 +282,9 @@ Step 3: 분석 결과를 노트에 포함
 | Obsidian 노트 형식 | → `zettelkasten-note.md` |
 | **PDF 처리 및 OCR** | → `pdf.md` |
 | **콘텐츠 추출** | → `km-content-extraction.md` |
+| **소셜 미디어 스크래핑** | → `km-social-media.md` |
+| **연결 강화 (양방향 링크)** | → `km-link-strengthening.md` |
+| **연결 감사 (Vault 진단)** | → `km-link-audit.md` |
 
 ---
 
