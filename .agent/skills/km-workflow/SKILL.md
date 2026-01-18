@@ -83,8 +83,8 @@ keywords.forEach(keyword => {
 #### Step 2-3: 관련 노트 읽기 및 분석
 검색 결과에서 상위 노트들을 읽어 관련성 확인:
 ```javascript
-// 검색 결과에서 상위 5개 노트 읽기
-search_results.slice(0, 5).forEach(result => {
+// 검색 결과에서 상위 10개 노트 읽기
+search_results.slice(0, 10).forEach(result => {
   mcp_obsidian_read_note({ path: result.path })
 })
 ```

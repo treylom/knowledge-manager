@@ -34,19 +34,19 @@ description: Extract content from Threads, Instagram with reply collection and d
 
 | 입력 URL | 정규화 결과 |
 |----------|-------------|
-| `threads.com/@user/post/...` | `threads.net/@user/post/...` |
-| `www.threads.net/@user/post/...` | `threads.net/@user/post/...` |
-| `m.threads.net/@user/post/...` | `threads.net/@user/post/...` |
+| `threads.net/@user/post/...` | `threads.com/@user/post/...` |
+| `www.threads.com/@user/post/...` | `threads.com/@user/post/...` |
+| `m.threads.com/@user/post/...` | `threads.com/@user/post/...` |
 | `instagram.com/p/...` | `instagram.com/p/...` (변경 없음) |
 | `www.instagram.com/p/...` | `instagram.com/p/...` |
 | `m.instagram.com/p/...` | `instagram.com/p/...` |
 
 ```javascript
 function normalize_social_url(url) {
-  // Threads 정규화
-  url = url.replace(/threads\.com/g, 'threads.net')
-  url = url.replace(/www\.threads\.net/g, 'threads.net')
-  url = url.replace(/m\.threads\.net/g, 'threads.net')
+  // Threads 정규화 (threads.net → threads.com)
+  url = url.replace(/threads\.net/g, 'threads.com')
+  url = url.replace(/www\.threads\.com/g, 'threads.com')
+  url = url.replace(/m\.threads\.com/g, 'threads.com')
 
   // Instagram 정규화
   url = url.replace(/www\.instagram\.com/g, 'instagram.com')
