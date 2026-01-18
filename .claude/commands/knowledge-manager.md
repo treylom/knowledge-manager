@@ -7,6 +7,51 @@ allowed-tools: Task, Read, Write, Bash, Glob, Grep, mcp__obsidian__*, mcp__notio
 
 사용자의 요청을 처리하기 위해 knowledge-manager 에이전트를 실행합니다.
 
+---
+
+## 📄 PDF 처리 규칙
+
+**PDF 파일이 입력으로 주어진 경우, 파일 크기에 따라 처리 방법이 다릅니다:**
+
+### 용량별 처리 전략
+
+| PDF 크기 | 처리 방법 | 비고 |
+|----------|----------|------|
+| **작은 PDF** (< 5MB, < 20페이지) | Read 도구로 직접 읽기 시도 | 실패 시 marker로 변환 |
+| **큰 PDF** (≥ 5MB 또는 ≥ 20페이지) | `/pdf` 스킬 사용 권장 | 또는 marker_single로 변환 |
+| **학술 논문/복잡한 문서** | `/pdf` 스킬 사용 (구조화된 추출) | 표/그림 추출 가능 |
+
+### 워크플로우
+
+**Step 1: PDF 크기 확인**
+```bash
+# 파일 크기 확인
+ls -lh "{PDF경로}"
+```
+
+**Step 2a: 작은 PDF → 직접 Read 시도**
+```
+Read("{PDF경로}")
+# "Prompt is too long" 에러 발생 시 → Step 2b로
+```
+
+**Step 2b: 큰 PDF → marker 변환 또는 /pdf 스킬**
+```bash
+# 옵션 1: marker로 변환
+mkdir -p ./km-temp
+marker_single "{PDF경로}" --output_format markdown --output_dir ./km-temp
+Read("./km-temp/{파일명}/{파일명}.md")
+
+# 옵션 2: /pdf 스킬 사용 권장 (더 나은 결과)
+# → 사용자에게 "/pdf 스킬 사용을 권장합니다" 안내
+```
+
+### 💡 권장사항
+- **학술 논문, 보고서, 복잡한 PDF**: `/pdf` 스킬이 구조화된 추출에 최적
+- **단순 텍스트 PDF**: Read 또는 marker로 충분
+
+---
+
 ## 중요: 사용자 선호도 확인 필수
 
 에이전트를 실행하기 전에 **반드시** 다음 사항을 사용자에게 확인해야 합니다:
