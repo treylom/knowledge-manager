@@ -18,33 +18,53 @@ function get_storage_backend() {
 }
 ```
 
-## Backend Mapping
+## 🛑 MCP 도구 우선 사용 규칙 (CRITICAL)
+
+```
+┌─────────────────────────────────────────────────────┐
+│ 🛑 CRITICAL: MCP 도구 사용 강제                      │
+│                                                      │
+│ MCP 도구가 사용 가능한 환경에서는 반드시 MCP 사용!    │
+│                                                      │
+│ ❌ 잘못된 예:                                        │
+│    - write_to_file("vault/note.md", content)         │
+│                                                      │
+│ ✅ 올바른 예:                                        │
+│    - mcp_obsidian_create_note(path, content)         │
+└─────────────────────────────────────────────────────┘
+```
+
+## Backend Mapping (Antigravity/Gemini CLI)
 
 | Feature | Obsidian | Notion | Local |
 |---------|----------|--------|-------|
-| Tool | `mcp__obsidian__create_note` | `mcp__notion__API-post-page` | `Write` |
+| Tool | `mcp_obsidian_create_note` | `mcp_notion_API-post-page` | `write_to_file` |
+| Search | `mcp_obsidian_search_vault` | `mcp_notion_API-post-search` | N/A |
 | Path format | Relative to vault | Database/Page ID | File system path |
 | Wikilinks | Supported | Converted to mentions | Supported |
+
+> **참고**: Antigravity는 MCP 도구 이름에 싱글 언더스코어(`_`)를 사용합니다.
 
 ---
 
 ## Unified Save Function
 
 ```javascript
+// Antigravity/Gemini CLI용 (싱글 언더스코어 사용)
 function save_note(relativePath, content) {
   backend = get_storage_backend()
   config = Read("km-config.json")
 
   switch (backend) {
     case "obsidian":
-      return mcp__obsidian__create_note({
+      // ⚠️ 반드시 MCP 도구 사용!
+      return mcp_obsidian_create_note({
         path: relativePath,
         content: content
       })
 
     case "notion":
-      // Convert to Notion blocks
-      return mcp__notion__API-post-page({
+      return mcp_notion_API_post_page({
         parent: { page_id: config.storage.notion.parentPageId },
         properties: { title: [{ text: { content: getTitle(relativePath) } }] }
       })
@@ -52,7 +72,7 @@ function save_note(relativePath, content) {
     case "local":
     default:
       fullPath = `${config.storage.local.outputPath}/${relativePath}`
-      return Write({ file_path: fullPath, content: content })
+      return write_to_file(fullPath, content)
   }
 }
 ```
