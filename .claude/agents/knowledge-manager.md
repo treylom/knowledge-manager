@@ -120,6 +120,38 @@ config.browser.provider        // "playwright" | "hyperbrowser" | "antigravity"
 
 ---
 
+## 🌐 웹 크롤링 도구 우선순위 (CRITICAL)
+
+### SNS URL (Threads, Instagram, Twitter 등)
+→ **반드시** `mcp__playwright__*` 사용
+→ WebFetch 사용 금지 (로그인 필요, JS 렌더링 필요)
+
+### 일반 웹 URL
+→ 1순위: `WebFetch` (빠르고 간단)
+→ 2순위: `mcp__playwright__*` (WebFetch 실패 시)
+
+### URL 유형 감지 및 도구 선택
+
+```javascript
+// SNS URL 감지
+if (url.includes('threads.') || url.includes('instagram.') || url.includes('twitter.') || url.includes('x.com')) {
+  // Playwright MCP 사용 (필수)
+  mcp__playwright__browser_navigate({ url })
+  mcp__playwright__browser_snapshot()
+} else {
+  // 일반 웹: WebFetch 먼저 시도
+  try {
+    WebFetch({ url, prompt: "콘텐츠 추출" })
+  } catch {
+    // Fallback: Playwright MCP
+    mcp__playwright__browser_navigate({ url })
+    mcp__playwright__browser_snapshot()
+  }
+}
+```
+
+---
+
 ## 🌐 Browser Abstraction Layer
 
 설정된 브라우저 공급자에 따라 도구를 선택합니다.
@@ -135,8 +167,8 @@ provider = config.browser.provider  // "playwright" | "hyperbrowser" | "antigrav
 | Provider | 도구 호출 |
 |----------|----------|
 | **playwright** (기본) | `mcp__playwright__browser_navigate` → `browser_wait_for` → `browser_snapshot` |
-| **hyperbrowser** | `mcp__hyperbrowser__scrape_webpage(url, outputFormat=["markdown"])` |
-| **antigravity** | Antigravity 환경의 브라우저 도구 사용 |
+| **hyperbrowser** (대안) | `mcp__hyperbrowser__scrape_webpage(url, outputFormat=["markdown"])` |
+| **antigravity** | Antigravity 환경의 내장 브라우저 도구 사용 |
 
 ### Playwright 사용 시 (기본)
 

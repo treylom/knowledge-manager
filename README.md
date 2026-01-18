@@ -216,6 +216,28 @@ Claude Code 또는 Antigravity에게 직접 물어보세요:
 | Claude Code / Antigravity | CLI, Desktop, 또는 Antigravity |
 | Node.js 18+ | MCP 서버 실행용 |
 
+### Playwright MCP 설치 (Claude Code 필수)
+
+> **Antigravity 사용자**: 내장 브라우저가 있어 Playwright MCP 불필요. 이 섹션 건너뛰기.
+
+Claude Code 환경에서 웹 콘텐츠를 추출하려면 **Playwright MCP 서버**가 필요합니다.
+
+```bash
+# Playwright MCP 자동 설치 (권장)
+claude mcp add playwright -- npx -y @anthropic-ai/mcp-playwright
+
+# 설치 확인
+claude mcp list
+# → playwright 서버가 표시되어야 함
+```
+
+**웹 크롤링 도구 우선순위:**
+
+| 콘텐츠 유형 | 1순위 도구 | 2순위 (Fallback) |
+|------------|-----------|------------------|
+| SNS (Threads, Instagram) | Playwright MCP (필수) | - |
+| 일반 웹 | WebFetch | Playwright MCP |
+
 ### 선택 (셋업 위저드가 안내)
 
 | 항목 | 용도 |
@@ -320,9 +342,11 @@ claude mcp list
 
 ## 고급 옵션
 
-### Hyperbrowser (소셜 미디어용)
+### Hyperbrowser (선택적 대안)
 
-기본 Playwright가 소셜 미디어 스크래핑에서 차단당하면 Hyperbrowser 사용을 고려하세요.
+> ⚠️ **권장하지 않음**: 기본적으로 Playwright MCP를 사용하세요. Hyperbrowser는 Playwright가 차단당하는 특수한 경우에만 고려하세요.
+
+Playwright MCP가 특정 사이트에서 지속적으로 차단당하는 경우에만 Hyperbrowser를 고려하세요.
 
 1. [hyperbrowser.ai](https://hyperbrowser.ai)에서 API 키 발급
 2. `km-config.json`에서 `browser.provider`를 `"hyperbrowser"`로 변경
@@ -337,6 +361,8 @@ claude mcp list
   }
 }
 ```
+
+**주의**: Hyperbrowser는 유료 서비스이며, 설정이 복잡해질 수 있습니다. 대부분의 경우 Playwright MCP로 충분합니다.
 
 ### 환경 변수 지원
 
@@ -588,6 +614,28 @@ Help me find my Obsidian vault path
 | Claude Code / Antigravity | CLI, Desktop, or Antigravity |
 | Node.js 18+ | For running MCP servers |
 
+### Playwright MCP Installation (Required for Claude Code)
+
+> **Antigravity users**: Has built-in browser, Playwright MCP not needed. Skip this section.
+
+To extract web content in Claude Code, you need the **Playwright MCP server**.
+
+```bash
+# Auto-install Playwright MCP (recommended)
+claude mcp add playwright -- npx -y @anthropic-ai/mcp-playwright
+
+# Verify installation
+claude mcp list
+# → playwright server should appear
+```
+
+**Web Crawling Tool Priority:**
+
+| Content Type | Primary Tool | Fallback |
+|--------------|-------------|----------|
+| SNS (Threads, Instagram) | Playwright MCP (required) | - |
+| General Web | WebFetch | Playwright MCP |
+
 ### Optional (Setup wizard will guide you)
 
 | Item | Purpose |
@@ -692,9 +740,11 @@ claude mcp list
 
 ## Advanced Options
 
-### Hyperbrowser (for Social Media)
+### Hyperbrowser (Optional Alternative)
 
-If default Playwright gets blocked on social media scraping, consider using Hyperbrowser.
+> ⚠️ **Not recommended**: Use Playwright MCP by default. Only consider Hyperbrowser if Playwright is consistently blocked.
+
+Only consider Hyperbrowser if Playwright MCP is consistently blocked on specific sites.
 
 1. Get API key from [hyperbrowser.ai](https://hyperbrowser.ai)
 2. Change `browser.provider` to `"hyperbrowser"` in `km-config.json`
@@ -709,6 +759,8 @@ If default Playwright gets blocked on social media scraping, consider using Hype
   }
 }
 ```
+
+**Note**: Hyperbrowser is a paid service and may add configuration complexity. Playwright MCP is sufficient for most cases.
 
 ### Environment Variable Support
 
