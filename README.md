@@ -7,6 +7,7 @@ Claude Code용 종합 지식 관리 에이전트. 다양한 소스에서 콘텐�
 ## ✨ 특징
 
 - **다중 소스 입력**: 웹페이지, PDF, 소셜 미디어 (Threads/Instagram), Notion
+- **PDF 및 이미지 OCR**: 스캔된 PDF와 이미지에서 텍스트 추출 (Claude Code용)
 - **스마트 추출**: AI 기반 콘텐츠 분석 및 원자적 아이디어 추출
 - **유연한 저장**: Obsidian, Notion, 또는 로컬 Markdown 파일
 - **간단한 설정**: 셋업 위저드가 모든 것을 안내
@@ -189,6 +190,17 @@ Knowledge Manager 설정을 도와줘.
 | Obsidian | 로컬 지식 관리 앱 (무료) |
 | Notion 계정 | 팀 협업용 |
 
+### PDF/OCR 처리용 (Claude Code 환경)
+
+> **Antigravity 사용자**: 자체 내장 PDF/이미지 처리 기능 사용. 아래 설치 불필요.
+
+| 항목 | 설치 명령 | 용도 |
+|------|----------|------|
+| Marker | `pip install marker-pdf` | PDF → Markdown 변환 (권장) |
+| pytesseract | `pip install pytesseract pdf2image` | 스캔 PDF OCR |
+| Tesseract OCR | [설치 가이드](https://github.com/tesseract-ocr/tesseract) | OCR 엔진 |
+| pdfplumber | `pip install pdfplumber` | 테이블 추출 |
+
 ---
 
 ## 📖 사용법
@@ -334,6 +346,7 @@ A comprehensive knowledge management agent for Claude Code. It collects content 
 ## Features
 
 - **Multiple Input Sources**: Web pages, PDFs, social media (Threads/Instagram), Notion
+- **PDF & Image OCR**: Extract text from scanned PDFs and images (Claude Code)
 - **Smart Extraction**: AI-powered content analysis and atomic idea extraction
 - **Flexible Storage**: Obsidian, Notion, or local Markdown files
 - **Easy Setup**: Setup wizard guides you through everything
@@ -515,6 +528,17 @@ After setup is complete:
 |------|---------|
 | Obsidian | Local knowledge management app (free) |
 | Notion account | For team collaboration |
+
+### For PDF/OCR Processing (Claude Code)
+
+> **Antigravity users**: Use built-in PDF/image processing. No installation required.
+
+| Item | Install Command | Purpose |
+|------|-----------------|---------|
+| Marker | `pip install marker-pdf` | PDF → Markdown (recommended) |
+| pytesseract | `pip install pytesseract pdf2image` | Scanned PDF OCR |
+| Tesseract OCR | [Install Guide](https://github.com/tesseract-ocr/tesseract) | OCR engine |
+| pdfplumber | `pip install pdfplumber` | Table extraction |
 
 ---
 

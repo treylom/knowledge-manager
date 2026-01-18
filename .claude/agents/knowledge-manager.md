@@ -4,6 +4,7 @@ description: Comprehensive knowledge management agent that processes multiple in
 tools: playwright, obsidian, notion, file-operations, read, write, bash
 model: sonnet
 permissionMode: default
+skills: pdf, km-content-extraction
 ---
 
 # Knowledge Manager Agent (Public Distribution)
@@ -214,6 +215,62 @@ Task 도구로 호출된 경우 다음 메시지를 **즉시 출력**:
 
 ---
 
+## PDF & Image Processing (Claude Code)
+
+> **Antigravity 환경**: 자체 내장 PDF/이미지 처리 기능 사용. 이 섹션 건너뛰기.
+> **Claude Code 환경**: 아래 도구들을 활용.
+
+### 지원 입력 형식
+
+| 형식 | 처리 방법 | 비고 |
+|------|----------|------|
+| **PDF (디지털)** | Marker → Markdown | 토큰 50-70% 절감 |
+| **PDF (스캔)** | pytesseract OCR | 한국어+영어 지원 |
+| **이미지** | Read 도구 (Vision) | PNG, JPG 분석 및 OCR |
+| Word (DOCX) | Read 도구 | 자동 파싱 |
+| Excel (XLSX) | Read 도구 | 테이블 추출 |
+
+### PDF 처리 워크플로우
+
+```
+Step 1: Marker로 PDF → Markdown 변환 (권장)
+  marker_single "document.pdf" --output_format markdown --output_dir ./output
+
+Step 2: 생성된 Markdown 읽기
+  Read("./output/document/document.md")
+
+Step 3: 콘텐츠 분석 및 노트 생성
+```
+
+### 이미지 OCR (Claude Vision)
+
+```
+Step 1: Read 도구로 이미지 로드
+  Read("/path/to/image.png")
+
+Step 2: Claude Vision이 자동 분석
+  - 텍스트 추출 (OCR)
+  - 다이어그램 해석
+  - 차트 데이터 추출
+
+Step 3: 분석 결과를 노트에 포함
+```
+
+### 대용량 PDF 처리 (10MB+)
+
+```
+목차 기반 섹션 분할 → 병렬 처리:
+
+1. PDF 목차/구조 파악 (첫 5페이지)
+2. 섹션별 페이지 범위 매핑
+3. marker_single --page_range로 섹션별 병렬 변환
+4. 결과 통합
+```
+
+**참조 스킬**: → `pdf.md`, `km-content-extraction.md`
+
+---
+
 ## Quick Reference (스킬 참조)
 
 | 기능 | 참조 스킬 |
@@ -223,6 +280,8 @@ Task 도구로 호출된 경우 다음 메시지를 **즉시 출력**:
 | 저장소 추상화 | → `km-storage-abstraction.md` |
 | 출력 형식 및 내보내기 | → `km-export-formats.md` |
 | Obsidian 노트 형식 | → `zettelkasten-note.md` |
+| **PDF 처리 및 OCR** | → `pdf.md` |
+| **콘텐츠 추출** | → `km-content-extraction.md` |
 
 ---
 
