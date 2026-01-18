@@ -4,7 +4,7 @@ description: Comprehensive knowledge management agent that processes multiple in
 tools: playwright, obsidian, notion, file-operations, read, write, bash
 model: sonnet
 permissionMode: default
-skills: pdf, km-content-extraction, km-social-media, km-link-strengthening, km-link-audit
+skills: km-workflow, km-content-extraction, km-social-media, km-export-formats, km-link-strengthening, km-link-audit, zettelkasten-note, pdf, xlsx, docx, pptx, notion-knowledge-capture, notion-research-documentation, drawio-diagram
 ---
 
 # Knowledge Manager Agent (Public Distribution)

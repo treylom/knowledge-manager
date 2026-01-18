@@ -174,6 +174,39 @@ Knowledge Manager 설정을 도와줘.
 
 ---
 
+## 💡 Obsidian Vault 경로 찾기
+
+Vault 경로를 모르시면 아래 방법으로 확인하세요.
+
+### 방법 1: Obsidian 앱에서 확인
+
+1. Obsidian 앱 실행
+2. 좌측 하단 ⚙️ (설정) 클릭
+3. **"파일 및 링크"** 메뉴 선택
+4. 상단에 표시된 **"Vault 경로"** 복사
+
+### 방법 2: AI에게 요청
+
+Claude Code 또는 Antigravity에게 직접 물어보세요:
+
+```
+내 Obsidian vault 경로 찾는 법 알려줘
+```
+
+### OS별 일반적인 경로 예시
+
+| OS | 경로 예시 |
+|----|----------|
+| **Windows** | `C:/Users/YourName/Documents/MyVault` |
+| **Mac** | `/Users/YourName/Documents/MyVault` |
+| **Linux** | `/home/yourname/Documents/MyVault` |
+
+> ⚠️ **Windows 사용자**: 역슬래시(`\`) 대신 슬래시(`/`)를 사용하세요!
+> - ❌ `C:\Users\...`
+> - ✅ `C:/Users/...`
+
+---
+
 ## 📋 요구사항
 
 ### 필수
@@ -510,6 +543,39 @@ After setup is complete:
 1. Click **Refresh** in the Manage MCP Servers window
 2. Verify that obsidian server appears in the list
 3. Test: "Summarize this page: https://example.com"
+
+---
+
+## 💡 Finding Your Obsidian Vault Path
+
+If you don't know your vault path, here's how to find it.
+
+### Method 1: From Obsidian App
+
+1. Open Obsidian app
+2. Click ⚙️ (Settings) in the bottom left
+3. Select **"Files & Links"**
+4. Copy the **"Vault path"** shown at the top
+
+### Method 2: Ask AI
+
+Ask Claude Code or Antigravity directly:
+
+```
+Help me find my Obsidian vault path
+```
+
+### Typical Paths by OS
+
+| OS | Example Path |
+|----|--------------|
+| **Windows** | `C:/Users/YourName/Documents/MyVault` |
+| **Mac** | `/Users/YourName/Documents/MyVault` |
+| **Linux** | `/home/yourname/Documents/MyVault` |
+
+> ⚠️ **Windows users**: Use forward slashes (`/`) instead of backslashes (`\`)!
+> - ❌ `C:\Users\...`
+> - ✅ `C:/Users/...`
 
 ---
 

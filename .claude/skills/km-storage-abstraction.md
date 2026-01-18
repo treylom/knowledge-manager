@@ -60,7 +60,7 @@ mcp__obsidian__list_notes({
 ```
 ✅ 올바름: Zettelkasten/AI-연구/노트.md  (vault root 기준 상대 경로)
 ❌ 틀림: /Users/.../vault/Zettelkasten/...  (절대 경로 금지)
-❌ 틀림: AI_Second_Brain/Zettelkasten/...  (vault 이름 중복 금지)
+❌ 틀림: MyVault/Zettelkasten/...  (vault 이름 중복 금지)
 ```
 
 **장점:**
