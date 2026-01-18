@@ -28,6 +28,38 @@ description: Extract content from Threads, Instagram with reply collection and d
 
 ---
 
+## 🔄 URL 정규화 (MANDATORY)
+
+소셜 미디어 URL 처리 전 **반드시** 정규화 수행:
+
+| 입력 URL | 정규화 결과 |
+|----------|-------------|
+| `threads.com/@user/post/...` | `threads.net/@user/post/...` |
+| `www.threads.net/@user/post/...` | `threads.net/@user/post/...` |
+| `m.threads.net/@user/post/...` | `threads.net/@user/post/...` |
+| `instagram.com/p/...` | `instagram.com/p/...` (변경 없음) |
+| `www.instagram.com/p/...` | `instagram.com/p/...` |
+| `m.instagram.com/p/...` | `instagram.com/p/...` |
+
+```javascript
+function normalize_social_url(url) {
+  // Threads 정규화
+  url = url.replace(/threads\.com/g, 'threads.net')
+  url = url.replace(/www\.threads\.net/g, 'threads.net')
+  url = url.replace(/m\.threads\.net/g, 'threads.net')
+
+  // Instagram 정규화
+  url = url.replace(/www\.instagram\.com/g, 'instagram.com')
+  url = url.replace(/m\.instagram\.com/g, 'instagram.com')
+
+  return url
+}
+```
+
+**⚠️ 정규화 없이 크롤링 시작 = 잘못된 동작!**
+
+---
+
 ## Depth 선택 질문 (필수!)
 
 소셜 미디어 URL 감지 시 **반드시** 물어야 합니다:

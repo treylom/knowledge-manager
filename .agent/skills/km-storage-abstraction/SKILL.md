@@ -38,12 +38,22 @@ function get_storage_backend() {
 
 | Feature | Obsidian | Notion | Local |
 |---------|----------|--------|-------|
-| Tool | `mcp_obsidian_create_note` | `mcp_notion_API-post-page` | `write_to_file` |
+| Create | `mcp_obsidian_create_note` | `mcp_notion_API-post-page` | `write_to_file` |
 | Search | `mcp_obsidian_search_vault` | `mcp_notion_API-post-search` | N/A |
+| Read | `mcp_obsidian_read_note` | `mcp_notion_API-get-block-children` | `read_file` |
 | Path format | Relative to vault | Database/Page ID | File system path |
 | Wikilinks | Supported | Converted to mentions | Supported |
 
 > **참고**: Antigravity는 MCP 도구 이름에 싱글 언더스코어(`_`)를 사용합니다.
+
+### MCP 도구 사용 가이드 (Obsidian)
+
+| 작업 | 도구명 | 설명 |
+|------|--------|------|
+| 노트 생성 | `mcp_obsidian_create_note` | 새 노트 생성 |
+| 노트 검색 | `mcp_obsidian_search_vault` | Vault 내 키워드 검색 |
+| 노트 읽기 | `mcp_obsidian_read_note` | 노트 내용 읽기 |
+| 노트 목록 | `mcp_obsidian_list_notes` | 폴더 내 노트 목록 |
 
 ---
 
