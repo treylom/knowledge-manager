@@ -308,51 +308,59 @@ Task 도구로 호출된 경우 다음 메시지를 **즉시 출력**:
 
 ---
 
-## 🛑 PDF 처리 규칙 (CRITICAL)
+## 🛑 PDF 처리 규칙 (Claude Code 전용 - CRITICAL)
+
+> **Antigravity 환경**: 자체 PDF 처리 기능이 있으므로 이 섹션 건너뛰기.
+> **Claude Code 환경**: 아래 규칙 필수 적용.
 
 **PDF 파일 감지 시 반드시 아래 순서 실행:**
 
 ### ❌ 절대 금지
 
 ```
-❌ Read 도구로 PDF 직접 읽기 → 컨텍스트 초과 에러 발생!
-❌ PDF 내용 추측/생성 → 실제 내용 추출 필수!
+❌ 한글 경로 PDF를 Read로 직접 읽기 → UTF-8 에러 발생!
+   예: Read("C:\바탕 화면\문서.pdf") → 실패!
+✅ 영어 경로 PDF는 Read로 직접 읽기 가능
+   예: Read("C:\Users\user\AI\doc.pdf") → 성공!
 ```
+
+### 🔍 Step 0: 경로 확인 (한글/특수문자 감지) - 먼저 확인!
+
+**Claude Code의 알려진 버그 (GitHub Issue #18285, #14392)**:
+한글이 포함된 경로에서 Read/도구들이 UTF-8 인코딩 문제로 실패합니다.
+
+| 경로 유형 | 예시 | 처리 방법 |
+|----------|------|----------|
+| **영어만 경로** | `C:\Users\user\AI\doc.pdf` | **Read로 직접 읽기** ✅ |
+| **한글 포함 경로** | `C:\Users\user\바탕 화면\문서.pdf` | /pdf 스킬 또는 marker |
+
+**한글 경로 감지 패턴:**
+- 경로에 한글 포함 (가-힣, 예: 바탕 화면, 문서, 석사논문)
+- 경로에 한글 폴더명 (예: `\바탕 화면\`, `\다운로드\`)
 
 ### ✅ 필수 워크플로우
 
+**영어 경로인 경우:**
 ```
-Step 1: PDF 크기 확인
-  - Bash로 파일 크기 확인
-  - 10MB 이상 → 대용량 처리 모드
-
-Step 2: Marker로 Markdown 변환 (필수!)
-  marker_single "{pdf_path}" --output_format markdown --output_dir ./km-temp
-
-Step 3: 변환된 Markdown 읽기
-  Read("./km-temp/{파일명}/{파일명}.md")
-
-Step 4: 이후 일반 워크플로우 진행
+Read("C:\Users\user\AI\document.pdf")
 ```
+→ 영어 경로는 Read 도구가 정상 작동
 
-### 코드 예시
+**한글 경로인 경우:**
+```
+/pdf "C:\Users\user\바탕 화면\문서.pdf"
+```
+→ 구조화된 Markdown으로 변환됨
 
+**/pdf 실패 시 → marker_single 사용:**
 ```bash
-# Step 1: 임시 디렉토리 생성
 mkdir -p ./km-temp
-
-# Step 2: Marker로 PDF → Markdown 변환
-marker_single "/path/to/document.pdf" --output_format markdown --output_dir ./km-temp
-
-# Step 3: 생성된 파일 확인
-ls ./km-temp/document/
-
-# Step 4: Read 도구로 Markdown 읽기
-Read("./km-temp/document/document.md")
+marker_single "C:\Users\user\바탕 화면\문서.pdf" --output_format markdown --output_dir ./km-temp
+Read("./km-temp/문서/문서.md")
 ```
 
-**⚠️ PDF를 직접 Read하면 "Prompt is too long" 에러가 발생합니다!**
-**⚠️ 반드시 Marker 변환 → Markdown 읽기 순서를 준수하세요!**
+> ⚠️ **한글 경로에서 Read 직접 사용 금지! UTF-8 에러 발생!**
+> ⚠️ **영어 경로는 Read로 바로 읽어도 됩니다.**
 
 ---
 
