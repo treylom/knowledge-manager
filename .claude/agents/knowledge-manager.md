@@ -308,6 +308,54 @@ Task 도구로 호출된 경우 다음 메시지를 **즉시 출력**:
 
 ---
 
+## 🛑 PDF 처리 규칙 (CRITICAL)
+
+**PDF 파일 감지 시 반드시 아래 순서 실행:**
+
+### ❌ 절대 금지
+
+```
+❌ Read 도구로 PDF 직접 읽기 → 컨텍스트 초과 에러 발생!
+❌ PDF 내용 추측/생성 → 실제 내용 추출 필수!
+```
+
+### ✅ 필수 워크플로우
+
+```
+Step 1: PDF 크기 확인
+  - Bash로 파일 크기 확인
+  - 10MB 이상 → 대용량 처리 모드
+
+Step 2: Marker로 Markdown 변환 (필수!)
+  marker_single "{pdf_path}" --output_format markdown --output_dir ./km-temp
+
+Step 3: 변환된 Markdown 읽기
+  Read("./km-temp/{파일명}/{파일명}.md")
+
+Step 4: 이후 일반 워크플로우 진행
+```
+
+### 코드 예시
+
+```bash
+# Step 1: 임시 디렉토리 생성
+mkdir -p ./km-temp
+
+# Step 2: Marker로 PDF → Markdown 변환
+marker_single "/path/to/document.pdf" --output_format markdown --output_dir ./km-temp
+
+# Step 3: 생성된 파일 확인
+ls ./km-temp/document/
+
+# Step 4: Read 도구로 Markdown 읽기
+Read("./km-temp/document/document.md")
+```
+
+**⚠️ PDF를 직접 Read하면 "Prompt is too long" 에러가 발생합니다!**
+**⚠️ 반드시 Marker 변환 → Markdown 읽기 순서를 준수하세요!**
+
+---
+
 ## PDF & Image Processing (Claude Code)
 
 > **Antigravity 환경**: 자체 내장 PDF/이미지 처리 기능 사용. 이 섹션 건너뛰기.
