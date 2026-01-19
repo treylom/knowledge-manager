@@ -293,6 +293,8 @@ claude mcp list
 
 AI 이미지 생성 기반의 고퀄리티 프레젠테이션을 만들 수 있습니다.
 
+> 📦 **Powered by [baoyu-slide-deck](https://github.com/JimLiu/baoyu-skills)** - JimLiu의 baoyu-skills에서 제공하는 슬라이드 생성 스킬입니다.
+
 ### 사용법
 
 ```bash
@@ -843,3 +845,4 @@ MIT License - Free to use, modify, and distribute.
 - [MCP Protocol](https://modelcontextprotocol.io)
 - [Obsidian](https://obsidian.md)
 - [Antigravity MCP Setup Guide](https://composio.dev/blog/howto-mcp-antigravity)
+- [baoyu-skills](https://github.com/JimLiu/baoyu-skills) - PPT/슬라이드 생성 스킬 원본
