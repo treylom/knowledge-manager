@@ -23,6 +23,36 @@ local = config.storage.local
 
 ## Provider별 도구 매핑
 
+### 🛑 MCP 도구 우선 사용 규칙 (CRITICAL)
+
+```
+┌─────────────────────────────────────────────────────┐
+│ 🛑 CRITICAL: MCP 도구 사용 강제                      │
+│                                                      │
+│ MCP 도구가 사용 가능한 환경에서는 반드시 MCP 사용!    │
+│                                                      │
+│ ❌ 잘못된 예:                                        │
+│    - write_to_file("vault/note.md", content)         │
+│    - Write 도구로 직접 파일 생성                      │
+│                                                      │
+│ ✅ 올바른 예:                                        │
+│    - mcp_obsidian_create_note(path, content)         │
+│    - mcp__obsidian__create_note({path, content})     │
+└─────────────────────────────────────────────────────┘
+```
+
+### 환경별 도구 이름
+
+| 환경 | Obsidian 노트 생성 | Obsidian 검색 |
+|------|-------------------|--------------|
+| **Claude Code** | `mcp__obsidian__create_note` | `mcp__obsidian__search_vault` |
+| **Antigravity** | `mcp_obsidian_create_note` | `mcp_obsidian_search_vault` |
+| **Gemini CLI** | `mcp_obsidian_create_note` | `mcp_obsidian_search_vault` |
+
+> **참고**: Antigravity와 Gemini CLI는 MCP 도구 이름에 더블 언더스코어(`__`) 대신 싱글 언더스코어(`_`)를 사용합니다.
+
+---
+
 ### Obsidian (권장 - 로컬 지식 관리)
 
 ```javascript
@@ -60,7 +90,7 @@ mcp__obsidian__list_notes({
 ```
 ✅ 올바름: Zettelkasten/AI-연구/노트.md  (vault root 기준 상대 경로)
 ❌ 틀림: /Users/.../vault/Zettelkasten/...  (절대 경로 금지)
-❌ 틀림: AI_Second_Brain/Zettelkasten/...  (vault 이름 중복 금지)
+❌ 틀림: MyVault/Zettelkasten/...  (vault 이름 중복 금지)
 ```
 
 **장점:**

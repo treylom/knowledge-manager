@@ -7,6 +7,7 @@ Claude Code용 종합 지식 관리 에이전트. 다양한 소스에서 콘텐�
 ## ✨ 특징
 
 - **다중 소스 입력**: 웹페이지, PDF, 소셜 미디어 (Threads/Instagram), Notion
+- **PDF 및 이미지 OCR**: 스캔된 PDF와 이미지에서 텍스트 추출 (Claude Code용)
 - **스마트 추출**: AI 기반 콘텐츠 분석 및 원자적 아이디어 추출
 - **유연한 저장**: Obsidian, Notion, 또는 로컬 Markdown 파일
 - **PPT/슬라이드 생성**: AI 이미지 기반 고퀄리티 프레젠테이션 (15+ 스타일) ⭐ NEW
@@ -174,6 +175,39 @@ Knowledge Manager 설정을 도와줘.
 
 ---
 
+## 💡 Obsidian Vault 경로 찾기
+
+Vault 경로를 모르시면 아래 방법으로 확인하세요.
+
+### 방법 1: Obsidian 앱에서 확인
+
+1. Obsidian 앱 실행
+2. 좌측 하단 ⚙️ (설정) 클릭
+3. **"파일 및 링크"** 메뉴 선택
+4. 상단에 표시된 **"Vault 경로"** 복사
+
+### 방법 2: AI에게 요청
+
+Claude Code 또는 Antigravity에게 직접 물어보세요:
+
+```
+내 Obsidian vault 경로 찾는 법 알려줘
+```
+
+### OS별 일반적인 경로 예시
+
+| OS | 경로 예시 |
+|----|----------|
+| **Windows** | `C:/Users/YourName/Documents/MyVault` |
+| **Mac** | `/Users/YourName/Documents/MyVault` |
+| **Linux** | `/home/yourname/Documents/MyVault` |
+
+> ⚠️ **Windows 사용자**: 역슬래시(`\`) 대신 슬래시(`/`)를 사용하세요!
+> - ❌ `C:\Users\...`
+> - ✅ `C:/Users/...`
+
+---
+
 ## 📋 요구사항
 
 ### 필수
@@ -183,12 +217,45 @@ Knowledge Manager 설정을 도와줘.
 | Claude Code / Antigravity | CLI, Desktop, 또는 Antigravity |
 | Node.js 18+ | MCP 서버 실행용 |
 
+### Playwright MCP 설치 (Claude Code 필수)
+
+> **Antigravity 사용자**: 내장 브라우저가 있어 Playwright MCP 불필요. 이 섹션 건너뛰기.
+
+Claude Code 환경에서 웹 콘텐츠를 추출하려면 **Playwright MCP 서버**가 필요합니다.
+
+```bash
+# Playwright MCP 자동 설치 (권장)
+claude mcp add playwright -- npx -y @anthropic-ai/mcp-playwright
+
+# 설치 확인
+claude mcp list
+# → playwright 서버가 표시되어야 함
+```
+
+**웹 크롤링 도구 우선순위:**
+
+| 콘텐츠 유형 | 1순위 도구 | 2순위 (Fallback) |
+|------------|-----------|------------------|
+| SNS (Threads, Instagram) | Playwright MCP (필수) | - |
+| 일반 웹 | WebFetch | Playwright MCP |
+
 ### 선택 (셋업 위저드가 안내)
 
 | 항목 | 용도 |
 |------|------|
 | Obsidian | 로컬 지식 관리 앱 (무료) |
 | Notion 계정 | 팀 협업용 |
+
+### PDF/OCR 처리용 (Claude Code 환경)
+
+> **Antigravity 사용자**: 자체 내장 PDF/이미지 처리 기능 사용. 아래 설치 불필요.
+
+| 항목 | 설치 명령 | 용도 |
+|------|----------|------|
+| Marker | `pip install marker-pdf` | PDF → Markdown 변환 (권장) |
+| pytesseract | `pip install pytesseract pdf2image` | 스캔 PDF OCR |
+| Tesseract OCR | [설치 가이드](https://github.com/tesseract-ocr/tesseract) | OCR 엔진 |
+| pdfplumber | `pip install pdfplumber` | 테이블 추출 |
 
 ---
 
@@ -327,9 +394,11 @@ claude mcp list
 
 ## 고급 옵션
 
-### Hyperbrowser (소셜 미디어용)
+### Hyperbrowser (선택적 대안)
 
-기본 Playwright가 소셜 미디어 스크래핑에서 차단당하면 Hyperbrowser 사용을 고려하세요.
+> ⚠️ **권장하지 않음**: 기본적으로 Playwright MCP를 사용하세요. Hyperbrowser는 Playwright가 차단당하는 특수한 경우에만 고려하세요.
+
+Playwright MCP가 특정 사이트에서 지속적으로 차단당하는 경우에만 Hyperbrowser를 고려하세요.
 
 1. [hyperbrowser.ai](https://hyperbrowser.ai)에서 API 키 발급
 2. `km-config.json`에서 `browser.provider`를 `"hyperbrowser"`로 변경
@@ -344,6 +413,8 @@ claude mcp list
   }
 }
 ```
+
+**주의**: Hyperbrowser는 유료 서비스이며, 설정이 복잡해질 수 있습니다. 대부분의 경우 Playwright MCP로 충분합니다.
 
 ### 환경 변수 지원
 
@@ -386,6 +457,7 @@ A comprehensive knowledge management agent for Claude Code. It collects content 
 ## Features
 
 - **Multiple Input Sources**: Web pages, PDFs, social media (Threads/Instagram), Notion
+- **PDF & Image OCR**: Extract text from scanned PDFs and images (Claude Code)
 - **Smart Extraction**: AI-powered content analysis and atomic idea extraction
 - **Flexible Storage**: Obsidian, Notion, or local Markdown files
 - **Easy Setup**: Setup wizard guides you through everything
@@ -552,6 +624,39 @@ After setup is complete:
 
 ---
 
+## 💡 Finding Your Obsidian Vault Path
+
+If you don't know your vault path, here's how to find it.
+
+### Method 1: From Obsidian App
+
+1. Open Obsidian app
+2. Click ⚙️ (Settings) in the bottom left
+3. Select **"Files & Links"**
+4. Copy the **"Vault path"** shown at the top
+
+### Method 2: Ask AI
+
+Ask Claude Code or Antigravity directly:
+
+```
+Help me find my Obsidian vault path
+```
+
+### Typical Paths by OS
+
+| OS | Example Path |
+|----|--------------|
+| **Windows** | `C:/Users/YourName/Documents/MyVault` |
+| **Mac** | `/Users/YourName/Documents/MyVault` |
+| **Linux** | `/home/yourname/Documents/MyVault` |
+
+> ⚠️ **Windows users**: Use forward slashes (`/`) instead of backslashes (`\`)!
+> - ❌ `C:\Users\...`
+> - ✅ `C:/Users/...`
+
+---
+
 ## Requirements
 
 ### Required
@@ -561,12 +666,45 @@ After setup is complete:
 | Claude Code / Antigravity | CLI, Desktop, or Antigravity |
 | Node.js 18+ | For running MCP servers |
 
+### Playwright MCP Installation (Required for Claude Code)
+
+> **Antigravity users**: Has built-in browser, Playwright MCP not needed. Skip this section.
+
+To extract web content in Claude Code, you need the **Playwright MCP server**.
+
+```bash
+# Auto-install Playwright MCP (recommended)
+claude mcp add playwright -- npx -y @anthropic-ai/mcp-playwright
+
+# Verify installation
+claude mcp list
+# → playwright server should appear
+```
+
+**Web Crawling Tool Priority:**
+
+| Content Type | Primary Tool | Fallback |
+|--------------|-------------|----------|
+| SNS (Threads, Instagram) | Playwright MCP (required) | - |
+| General Web | WebFetch | Playwright MCP |
+
 ### Optional (Setup wizard will guide you)
 
 | Item | Purpose |
 |------|---------|
 | Obsidian | Local knowledge management app (free) |
 | Notion account | For team collaboration |
+
+### For PDF/OCR Processing (Claude Code)
+
+> **Antigravity users**: Use built-in PDF/image processing. No installation required.
+
+| Item | Install Command | Purpose |
+|------|-----------------|---------|
+| Marker | `pip install marker-pdf` | PDF → Markdown (recommended) |
+| pytesseract | `pip install pytesseract pdf2image` | Scanned PDF OCR |
+| Tesseract OCR | [Install Guide](https://github.com/tesseract-ocr/tesseract) | OCR engine |
+| pdfplumber | `pip install pdfplumber` | Table extraction |
 
 ---
 
@@ -654,9 +792,11 @@ claude mcp list
 
 ## Advanced Options
 
-### Hyperbrowser (for Social Media)
+### Hyperbrowser (Optional Alternative)
 
-If default Playwright gets blocked on social media scraping, consider using Hyperbrowser.
+> ⚠️ **Not recommended**: Use Playwright MCP by default. Only consider Hyperbrowser if Playwright is consistently blocked.
+
+Only consider Hyperbrowser if Playwright MCP is consistently blocked on specific sites.
 
 1. Get API key from [hyperbrowser.ai](https://hyperbrowser.ai)
 2. Change `browser.provider` to `"hyperbrowser"` in `km-config.json`
@@ -671,6 +811,8 @@ If default Playwright gets blocked on social media scraping, consider using Hype
   }
 }
 ```
+
+**Note**: Hyperbrowser is a paid service and may add configuration complexity. Playwright MCP is sufficient for most cases.
 
 ### Environment Variable Support
 

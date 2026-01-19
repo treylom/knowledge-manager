@@ -214,6 +214,57 @@ Task 도구로 호출된 경우 다음 메시지를 **즉시 출력**:
 
 ---
 
+## 🛑 PDF 처리 규칙 (Claude Code 전용 - CRITICAL)
+
+> **Antigravity 환경**: 자체 PDF 처리 기능이 있으므로 이 섹션 건너뛰기.
+> **Claude Code 환경**: 아래 규칙 필수 적용.
+
+**PDF 파일 감지 시 반드시 아래 순서 실행:**
+
+### ❌ 절대 금지
+
+```
+❌ 한글 경로 PDF를 Read로 직접 읽기 → UTF-8 에러 발생!
+   예: Read("C:\바탕 화면\문서.pdf") → 실패!
+✅ 영어 경로 PDF는 Read로 직접 읽기 가능
+   예: Read("C:\Users\user\AI\doc.pdf") → 성공!
+```
+
+### 🔍 Step 0: 경로 확인 (한글/특수문자 감지) - 먼저 확인!
+
+**Claude Code의 알려진 버그 (GitHub Issue #18285, #14392)**:
+한글이 포함된 경로에서 Read/도구들이 UTF-8 인코딩 문제로 실패합니다.
+
+| 경로 유형 | 예시 | 처리 방법 |
+|----------|------|----------|
+| **영어만 경로** | `C:\Users\user\AI\doc.pdf` | **Read로 직접 읽기** ✅ |
+| **한글 포함 경로** | `C:\Users\user\바탕 화면\문서.pdf` | /pdf 스킬 또는 marker |
+
+### ✅ 필수 워크플로우
+
+**영어 경로인 경우:**
+```
+Read("C:\Users\user\AI\document.pdf")
+```
+→ 영어 경로는 Read 도구가 정상 작동
+
+**한글 경로인 경우:**
+```
+/pdf "C:\Users\user\바탕 화면\문서.pdf"
+```
+
+**/pdf 실패 시 → marker_single 사용:**
+```bash
+mkdir -p ./km-temp
+marker_single "C:\Users\user\바탕 화면\문서.pdf" --output_format markdown --output_dir ./km-temp
+Read("./km-temp/문서/문서.md")
+```
+
+> ⚠️ **한글 경로에서 Read 직접 사용 금지! UTF-8 에러 발생!**
+> ⚠️ **영어 경로는 Read로 바로 읽어도 됩니다.**
+
+---
+
 ## Quick Reference (스킬 참조)
 
 | 기능 | 참조 스킬 |
