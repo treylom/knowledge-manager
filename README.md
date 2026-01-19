@@ -9,6 +9,7 @@ Claude Code용 종합 지식 관리 에이전트. 다양한 소스에서 콘텐�
 - **다중 소스 입력**: 웹페이지, PDF, 소셜 미디어 (Threads/Instagram), Notion
 - **스마트 추출**: AI 기반 콘텐츠 분석 및 원자적 아이디어 추출
 - **유연한 저장**: Obsidian, Notion, 또는 로컬 Markdown 파일
+- **PPT/슬라이드 생성**: AI 이미지 기반 고퀄리티 프레젠테이션 (15+ 스타일) ⭐ NEW
 - **간단한 설정**: 셋업 위저드가 모든 것을 안내
 
 ---
@@ -217,6 +218,57 @@ Knowledge Manager 설정을 도와줘.
 
 # 웹 아티클 정리
 /km https://example.com/article
+```
+
+---
+
+## 🎨 PPT/슬라이드 생성 (NEW!)
+
+AI 이미지 생성 기반의 고퀄리티 프레젠테이션을 만들 수 있습니다.
+
+### 사용법
+
+```bash
+# 콘텐츠에서 PPT 생성
+/knowledge-manager https://example.com/article PPT로 만들어줘
+
+# 스타일 지정
+/knowledge-manager content.md sketch-notes 스타일로 슬라이드 생성
+
+# 직접 슬라이드 생성
+/baoyu-slide-deck content.md --style corporate
+```
+
+### 스타일 가이드
+
+| 스타일 | 용도 | 추천 상황 |
+|--------|------|----------|
+| `sketch-notes` | 교육/튜토리얼 | 강의, 워크샵 |
+| `blueprint` | 기술 문서 | 아키텍처, 시스템 설계 |
+| `corporate` | 비즈니스 | 투자 발표, 경영 보고 |
+| `minimal` | 미니멀 | 심플한 발표 |
+| `chalkboard` | 강의실 | 교육 콘텐츠 |
+| `notion` | SaaS 대시보드 | 제품 데모, B2B |
+
+### 옵션
+
+| 옵션 | 설명 | 예시 |
+|------|------|------|
+| `--style <name>` | 비주얼 스타일 | `--style corporate` |
+| `--audience <type>` | 대상 청중 | `--audience executives` |
+| `--lang <code>` | 출력 언어 | `--lang ko` |
+| `--slides <number>` | 슬라이드 수 | `--slides 15` |
+| `--outline-only` | 아웃라인만 생성 | - |
+
+### 출력물
+
+```
+slide-deck/{topic}/
+├── outline.md           # 아웃라인
+├── 01-slide-cover.png   # 개별 슬라이드 이미지
+├── ...
+├── {topic}.pptx         # PowerPoint 파일
+└── {topic}.pdf          # PDF 파일
 ```
 
 ---

@@ -1,9 +1,10 @@
 ---
 name: knowledge-manager
-description: Comprehensive knowledge management agent that processes multiple input sources (web, files, Notion, images) and exports to various formats (Obsidian, Notion, Markdown, PDF)
+description: Comprehensive knowledge management agent that processes multiple input sources (web, files, Notion, images) and exports to various formats (Obsidian, Notion, Markdown, PDF, Slides)
 tools: playwright, obsidian, notion, file-operations, read, write, bash
 model: sonnet
 permissionMode: default
+skills: km-workflow, km-browser-abstraction, km-storage-abstraction, km-export-formats, zettelkasten-note, baoyu-slide-deck
 ---
 
 # Knowledge Manager Agent (Public Distribution)
@@ -223,6 +224,55 @@ Task 도구로 호출된 경우 다음 메시지를 **즉시 출력**:
 | 저장소 추상화 | → `km-storage-abstraction.md` |
 | 출력 형식 및 내보내기 | → `km-export-formats.md` |
 | Obsidian 노트 형식 | → `zettelkasten-note.md` |
+| **PPT/슬라이드 생성** | → `baoyu-slide-deck/SKILL.md` (AI 이미지, 15+ 스타일) ⭐ NEW |
+
+---
+
+## 🎨 PPT/슬라이드 생성 (NEW!)
+
+### 특수 키워드 감지
+
+| 키워드 | 동작 |
+|--------|------|
+| "PPT 만들어줘", "슬라이드 생성", "프레젠테이션" | → baoyu-slide-deck 스킬 |
+| "디자인 PPT", "고퀄 슬라이드" | → baoyu-slide-deck 스킬 |
+| "sketch-notes", "blueprint", "corporate 스타일" | → 해당 스타일로 슬라이드 생성 |
+
+### 사용법
+
+```bash
+# 웹 콘텐츠 → 슬라이드
+/knowledge-manager https://example.com/article PPT로 만들어줘
+
+# 파일 → 슬라이드 (스타일 지정)
+/knowledge-manager content.md sketch-notes 스타일로 슬라이드
+
+# 직접 슬라이드 생성
+/baoyu-slide-deck content.md --style corporate
+```
+
+### 스타일 가이드
+
+| 스타일 | 용도 | 추천 상황 |
+|--------|------|----------|
+| `sketch-notes` | 교육/튜토리얼 | 강의, 워크샵 |
+| `blueprint` | 기술 문서 | 아키텍처, 시스템 설계 |
+| `corporate` | 비즈니스 | 투자 발표, 경영 보고 |
+| `minimal` | 미니멀 | 심플한 발표 |
+| `chalkboard` | 강의실 | 교육 콘텐츠 |
+| `notion` | SaaS 대시보드 | 제품 데모, B2B |
+
+### 출력물
+
+```
+slide-deck/{topic}/
+├── outline.md           # 아웃라인
+├── 01-slide-cover.png   # 개별 슬라이드 이미지
+├── 02-slide-intro.png
+├── ...
+├── {topic}.pptx         # PowerPoint 파일
+└── {topic}.pdf          # PDF 파일
+```
 
 ---
 
