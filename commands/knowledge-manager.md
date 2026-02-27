@@ -7,6 +7,29 @@ allowed-tools: Task, Read, Write, Bash, Glob, Grep, mcp__obsidian__*, mcp__notio
 
 ---
 
+## 🔄 STEP 0.5: 모드 감지
+
+| $ARGUMENTS 패턴 | 모드 | 다음 단계 |
+|----------------|------|----------|
+| 일반 URL, "정리해줘", "분석해줘" | **Mode I** (Content Ingestion) | STEP 1로 |
+| YouTube URL (`youtube.com`, `youtu.be`) | **Mode Y** (YouTube) | `km-youtube-transcript.md` 스킬 참조 → STEP 1로 |
+| "카톡방 읽어", "채팅방 분석", 오픈채팅방 이름 | **Mode K** (KakaoTalk Read) | `km-kakao-chat-read.md` 스킬 참조 → STEP 1로 |
+| "아카이브 정리", "카테고리 재편" | **Mode R** (Archive Reorganization) | `km-archive-reorganization.md` 스킬 참조 |
+
+**Mode Y (YouTube):**
+- `pip install youtube-transcript-api` 확인 → 트랜스크립트 추출
+- 한국어 자막 우선, 영어 폴백, 자동생성 자막 지원
+- 메타데이터 수집 (제목, 채널, 업로드일)
+- 이후 STEP 1 선호도 질문 → 분석 깊이 결정
+
+**Mode K (KakaoTalk Read):**
+- km-config.json의 `kakao.readMethod` 확인 (auto/kmsg/export)
+- macOS: `kmsg read "{chatName}" --limit N --json`
+- Windows: 사용자에게 "대화 내보내기" TXT 파일 요청 → 파싱
+- 시간 필터링 적용 → 이후 STEP 1로
+
+---
+
 ## 🛑 STEP 1: 사용자 선호도 확인 (필수 - 가장 먼저 실행!)
 
 **⚠️ 콘텐츠 처리/읽기 전에 반드시 아래 AskUserQuestion을 그대로 호출하세요!**

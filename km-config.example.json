@@ -52,6 +52,30 @@
     }
   },
 
+  "youtube": {
+    "preferredLanguage": "ko",
+    "_preferredLanguage_help": "우선 자막 언어 (기본: ko). 한국어 자막이 없으면 fallbackLanguage로 시도",
+    "fallbackLanguage": "en",
+    "_fallbackLanguage_help": "폴백 자막 언어 (기본: en)"
+  },
+
+  "kakao": {
+    "enabled": false,
+    "_enabled_help": "카카오톡 전송 기능 활성화 (Windows/WSL 환경 전용)",
+    "selfName": "",
+    "_selfName_help": "본인 카카오톡 채팅방 이름 (예: '홍길동'). '카카오 나에게' 명령 시 사용됨. 주의: '나'가 아닌 본인 실명을 입력하세요!",
+    "scriptPath": ".claude/scripts/send_kakao.py",
+    "_scriptPath_help": "send_kakao.py 스크립트 경로 (WSL 절대경로 또는 프로젝트 상대경로)",
+    "readMethod": "auto",
+    "_readMethod_help": "채팅방 읽기 방식: auto=플랫폼 자동감지, kmsg=macOS kmsg CLI, export=Windows 대화 내보내기 TXT 파싱"
+  },
+
+  "notification": {
+    "ntfyTopic": "",
+    "_ntfyTopic_help": "ntfy.sh 토픽명 (예: 'my-km-alerts'). 비워두면 알림 비활성화. 설정법: 1) 스마트폰에 ntfy 앱 설치 (Android/iOS), 2) 앱에서 토픽 구독, 3) 여기에 같은 토픽명 입력",
+    "_ntfy_why": "카카오톡 '나와의 채팅'은 본인 메시지에 대해 푸시 알림이 울리지 않습니다. ntfy가 작업 완료를 모바일로 알려줍니다."
+  },
+
   "defaults": {
     "detailLevel": 2,
     "_detailLevel_help": "1=간략, 2=보통(기본), 3=상세",
