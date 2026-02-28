@@ -1,6 +1,6 @@
 # Knowledge Manager Agent
 
-> 📖 **English documentation is available at the bottom of this page.**
+> 📖 **[English documentation is available at the bottom of this page.](#-english-documentation)**
 
 Claude Code용 종합 지식 관리 에이전트. 다양한 소스에서 콘텐츠를 수집하고, Zettelkasten 원칙에 따라 분석하여, Obsidian 또는 Notion에 저장합니다.
 
