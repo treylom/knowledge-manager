@@ -75,7 +75,9 @@ Glob("km-config.json") → 존재하면 Read로 설정 로드
 | "아카이브 정리", "카테고리 재편", "대규모 재편" | **Mode R** (Archive Reorganization) |
 
 **Mode Y**: `km-youtube-transcript.md` 스킬 참조 → 트랜스크립트 추출 후 프리셋 기반 분석
-**Mode K**: `km-kakao-chat-read.md` 스킬 참조 → 메시지 수집 후 분석
+**Mode K**: `km-kakao-chat-read.md` 스킬 참조
+  - macOS: kmsg 자동 수집
+  - Windows: **자동 수집 불가** — 사용자에게 "대화 내보내기" TXT 경로 요청 → 파싱
 
 ### 0.5-2. 복합 프리셋 매칭 (최우선 — 첫 매칭 적용)
 

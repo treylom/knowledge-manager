@@ -24,8 +24,9 @@ allowed-tools: Task, Read, Write, Bash, Glob, Grep, mcp__obsidian__*, mcp__notio
 
 **Mode K (KakaoTalk Read):**
 - km-config.json의 `kakao.readMethod` 확인 (auto/kmsg/export)
-- macOS: `kmsg read "{chatName}" --limit N --json`
-- Windows: 사용자에게 "대화 내보내기" TXT 파일 요청 → 파싱
+- macOS: `kmsg read "{chatName}" --limit N --json` (자동 수집)
+- Windows: **자동 수집 불가** — 사용자에게 "대화 내보내기" TXT 파일 경로 요청 → 파싱
+  (카카오톡은 메시지 읽기 API를 제공하지 않으며, Win32 자동화도 최신 버전에서 차단됨)
 - 시간 필터링 적용 → 이후 STEP 1로
 
 ---

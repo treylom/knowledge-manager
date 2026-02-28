@@ -4,6 +4,23 @@
 
 ---
 
+## 플랫폼별 제약 사항
+
+카카오톡은 Telegram/Discord와 달리 **메시지 읽기 API를 제공하지 않습니다.**
+
+| 플랫폼 | 메시지 수집 방법 | 자동화 |
+|--------|----------------|--------|
+| **macOS** | [kmsg](https://github.com/channprj/kmsg) — Accessibility API 기반 | 자동 |
+| **Windows/WSL** | 수동 "대화 내보내기" → TXT 파싱 | **수동 필요** |
+
+**Windows 자동화 불가 이유:**
+- Kakao Developer API: 전송만 가능, 읽기 API 없음
+- 오픈채팅 Bot/Webhook API: 미제공
+- Win32 API: 최신 카카오톡 PC가 커스텀 렌더링 컨트롤 사용, 표준 텍스트 접근 차단
+- LOCO 프로토콜: 작동하나 TOS 위반으로 계정 영구 밴 위험
+
+---
+
 ## 플랫폼별 메시지 수집
 
 ### macOS: kmsg
@@ -29,11 +46,11 @@ kmsg read "{chatName}" --limit 500 --json
 ]
 ```
 
-### Windows/WSL: 대화 내보내기 + TXT 파싱
+### Windows/WSL: 수동 대화 내보내기 + TXT 파싱
 
-카카오톡 PC의 "대화 내보내기" 기능을 활용합니다.
+> **Windows에서는 자동 메시지 수집이 불가능합니다.** 사용자가 직접 TXT 파일을 내보내야 합니다.
 
-**Step 1: 내보내기 파일 확보**
+**Step 1: 사용자에게 내보내기 안내**
 
 ```
 사용자에게 안내:
@@ -41,6 +58,7 @@ kmsg read "{chatName}" --limit 500 --json
 2. 우측 상단 ≡ (햄버거 메뉴) 클릭
 3. "대화 내보내기" 선택
 4. 텍스트 파일(.txt) 저장
+5. 저장 경로를 알려주세요
 
 또는 사용자가 이미 가지고 있는 .txt 파일 경로를 받기
 ```
