@@ -50,6 +50,7 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 
 | 소스 유형 | 🚨 필수 도구 호출 | 이미지 처리 | 참조 스킬 |
 |----------|------------------|-----------|----------|
+| **YouTube** | `youtube-transcript-api` → `yt-dlp` 폴백 | 썸네일만 | → km-youtube-transcript.md |
 | **소셜 미디어** | `playwright-cli open → snapshot` ⭐ (fallback: MCP → WebFetch) | 미디어 URL 수집 | → km-social-media.md |
 | **일반 웹 페이지** | `playwright-cli open → snapshot` (fallback: MCP → WebFetch) | img/figure 파싱 + 차트 스크린샷 | 이 문서 |
 | PDF | **1순위**: `Read` → **2순위**: `marker_single` → **3순위**: `GLM-OCR` → **4순위**: Gemini OCR | marker images/ 폴더 스캔 | → pdf 스킬, km-glm-ocr |
@@ -280,6 +281,24 @@ OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
 4순위: 스텔스 스크립트 (봇 탐지 시) ← stealth-browsing 스킬
 5순위: Hyperbrowser (클라우드, 유료 - 크레딧 소진 주의)
 ```
+
+### YouTube URL (🚨 전용 파이프라인!)
+
+**다음 URL 패턴은 YouTube 트랜스크립트 파이프라인으로 처리:**
+- `youtube.com/watch?v=*`
+- `youtu.be/*`
+- `youtube.com/shorts/*`
+
+```
+참조 스킬: → km-youtube-transcript.md
+
+Step 1: Video ID 추출 (URL 파싱)
+Step 2: 트랜스크립트 추출 (youtube-transcript-api → yt-dlp 폴백)
+Step 3: 메타데이터 수집 (yt-dlp --dump-json → WebFetch 폴백)
+Step 4: 콘텐츠 분석 (프리셋 반영 — 타임라인, 인사이트, 인용구)
+```
+
+**Playwright/WebFetch 사용 금지** — YouTube 페이지 크롤링으로는 트랜스크립트 추출 불가.
 
 ### 소셜 미디어 URL
 
@@ -923,6 +942,7 @@ Read(file_path="/home/tofu/AI/AI_Second_Brain/{path}")
 ## 스킬 참조
 
 - **km-glm-ocr.md**: GLM-OCR 로컬 OCR (테이블/수식/코드, PaddleOCR 대비 5.6x 빠름) ⭐ NEW
+- **km-youtube-transcript.md**: YouTube 트랜스크립트 추출 + 분석
 - **km-social-media.md**: 소셜 미디어 전용 추출
 - **pdf.md**: PDF 상세 처리
 - **xlsx.md**: Excel 상세 처리

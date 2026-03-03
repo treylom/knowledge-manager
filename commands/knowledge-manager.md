@@ -227,12 +227,13 @@ AskUserQuestion({
 
 ## STEP 2: 콘텐츠 추출 (Main 직접)
 
-Main이 입력 소스를 직접 추출합니다. 스킬 참조: `km-content-extraction.md`, `km-social-media.md`
+Main이 입력 소스를 직접 추출합니다. 스킬 참조: `km-content-extraction.md`, `km-youtube-transcript.md`, `km-social-media.md`
 
 ### 소스 유형별 추출
 
 | 입력 유형 | 추출 방법 |
 |----------|----------|
+| **YouTube** | `youtube-transcript-api` → `yt-dlp` 폴백 → 스킬: `km-youtube-transcript.md` |
 | **소셜 미디어 (Threads/Instagram)** | `playwright-cli open → snapshot` (1순위) → `mcp__playwright__*` (fallback) |
 | **일반 웹 URL** | `playwright-cli` (1순위) → `WebFetch` (fallback) → `mcp__playwright__*` |
 | **PDF (작은)** | Read 직접 시도 (< 5MB, < 20p) |
@@ -507,6 +508,7 @@ Write({ file_path: "{vault_absolute_path}/적절한/경로/파일명.md", conten
 |------|----------|
 | 전체 워크플로우 | `km-workflow.md` |
 | 콘텐츠 추출 | `km-content-extraction.md` |
+| **YouTube 트랜스크립트** | `km-youtube-transcript.md` |
 | 소셜 미디어 | `km-social-media.md` |
 | 출력 형식 | `km-export-formats.md` |
 | 연결 강화 | `km-link-strengthening.md` |
