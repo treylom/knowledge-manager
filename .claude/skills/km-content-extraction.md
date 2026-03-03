@@ -294,11 +294,16 @@ OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
 
 Step 1: Video ID 추출 (URL 파싱)
 Step 2: 트랜스크립트 추출 (youtube-transcript-api → yt-dlp 폴백)
-Step 3: 메타데이터 수집 (yt-dlp --dump-json → WebFetch 폴백)
+Step 3: 메타데이터 + 챕터 수집 (🚨 정확성 보장!)
+        1순위: yt-dlp --dump-json
+        2순위: playwright-cli open → snapshot (⭐ 핵심 폴백)
+        3순위: Playwright MCP (CLI 실패 시)
+        → 챕터가 있으면 타임라인 타임스탬프로 활용!
 Step 4: 콘텐츠 분석 (프리셋 반영 — 타임라인, 인사이트, 인용구)
 ```
 
-**Playwright/WebFetch 사용 금지** — YouTube 페이지 크롤링으로는 트랜스크립트 추출 불가.
+**트랜스크립트 추출에는 Playwright/WebFetch 사용 금지** — 자막은 반드시 youtube-transcript-api 또는 yt-dlp 사용.
+**메타데이터/챕터 수집에는 playwright-cli 사용 가능** — yt-dlp 실패 시 playwright-cli로 제목, 채널, 업로드일, 챕터 등 수집.
 
 ### 소셜 미디어 URL
 

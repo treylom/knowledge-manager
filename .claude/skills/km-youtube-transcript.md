@@ -116,7 +116,9 @@ def get_transcript_ytdlp(video_id, preferred_lang="ko"):
 
 ---
 
-## 영상 메타데이터 수집
+## 영상 메타데이터 수집 (3-Tier 폴백)
+
+### 1순위: yt-dlp (설치된 경우)
 
 ```python
 def get_video_metadata(video_id):
@@ -144,9 +146,57 @@ def get_video_metadata(video_id):
     return None
 ```
 
-**메타데이터 없이 진행하는 경우 (yt-dlp 미설치):**
+### 2순위: Playwright CLI (🚨 yt-dlp 실패/미설치 시 — MUST USE!)
 
-WebFetch로 YouTube 페이지에서 제목/채널 정도만 추출하여 진행합니다.
+> **CRITICAL**: WebFetch는 YouTube 접근 불가. yt-dlp 실패 시 반드시 Playwright CLI 사용!
+> Playwright MCP(`mcp__playwright__*`)가 아닌 **`playwright-cli`** (Bash 기반)를 먼저 사용할 것.
+
+```bash
+# Step 1: YouTube 페이지 열기
+playwright-cli open "https://www.youtube.com/watch?v={video_id}"
+
+# Step 2: 접근성 스냅샷으로 메타데이터 추출
+playwright-cli snapshot
+```
+
+스냅샷에서 추출할 정보:
+- **제목**: `<h1>` 또는 페이지 타이틀에서 추출
+- **채널명**: 채널 링크 텍스트
+- **업로드일**: info-strings 영역
+- **영상 길이**: 시크바 버튼 텍스트 (예: "0:00 / 23:11")
+- **조회수**: view-count 텍스트
+- **좋아요**: like 버튼 aria-label
+
+추가로 description 확장 후 **챕터 정보** 추출:
+
+```bash
+# Step 3: 설명 영역 펼치기 (챕터 확인)
+playwright-cli click "#expand"
+
+# Step 4: 다시 스냅샷으로 챕터 목록 추출
+playwright-cli snapshot
+
+# Step 5: 브라우저 종료
+playwright-cli close
+```
+
+**챕터 정보가 있으면 타임라인 테이블의 타임스탬프로 사용 (자막 추정 대신 정확한 시간).**
+
+### 3순위: Playwright MCP (CLI 실패 시 폴백)
+
+```tool-call
+mcp__playwright__browser_navigate({ url: "https://www.youtube.com/watch?v={video_id}" })
+mcp__playwright__browser_snapshot()
+# 설명 펼치기
+mcp__playwright__browser_click({ element: "설명 더보기 버튼", ref: "expand" })
+mcp__playwright__browser_snapshot()
+mcp__playwright__browser_close()
+```
+
+### 메타데이터 수집 실패 시
+
+모든 방법 실패 시 트랜스크립트 내용만으로 진행하되 사용자에게 알림:
+> "영상 메타데이터를 수집하지 못했습니다. 트랜스크립트 기반으로 분석합니다."
 
 ---
 
@@ -267,13 +317,16 @@ STEP A: 트랜스크립트 추출
   youtube-transcript-api → 한국어/영어 자막
   실패 시 → yt-dlp 자막 다운로드 폴백
   ↓
-STEP B: 영상 메타데이터 수집
-  yt-dlp --dump-json 또는 WebFetch 폴백
-  제목, 채널, 업로드일, 설명
+STEP B: 영상 메타데이터 + 챕터 수집 (🚨 CRITICAL — 정확성 보장!)
+  1순위: yt-dlp --dump-json
+  2순위: playwright-cli open → snapshot (⭐ WebFetch 대체)
+  3순위: Playwright MCP (CLI 실패 시)
+  → 제목, 채널, 업로드일, 길이, 조회수, 챕터 목록
+  → 챕터가 있으면 STEP C 타임라인의 타임스탬프로 사용!
   ↓
 STEP C: 콘텐츠 분석 (프리셋 반영)
   요약/보통/상세에 따라 깊이 조정
-  타임라인 구조화, 인사이트 추출
+  타임라인 구조화 (챕터 기반 > 자막 추정), 인사이트 추출
   ↓
 STEP D: Obsidian 저장
   정리된 노트 생성 (km-export-formats.md 형식)
