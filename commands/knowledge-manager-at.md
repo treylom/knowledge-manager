@@ -948,7 +948,7 @@ IF dashboard_available AND image_extraction_enabled:
 ```
 1. 새 노트 핵심 키워드 추출
 2. CLI `"$OBSIDIAN_CLI" search` / MCP search_vault로 관련 노트 탐색
-   - CLI `"$OBSIDIAN_CLI" deadends format=json` → 나가는 링크 없는 파일 = 연결 강화 우선 후보
+   - CLI `"$OBSIDIAN_CLI" deadends` → 나가는 링크 없는 파일 = 연결 강화 우선 후보 (format 옵션 미지원, 플레인 텍스트 목록 반환)
 3. 관련성 점수 3점 이상인 노트와 양방향 링크 생성
 4. CLI `"$OBSIDIAN_CLI" append` / MCP update_note로 기존 노트에 역방향 링크 추가
    - CLI `"$OBSIDIAN_CLI" prepend` → 네비게이션 헤더 추가 시 사용

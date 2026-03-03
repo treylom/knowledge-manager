@@ -292,7 +292,9 @@ Main이 입력 소스를 직접 추출합니다. 스킬 참조: `km-content-extr
 
 ```
 1. 키워드 검색:
-   - CLI: `"$OBSIDIAN_CLI" search:context query="{핵심 키워드}" format=json limit=20` / MCP 폴백: mcp__obsidian__search_vault
+   - CLI: `"$OBSIDIAN_CLI" search query="{핵심 키워드}" format=json limit=20` → 파일 목록 반환
+   - 컨텍스트 필요 시: MCP `mcp__obsidian__search_vault` 사용 (매칭 라인 컨텍스트 포함)
+   - ⚠️ CLI `search:context`는 v1.12.4에서 불안정 (exit 255) → CLI `search` + MCP 컨텍스트로 대체
    - Grep으로 vault 전체 검색 (한국어 + 영어 키워드)
    - 결과 TOP 20 정리
 
@@ -462,7 +464,7 @@ kakao_recipient가 설정된 경우:
 ```
 1. 새 노트 핵심 키워드 추출
 2. CLI `"$OBSIDIAN_CLI" search` / MCP search_vault로 관련 노트 탐색
-   - CLI `"$OBSIDIAN_CLI" deadends format=json` → 나가는 링크 없는 파일 = 연결 강화 우선 후보
+   - CLI `"$OBSIDIAN_CLI" deadends` → 나가는 링크 없는 파일 = 연결 강화 우선 후보 (format 옵션 미지원, 플레인 텍스트 목록 반환)
 3. 관련성 점수 3점 이상인 노트와 양방향 링크 생성
 4. CLI `"$OBSIDIAN_CLI" append` / MCP update_note로 기존 노트에 역방향 링크 추가
    - CLI `"$OBSIDIAN_CLI" prepend` → 네비게이션 헤더 추가 시 사용
