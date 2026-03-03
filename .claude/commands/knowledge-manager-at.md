@@ -211,55 +211,30 @@ AskUserQuestion({
 > AT 버전에서는 RALPH가 항상 ON (max 5회), DA가 항상 ON입니다.
 > 별도 질문 없이 자동 적용됩니다.
 
-### 퀵 프리셋 (사용자 키워드 감지 시 질문 스킵)
-
-| 사용자 표현 | 프리셋 | 질문 스킵 |
-|------------|--------|----------|
-| "빠르게", "간단히" | 요약, 전체균형, 단일노트, 최소 | O |
-| "꼼꼼히", "자세히" | 상세, 전체균형, 원자적분할, 최대 | O |
-| "기본으로", "기본" | 상세, 전체균형, 3-tier, 최대 | O |
-| 키워드 없음 | - | X (질문 필수) |
+> **퀵 프리셋은 `/knowledge-manager-m` 전용입니다.** 이 커맨드에서는 항상 STEP 1 질문을 수행합니다.
 
 ---
 
-## STEP 1.5A: 이미지/그래프 추출 여부 확인 (선택!)
+## STEP 1.5A: 이미지 자동 추출 (질문 없이 항상 실행)
 
-소스에 이미지/차트/그래프가 포함될 수 있는 경우 사용자에게 확인합니다:
+> **이미지 추출은 사용자가 명시적으로 "텍스트만"이라고 말하지 않는 한 항상 자동 실행됩니다.**
 
-```json
-AskUserQuestion({
-  "questions": [
-    {
-      "question": "소스의 이미지/차트/그래프도 함께 추출하여 노트에 첨부할까요?",
-      "header": "이미지 추출",
-      "options": [
-        {"label": "아니오 (기본)", "description": "텍스트만 추출 (빠름, 가벼움)"},
-        {"label": "예 (권장)", "description": "이미지/차트/그래프도 추출하여 Obsidian 노트에 임베딩 + Notion에 삽입"}
-      ],
-      "multiSelect": false
-    }
-  ]
-})
-```
+### 이미지 추출 자동 판별
 
-**"예" 선택 시:**
-- `image_extraction_enabled = true`
-- content-extractor에게 Image Catalog 생성 지시 추가
-- Phase 5.25 (이미지 저장 및 임베딩) 활성화
+| 소스 유형 | image_extraction | 근거 |
+|----------|-----------------|------|
+| 웹 URL (일반) | **auto** (모든 콘텐츠 이미지, 최대 15개) | 기본 활성화 |
+| PDF | **auto** (모든 콘텐츠 이미지, 최대 15개) | 기본 활성화 |
+| 소셜 미디어 | **auto** (본문 이미지, 최대 10개) | 기본 활성화 |
+| Vault 종합 | **auto** (기존 Resources/images 참조 + 누락 이미지 보완) | 기본 활성화 |
+| 사용자 "이미지도", "이미지 포함" | **true** (전체, 제한 없음) | 명시적 확장 |
+| 사용자 "텍스트만", "이미지 제외" | **false** | 명시적 제외 (유일한 비활성 조건) |
+
+**자동 실행 동작:**
+- `image_extraction_enabled = true` (기본값)
+- content-extractor에게 Image Catalog 생성 지시 자동 포함
+- Phase 5.25 (이미지 저장 및 임베딩) 항상 활성화
 - 참조 스킬: `km-image-pipeline.md`
-
-**"아니오" 선택 시 (기본):**
-- `image_extraction_enabled = false`
-- 기존 텍스트 전용 파이프라인 유지
-- Phase 5.25 스킵
-
-### 퀵 프리셋 확장
-
-| 사용자 표현 | 이미지 추출 | 질문 스킵 |
-|------------|-----------|----------|
-| "이미지도", "차트 포함", "그래프 포함" | true | O |
-| "빠르게", "간단히", "텍스트만" | false | O |
-| 키워드 없음 | - | X (질문 필수) |
 
 ---
 
@@ -948,7 +923,7 @@ IF dashboard_available AND image_extraction_enabled:
 ```
 1. 새 노트 핵심 키워드 추출
 2. CLI `"$OBSIDIAN_CLI" search` / MCP search_vault로 관련 노트 탐색
-   - CLI `"$OBSIDIAN_CLI" deadends format=json` → 나가는 링크 없는 파일 = 연결 강화 우선 후보
+   - CLI `"$OBSIDIAN_CLI" deadends` → 나가는 링크 없는 파일 = 연결 강화 우선 후보 (format 옵션 미지원, 플레인 텍스트 목록 반환)
 3. 관련성 점수 3점 이상인 노트와 양방향 링크 생성
 4. CLI `"$OBSIDIAN_CLI" append` / MCP update_note로 기존 노트에 역방향 링크 추가
    - CLI `"$OBSIDIAN_CLI" prepend` → 네비게이션 헤더 추가 시 사용
