@@ -319,14 +319,33 @@ console.log(`
 // claude mcp add 명령어로 MCP 서버 등록
 Bash(`claude mcp add playwright -s user -- npx -y @modelcontextprotocol/server-playwright`)
 
+// 브라우저 바이너리 설치 (Playwright가 실제로 브라우저를 제어하려면 필요)
+console.log(`
+⏳ 브라우저 엔진을 설치하고 있어요...
+(Chromium 다운로드, 1-3분 정도 걸릴 수 있어요)
+`)
+
+const browserInstall = Bash(`npx playwright install chromium 2>&1`)
+const browserOk = !browserInstall.includes("ERROR")
+
 // 설치 확인
 const mcpList = Bash(`claude mcp list`)
 if (mcpList.includes("playwright")) {
-  console.log(`
-✅ Playwright MCP 서버 설치 완료!
+  if (browserOk) {
+    console.log(`
+✅ Playwright MCP 서버 + 브라우저 엔진 설치 완료!
 
 이제 웹페이지에서 콘텐츠를 가져올 수 있어요.
-  `)
+    `)
+  } else {
+    console.log(`
+✅ Playwright MCP 서버 설치 완료!
+⚠️ 브라우저 엔진 설치에 문제가 있었어요.
+
+수동으로 설치해주세요:
+  npx playwright install chromium
+    `)
+  }
   playwrightInstalled = true
 } else {
   console.log(`
@@ -334,6 +353,7 @@ if (mcpList.includes("playwright")) {
 
 터미널에서 실행:
   claude mcp add playwright -s user -- npx -y @modelcontextprotocol/server-playwright
+  npx playwright install chromium
   `)
 }
 ```
@@ -383,6 +403,28 @@ Obsidian 앱에서 실시간으로 확인할 수 있어요! 🎉
 
 터미널에서 실행:
   claude mcp add obsidian -s user -e OBSIDIAN_VAULT_PATH="${normalizedPath}" -- npx -y @huangyihe/obsidian-mcp
+  `)
+}
+
+// Obsidian CLI (데스크톱 앱) 감지 — CLI가 있으면 MCP보다 빠른 접근 가능
+const cliWin = Bash(`"/mnt/c/Program Files/Obsidian/Obsidian.com" version 2>/dev/null || echo "NOT_FOUND"`)
+const cliMac = Bash(`/Applications/Obsidian.app/Contents/MacOS/Obsidian --version 2>/dev/null || echo "NOT_FOUND"`)
+
+if (!cliWin.includes("NOT_FOUND") || !cliMac.includes("NOT_FOUND")) {
+  console.log(`
+✅ Obsidian CLI도 감지되었어요!
+   MCP보다 빠른 vault 접근이 가능합니다.
+   (backlinks, orphans 등 고급 기능도 사용 가능)
+  `)
+} else {
+  console.log(`
+💡 Obsidian 데스크톱 앱이 설치되어 있으면
+   CLI로 더 빠르게 vault에 접근할 수 있어요.
+
+   설치: https://obsidian.md/download
+   설치 후 앱을 한 번 실행하면 CLI가 자동으로 활성화됩니다.
+
+   CLI 없이도 MCP로 정상 작동하니, 지금은 건너뛰셔도 괜찮아요!
   `)
 }
 ```
@@ -530,6 +572,12 @@ Bash(`claude mcp list`)
 
 ═══════════════════════════════════════════════════════════
 
+📱 모바일 사용
+   /rc 입력 → QR 스캔 → /knowledge-manager-m 사용
+   (다음 단계에서 설정 안내)
+
+═══════════════════════════════════════════════════════════
+
 🔧 고급 옵션 (선택사항)
 
   소셜 미디어(Threads, Instagram) 스크래핑이 필요하다면
@@ -541,6 +589,123 @@ Bash(`claude mcp list`)
     3. .mcp.json에 hyperbrowser 서버 추가
 
 ═══════════════════════════════════════════════════════════
+```
+
+---
+
+## Phase 6: 모바일 사용 설정 (Claude Remote Control)
+
+### 사용자 질문
+
+```
+AskUserQuestion:
+  question: "모바일에서도 Knowledge Manager를 사용하고 싶으신가요?"
+  header: "Mobile"
+  options:
+    - label: "네, 모바일에서도 쓸래요 (권장)"
+      description: "Claude Remote Control로 스마트폰에서 실행"
+    - label: "아니요, PC에서만 사용할게요"
+      description: "모바일 설정은 건너뛰기"
+```
+
+### "아니요" 선택 시
+
+```
+좋아요! 나중에 모바일 사용이 필요하면
+/knowledge-manager setup 을 다시 실행해주세요. 😊
+
+설정이 모두 완료되었습니다!
+```
+
+### "네" 선택 시
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📱 모바일 사용 설정 (Claude Remote Control)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Claude Code Remote Control을 사용하면
+스마트폰 브라우저에서 Claude에게 명령을 내릴 수 있어요.
+
+⚠️ 필요 조건: Claude Max 플랜 (Pro 플랜에서는 사용 불가)
+
+━━━━━━ Step 1: Remote Control 활성화 ━━━━━━
+
+Claude Code 터미널에서 아래 명령어를 입력하세요:
+
+  /remote-control
+
+또는 짧게:
+
+  /rc
+
+화면에 QR 코드와 URL이 나타납니다.
+```
+
+### 자동 시작 설정 질문
+
+```
+AskUserQuestion:
+  question: "Claude Code 시작 시 Remote Control을 자동으로 켤까요?"
+  header: "Auto RC"
+  options:
+    - label: "네, 자동으로 켜주세요 (권장)"
+      description: "매번 /rc를 입력하지 않아도 돼요"
+    - label: "아니요, 수동으로 할게요"
+      description: "필요할 때만 /rc로 시작"
+```
+
+자동 시작 승인 시:
+```javascript
+Bash(`claude config set -g remoteControlAtStartup true`)
+
+// 설정 확인
+const rcConfig = Bash(`claude config get -g remoteControlAtStartup 2>/dev/null`)
+
+if (rcConfig.includes("true")) {
+  console.log(`
+✅ Remote Control 자동 시작 설정 완료!
+
+다음에 Claude Code를 시작하면 자동으로 Remote Control이 켜져요.
+  `)
+} else {
+  console.log(`
+⚠️ 자동 설정에 문제가 있었어요. 수동으로 설정해주세요:
+
+터미널에서 실행:
+  claude config set -g remoteControlAtStartup true
+  `)
+}
+```
+
+### 모바일 접속 안내
+
+```
+━━━━━━ Step 2: 모바일 접속 방법 ━━━━━━
+
+1. PC에서 Claude Code를 실행하세요
+   (Remote Control이 자동으로 시작됩니다)
+
+2. 화면에 나타나는 QR 코드를 스마트폰으로 스캔
+   또는 표시된 URL을 모바일 브라우저에서 열기
+
+3. 모바일 화면에서 다음과 같이 입력:
+
+   /knowledge-manager-m https://example.com 요약해줘
+
+━━━━━━ 키워드 프리셋 ━━━━━━
+
+  "요약해줘"         — 빠른 요약
+  "꼼꼼히"           — 상세 분석
+  "실무용"           — 실무 중심 정리
+  "카카오 나에게"    — 카카오톡으로 결과 전송
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎉 모바일 설정도 완료! 이제 어디서든 사용할 수 있어요.
+
+💡 팁: 카카오톡 전송 설정은 km-config.json에서 할 수 있어요.
+   자세한 내용은 README.md의 "카카오톡 전송 설정" 섹션을 참고하세요.
 ```
 
 ---
