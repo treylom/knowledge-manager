@@ -8,23 +8,26 @@
 
 **모든 노트/파일 생성 시 반드시 도구를 실제로 호출해야 합니다!**
 
-### ✅ MUST DO (필수 행동)
+### ✅ MUST DO (필수 행동) — 3-Tier 저장 프로토콜
 
-**Obsidian 저장 시:**
+**Tier 1: Obsidian CLI (최우선)**
+```bash
+"/mnt/c/Program Files/Obsidian/Obsidian.com" create path="Zettelkasten/카테고리/노트제목 - YYYY-MM-DD-HHmm.md" content="[노트 전체 내용]"
+```
+
+**Tier 2: Obsidian MCP (CLI 실패 시)**
 ```tool-call
 mcp__obsidian__create_note
 - path: "Zettelkasten/카테고리/노트제목 - YYYY-MM-DD-HHmm.md"
 - content: "[노트 전체 내용]"
 ```
 
-**MCP 실패 시 대안:**
+**Tier 3: Write 도구 (MCP 실패 시)**
 ```tool-call
 Write
-- file_path: "{vaultPath}/Zettelkasten/카테고리/노트제목.md"
+- file_path: "C:\Users\treyl\OneDrive\Desktop\AI\AI_Second_Brain\Zettelkasten\카테고리\노트제목.md"
 - content: "[노트 전체 내용]"
 ```
-
-> **참고**: `{vaultPath}`는 `km-config.json`에서 설정한 Obsidian vault 경로입니다.
 
 ### ❌ NEVER DO (절대 금지!)
 
@@ -40,17 +43,17 @@ Write
 ❌ JSON 형식으로 출력만 하고 끝내기
 ❌ "저장하겠습니다"라고만 말하고 도구 호출 안 함
 ❌ 노트 내용을 대화창에만 표시하고 파일 생성 안 함
-❌ create_note 또는 Write 도구 호출 없이 다음 단계 진행
+❌ CLI/create_note/Write 도구 호출 없이 다음 단계 진행
 ```
 
 ### 저장 후 필수 검증
 
 ```
-□ mcp__obsidian__create_note 또는 Write 도구를 실제로 호출했는가?
+□ CLI, mcp__obsidian__create_note, 또는 Write 도구를 실제로 호출했는가?
 □ 도구 응답에서 성공 메시지 확인했는가?
-  - "created successfully"
-  - "Note created at..."
-  - 또는 에러 없는 정상 응답
+  - CLI: exit code 0 + 파일 경로 출력
+  - MCP: "created successfully" / "Note created at..."
+  - Write: 에러 없는 정상 응답
 □ 모든 생성해야 할 노트에 대해 도구 호출을 완료했는가?
 ```
 
@@ -69,6 +72,74 @@ Write
 | PDF | pdf | 공유, 보관, 인쇄 |
 | 블로그 | 기본 | Medium, WordPress 게시 |
 | 다이어그램 | drawio-diagram | 시각화, 아키텍처 |
+
+---
+
+## Notion 저장 (PowerShell 직접 호출 - Windows) ⚠️ CRITICAL
+
+**MCP 도구(`mcp__notion__API-post-page`)는 파라미터 직렬화 버그로 사용 금지!**
+**버그 리포트**: `Bug_Reports/Bug-2026-01-24-1905-Notion-MCP-API-post-page-이중직렬화.md`
+
+### 워크플로우
+
+**Step 1: JSON 페이로드 파일 생성**
+```
+Write 도구 사용:
+- file_path: "C:\Users\treyl\OneDrive\Desktop\AI\km-temp\notion_payload.json"
+- content: JSON 형식의 Notion API 페이로드
+```
+
+**Step 2: PowerShell 스크립트 생성**
+```
+Write 도구 사용:
+- file_path: "C:\Users\treyl\OneDrive\Desktop\AI\km-temp\notion_upload.ps1"
+- content: [아래 템플릿]
+```
+
+**PowerShell 템플릿:**
+```powershell
+$headers = @{
+    'Authorization' = 'Bearer $env:NOTION_API_KEY'
+    'Notion-Version' = '2022-06-28'
+    'Content-Type' = 'application/json'
+}
+$body = Get-Content -Raw 'C:\Users\treyl\OneDrive\Desktop\AI\km-temp\notion_payload.json' -Encoding UTF8
+$response = Invoke-RestMethod -Uri 'https://api.notion.com/v1/pages' -Method POST -Headers $headers -Body ([System.Text.Encoding]::UTF8.GetBytes($body))
+$response | ConvertTo-Json -Depth 10
+```
+
+**Step 3: PowerShell 실행**
+```bash
+powershell -ExecutionPolicy Bypass -File "C:\Users\treyl\OneDrive\Desktop\AI\km-temp\notion_upload.ps1"
+```
+
+### 데이터베이스 ID 참조
+
+| 용도 | Database ID (UUID 형식!) |
+|------|--------------------------|
+| **AI Second Brain** | `2a6e5818-0d0e-80ae-a6e3-cc8853fda844` |
+
+### Notion 블록 타입
+
+| 블록 타입 | JSON 키 |
+|----------|---------|
+| 문단 | `paragraph` |
+| 제목1 | `heading_1` |
+| 제목2 | `heading_2` |
+| 제목3 | `heading_3` |
+| 글머리 기호 | `bulleted_list_item` |
+| 번호 목록 | `numbered_list_item` |
+| 코드 블록 | `code` |
+| 인용 | `quote` |
+| **이미지 (외부 URL)** | `image` |
+
+### ❌ 금지 패턴
+
+```
+❌ mcp__notion__API-post-page 사용
+❌ MCP 도구로 parent 객체 전달 시도
+❌ Notion 저장 요청 시 JSON 출력만 하고 끝내기
+```
 
 ---
 
@@ -100,13 +171,12 @@ Step 1: 콘텐츠 준비 (공통)
 Step 2: 병렬 저장 (동시 실행!)
   같은 응답에서 두 도구 호출:
 
-  [도구 1] mcp__obsidian__create_note
-    path: "Zettelkasten/AI-연구/주제.md"
-    content: "[Obsidian 마크다운]"
+  [도구 1] Bash (Obsidian CLI — Tier 1)
+    "/mnt/c/Program Files/Obsidian/Obsidian.com" create path="Zettelkasten/AI-연구/주제.md" content="[Obsidian 마크다운]"
+    CLI 실패 시: mcp__obsidian__create_note (Tier 2) → Write (Tier 3)
 
-  [도구 2] mcp__notion__API-post-page
-    parent: { page_id: "[부모 페이지]" }
-    properties: { title: [...] }
+  [도구 2] Bash (Notion curl 호출) ⚠️ MCP 도구 사용 금지!
+    → 아래 "Notion 저장 (curl 직접 호출)" 섹션 참조
 
   → 두 작업이 동시에 실행됨!
 
@@ -461,18 +531,19 @@ chapter: N
 
 ```
 Step 1: 모든 원자 노트 병렬 생성 (N개 동시)
-  [도구 1] mcp__obsidian__create_note (원자노트1)
-  [도구 2] mcp__obsidian__create_note (원자노트2)
-  [도구 3] mcp__obsidian__create_note (원자노트3)
+  [도구 1] Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" create path="..." content="..." (원자노트1)
+  [도구 2] Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" create path="..." content="..." (원자노트2)
+  [도구 3] Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" create path="..." content="..." (원자노트3)
   ... (최대 10개 병렬)
+  CLI 실패 시: mcp__obsidian__create_note (Tier 2) → Write (Tier 3)
 
 Step 2: 모든 카테고리 MOC 병렬 생성
-  [도구 1] mcp__obsidian__create_note (챕터1-MOC)
-  [도구 2] mcp__obsidian__create_note (챕터2-MOC)
+  [도구 1] Bash: CLI create (챕터1-MOC)
+  [도구 2] Bash: CLI create (챕터2-MOC)
   ... (챕터 수만큼)
 
 Step 3: 메인 MOC 생성
-  [도구 1] mcp__obsidian__create_note (메인-MOC)
+  [도구 1] Bash: CLI create (메인-MOC)
 ```
 
 ### 파일명 규칙
@@ -610,10 +681,24 @@ Step 3: 콘텐츠 구조화
   ## 참고문헌
   [소스 정보]
 
+Step 3.5: 이미지 저장 및 임베딩 (이미지 추출 활성 시)
+  - 참조 스킬: km-image-pipeline.md
+  - 디렉토리 생성:
+    Bash: mkdir -p /home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/
+  - 웹 이미지 다운로드:
+    Bash: curl -sLo "/home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}" "{url}"
+  - PDF 이미지 복사:
+    Bash: cp km-temp/{name}/images/{file} "/home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}"
+  - 다운로드 실패(403/404) 시 Playwright 스크린샷 폴백:
+    mcp__playwright__browser_take_screenshot({ ref: "{element-ref}", filename: "{path}" })
+  - 노트 콘텐츠에 임베드 구문 삽입 (본문 흐름 배치):
+    개념 설명 → (빈 줄) → ![[Resources/images/{topic-folder}/{filename}]] → (빈 줄) → 상세 설명
+  - 검증: Glob("AI_Second_Brain/Resources/images/{topic-folder}/*") → 파일 존재 확인
+
 Step 4: Vault에 저장
   - 경로: Zettelkasten/[category]/[title] - YYYY-MM-DD-HHmm.md
-  - CRITICAL: vault root가 이미 설정된 vaultPath
-  - vaultPath 중복 접두사 절대 사용 금지!
+  - CRITICAL: vault root가 이미 AI_Second_Brain 폴더
+  - "AI_Second_Brain/" 접두사 절대 사용 금지!
   - Obsidian MCP 또는 Write 도구 사용
 ```
 
@@ -626,24 +711,28 @@ Step 4: Vault에 저장
    Threads/스레드-정리.md
 
 ❌ 잘못된 경로 (중첩 폴더 생성됨!):
-   {vaultPath}/Zettelkasten/AI-연구/... (Obsidian MCP 사용 시)
+   AI_Second_Brain/Zettelkasten/AI-연구/...
+   AI_Second_Brain/Research/...
 ```
 
-### 저장 도구 호출
+### 저장 도구 호출 (3-Tier)
 
 ```
-방법 1: Obsidian MCP (권장)
+Tier 1: Obsidian CLI (최우선)
+Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" create path="Zettelkasten/AI-연구/노트제목 - 2026-01-03-1430.md" content="[전체 노트 내용]"
+
+CLI 실패 시:
+Tier 2: Obsidian MCP
 mcp__obsidian__create_note
 - path: "Zettelkasten/AI-연구/노트제목 - 2026-01-03-1430.md"
 - content: "[전체 노트 내용]"
 
-방법 2: Write 도구 (MCP 실패 시)
+MCP 실패 시:
+Tier 3: Write 도구
 Write
-- file_path: "{vaultPath}/Zettelkasten/AI-연구/노트제목 - 2026-01-03-1430.md"
+- file_path: "C:\Users\treyl\OneDrive\Desktop\AI\AI_Second_Brain\Zettelkasten\AI-연구\노트제목 - 2026-01-03-1430.md"
 - content: "[전체 노트 내용]"
 ```
-
-> **참고**: `{vaultPath}`는 `km-config.json`에서 설정한 Obsidian vault 경로입니다.
 
 ---
 
@@ -667,6 +756,13 @@ Step 1: 마크다운 → Notion 블록 변환
   - `code` → code
   - > 인용 → quote
   - [[wikilink]] → mention (페이지 존재 시)
+
+Step 1.5: 이미지 블록 처리 (이미지 추출 활성 시)
+  - 참조 스킬: km-image-pipeline.md
+  - 외부 URL 이미지: image 블록으로 삽입
+    { "type": "image", "image": { "type": "external", "external": { "url": "{원본URL}" }, "caption": [{ "type": "text", "text": { "content": "{alt-text}" } }] } }
+  - 로컬 전용 이미지 (PDF 추출 등): 텍스트 설명으로 대체
+    { "type": "callout", "callout": { "icon": { "type": "emoji", "emoji": "🖼️" }, "rich_text": [{ "type": "text", "text": { "content": "[이미지: {alt-text}] — Obsidian vault Resources/images/{topic-folder}/{filename} 에서 확인" } }] } }
 
 Step 2: 메타데이터 처리
   - YAML 프론트매터 → Notion 속성
@@ -832,7 +928,7 @@ Step 5: 내보내기 및 저장
   mcp__drawio__export_diagram
   - 저장 경로: [관련노트폴더]/[주제]-diagram-[YYYY-MM-DD].drawio
   - 예: Zettelkasten/AI-연구/MCP-Architecture-diagram-2025-01-02.drawio
-  - CRITICAL: vault root 기준 상대경로 (중복 접두사 금지!)
+  - CRITICAL: vault root 기준 상대경로 (AI_Second_Brain/ 접두사 금지!)
 
 Step 6: 노트에 링크 추가
   관련 노트에 다이어그램 참조:
@@ -862,17 +958,18 @@ Step 6: 노트에 링크 추가
 
 노트/파일 생성 시 JSON 출력만 하고 끝내면 **절대 안 됩니다!**
 
-### ✅ 필수 패턴
+### ✅ 필수 패턴 (3-Tier)
 
 ```
-// Obsidian MCP 호출:
+// Tier 1: Obsidian CLI (최우선):
+Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" create path="Research/note.md" content="..."
+
+// CLI 실패 시 Tier 2: Obsidian MCP:
 mcp__obsidian__create_note(path="Research/note.md", content="...")
 
-// 또는 Write 도구 호출:
-Write(file_path="{vaultPath}/Research/note.md", content="...")
+// MCP 실패 시 Tier 3: Write 도구:
+Write(file_path="C:\...\AI_Second_Brain\Research\note.md", content="...")
 ```
-
-> **참고**: `{vaultPath}`는 `km-config.json`에서 설정한 Obsidian vault 경로입니다.
 
 ### ❌ 금지 패턴
 
@@ -887,9 +984,9 @@ Write(file_path="{vaultPath}/Research/note.md", content="...")
 ### 저장 후 검증
 
 ```
-1. 저장 도구 호출 (create_note 또는 Write)
-2. 결과 확인 - "created successfully" 또는 성공 메시지
-3. 실패 시 즉시 에러 보고
+1. 저장 도구 호출 (CLI → create_note → Write 순서)
+2. 결과 확인 - CLI exit 0 / "created successfully" / 성공 메시지
+3. 실패 시 다음 Tier로 폴백
 4. 절대 JSON 출력만 하고 끝내지 말 것!
 ```
 
@@ -948,10 +1045,18 @@ Write(file_path="{vaultPath}/Research/note.md", content="...")
 □ 파일이 올바른 위치에 저장되었는가?
 
 ## 파일 저장 검증 (필수!)
-□ mcp__obsidian__create_note 또는 Write 도구를 실제로 호출했는가?
-□ 도구 호출 결과에서 성공 메시지 확인했는가?
+□ CLI, mcp__obsidian__create_note, 또는 Write 도구를 실제로 호출했는가?
+□ 도구 호출 결과에서 성공 메시지 확인했는가? (CLI exit 0 / MCP success / Write 정상)
 □ JSON 출력만 하고 끝내지 않았는가?
 □ 모든 파일이 실제로 생성되었음을 확인했는가?
+
+## 이미지 파이프라인 검증 (이미지 추출 활성 시!)
+□ Image Catalog의 모든 이미지가 다운로드/복사 되었는가?
+□ Resources/images/{topic-folder}/ 폴더에 파일이 실제로 존재하는가?
+□ 노트 내 ![[Resources/images/...]] 구문과 실제 파일이 1:1 매핑되는가?
+□ 본문 흐름 배치 규칙을 따르는가? (개념→빈줄→이미지→빈줄→상세, 연속 배치 없음)
+□ Notion 외부 URL 이미지가 image 블록으로 삽입되었는가?
+□ 로컬 전용 이미지는 텍스트 설명(callout)으로 대체되었는가?
 ```
 
 ---
