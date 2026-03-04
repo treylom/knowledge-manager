@@ -79,12 +79,12 @@ Marker(Tier 2)가 실패하거나 부족한 경우 GLM-OCR로 폴백:
 ```bash
 # 1. venv 생성 (기존 paddleocr-vl venv 재사용 가능)
 # Python 3.12 권장
-"C:\Users\treyl\AppData\Local\Programs\Python\Python312\python.exe" -m venv .venvs\glm-ocr
+python3 -m venv .venvs/glm-ocr
 
 # 2. 의존성 설치
-".venvs\glm-ocr\Scripts\pip.exe" install torch torchvision --index-url https://download.pytorch.org/whl/cu128
-".venvs\glm-ocr\Scripts\pip.exe" install git+https://github.com/huggingface/transformers.git
-".venvs\glm-ocr\Scripts\pip.exe" install accelerate pillow pymupdf
+".venvs/glm-ocr/bin/pip" install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+".venvs/glm-ocr/bin/pip" install git+https://github.com/huggingface/transformers.git
+".venvs/glm-ocr/bin/pip" install accelerate pillow pymupdf
 
 # 3. 모델 다운로드 (첫 실행 시 자동, ~2GB)
 ```
@@ -93,7 +93,7 @@ Marker(Tier 2)가 실패하거나 부족한 경우 GLM-OCR로 폴백:
 
 ```bash
 # transformers를 git 버전으로 업그레이드
-"C:\Users\treyl\OneDrive\Desktop\AI\.venvs\paddleocr-vl\Scripts\pip.exe" install --upgrade git+https://github.com/huggingface/transformers.git
+".venvs/paddleocr-vl/bin/pip" install --upgrade git+https://github.com/huggingface/transformers.git
 ```
 
 ---
@@ -105,13 +105,10 @@ GLM-OCR 호출 전 **반드시** 가용성 확인:
 ### venv 존재 여부 확인
 
 ```bash
-# Windows - paddleocr-vl venv 재사용
-if exist "C:\Users\treyl\OneDrive\Desktop\AI\.venvs\paddleocr-vl\Scripts\python.exe" (echo AVAILABLE) else (echo NOT_AVAILABLE)
+# paddleocr-vl venv 재사용
+test -f .venvs/paddleocr-vl/bin/python && echo AVAILABLE || echo NOT_AVAILABLE
 
 # 또는 전용 venv
-if exist ".venvs\glm-ocr\Scripts\python.exe" (echo AVAILABLE) else (echo NOT_AVAILABLE)
-
-# Linux/macOS
 test -f .venvs/glm-ocr/bin/python && echo AVAILABLE || echo NOT_AVAILABLE
 ```
 
@@ -194,9 +191,9 @@ output_text = processor.decode(
 print(output_text)
 ```
 
-**Windows 경로 예시:**
+**실행 예시:**
 ```bash
-"C:\Users\treyl\OneDrive\Desktop\AI\.venvs\paddleocr-vl\Scripts\python.exe" "test_glm_ocr.py"
+".venvs/glm-ocr/bin/python" "test_glm_ocr.py"
 ```
 
 ### 방법 B: Ollama (설치 필요)
@@ -248,7 +245,7 @@ Step 2: Marker 실행 (Tier 2)
   → 실패? → Step 3
 
 Step 3: GLM-OCR 가용성 체크 (Tier 3)
-  venv 존재 확인: .venvs/paddleocr-vl/Scripts/python.exe (또는 glm-ocr venv)
+  venv 존재 확인: .venvs/paddleocr-vl/bin/python (또는 glm-ocr venv)
   → 존재? → Step 4
   → 미설치? → Step 5 (Gemini 폴백)
 
@@ -307,10 +304,6 @@ Tier 1: Claude Read → Tier 2: Marker → Tier 3: GLM-OCR → Tier 4: Gemini Fl
 
 ```bash
 # venv 삭제만으로 완전 제거
-# Windows
-rmdir /s /q ".venvs\glm-ocr"
-
-# Linux/macOS
 rm -rf .venvs/glm-ocr
 ```
 
@@ -379,10 +372,9 @@ rm -rf .venvs/glm-ocr
     km-glm-ocr.md             ← 이 파일 (스킬 문서)
 .venvs/
   paddleocr-vl/               ← 기존 venv 재사용 가능 (transformers 업그레이드 필요)
-    Scripts/python.exe         (Windows)
+    bin/python
   glm-ocr/                    ← 또는 전용 venv
-    Scripts/python.exe         (Windows)
-    bin/python                 (Linux/macOS)
+    bin/python
 ```
 
 ---

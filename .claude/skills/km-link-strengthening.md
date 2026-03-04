@@ -90,9 +90,9 @@ Tier 1: Obsidian CLI backlinks (최우선)
 
 검색 전략 (wikilink 역추적):
 1. CLI backlinks로 이 노트를 참조하는 모든 노트 발견:
-   Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" backlinks path="{새노트경로}" format=json
+   Bash: "$OBSIDIAN_CLI" backlinks path="{새노트경로}" format=json
 2. CLI links로 이 노트가 참조하는 노트 확인:
-   Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" links path="{새노트경로}"
+   Bash: "$OBSIDIAN_CLI" links path="{새노트경로}"
 3. 발견된 노트들을 관련성 점수 +4점으로 후보에 추가
 
 CLI 실패 시 Tier 2: Grep 폴백
@@ -109,7 +109,7 @@ CLI 실패 시 Tier 2: Grep 폴백
 새 노트: "GraphRAG 아키텍처 분석"
 
 Tier 1 (CLI):
-  "/mnt/c/Program Files/Obsidian/Obsidian.com" backlinks path="Zettelkasten/AI-연구/GraphRAG 아키텍처 분석.md" format=json
+  "$OBSIDIAN_CLI" backlinks path="Zettelkasten/AI-연구/GraphRAG 아키텍처 분석.md" format=json
   → 결과: Efficient-Memory-MOC.md, RAG-Pipeline-Overview.md 등
 
 CLI 실패 시 Tier 2 (Grep):
@@ -124,7 +124,7 @@ CLI 실패 시 Tier 2 (Grep):
 
 ```
 Tier 1: Obsidian CLI search (최우선)
-  Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" search query="{키워드}" format=json
+  Bash: "$OBSIDIAN_CLI" search query="{키워드}" format=json
 
 CLI 실패 시 Tier 2: Obsidian MCP
   도구: mcp__obsidian__search_vault
@@ -232,7 +232,7 @@ Advanced 모드 (Neo4j 사용 가능 시):
 
 ```
 Tier 1: Obsidian CLI append (섹션 추가용)
-  Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" append path="{기존노트경로}" content="\n- [[새노트]] - 자동 연결 (YYYY-MM-DD)"
+  Bash: "$OBSIDIAN_CLI" append path="{기존노트경로}" content="\n- [[새노트]] - 자동 연결 (YYYY-MM-DD)"
 
 CLI 실패 시 Tier 2: Obsidian MCP update_note (surgical edit용)
   도구: mcp__obsidian__update_note
@@ -381,10 +381,10 @@ Phase 6: 검증 및 보고
 
 | 작업 | Tier 1: CLI | Tier 2: MCP | Tier 3: 폴백 |
 |------|------------|-------------|-------------|
-| 관련 노트 검색 | `"/mnt/c/Program Files/Obsidian/Obsidian.com" search query="{q}" format=json` | `mcp__obsidian__search_vault` | Grep |
-| 역추적 (backlinks) | `"/mnt/c/Program Files/Obsidian/Obsidian.com" backlinks path="{p}" format=json` | Grep `\[\[노트명\]\]` | - |
-| 노트 링크 확인 | `"/mnt/c/Program Files/Obsidian/Obsidian.com" links path="{p}"` | Read + wikilink 파싱 | - |
-| 노트 읽기 | `"/mnt/c/Program Files/Obsidian/Obsidian.com" read path="{p}"` | `mcp__obsidian__read_note` | Read |
-| 역방향 링크 추가 (append) | `"/mnt/c/Program Files/Obsidian/Obsidian.com" append path="{p}" content="{c}"` | `mcp__obsidian__update_note` | Edit |
+| 관련 노트 검색 | `"$OBSIDIAN_CLI" search query="{q}" format=json` | `mcp__obsidian__search_vault` | Grep |
+| 역추적 (backlinks) | `"$OBSIDIAN_CLI" backlinks path="{p}" format=json` | Grep `\[\[노트명\]\]` | - |
+| 노트 링크 확인 | `"$OBSIDIAN_CLI" links path="{p}"` | Read + wikilink 파싱 | - |
+| 노트 읽기 | `"$OBSIDIAN_CLI" read path="{p}"` | `mcp__obsidian__read_note` | Read |
+| 역방향 링크 추가 (append) | `"$OBSIDIAN_CLI" append path="{p}" content="{c}"` | `mcp__obsidian__update_note` | Edit |
 | surgical text 편집 | - (CLI 미지원) | `mcp__obsidian__update_note` | Edit |
 | 일괄 백링크 (배치) | CLI orphans + backlinks + 커스텀 로직 | `mcp__obsidian__auto_backlink_vault` | - |

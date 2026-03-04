@@ -125,10 +125,6 @@ PaddleOCR-VL-1.5 호출 전 **반드시** 가용성 확인:
 ### 방법 1: venv 존재 여부 확인 (권장)
 
 ```bash
-# Windows
-if exist ".venvs\paddleocr-vl\Scripts\python.exe" (echo AVAILABLE) else (echo NOT_AVAILABLE)
-
-# Linux/macOS
 test -f .venvs/paddleocr-vl/bin/python && echo AVAILABLE || echo NOT_AVAILABLE
 ```
 
@@ -183,7 +179,7 @@ PaddleOCR-VL-1.5는 프롬프트로 태스크를 지정합니다:
 
 ```bash
 # venv의 Python으로 직접 실행
-"{PROJECT_ROOT}/.venvs/paddleocr-vl/Scripts/python.exe" -c "
+".venvs/paddleocr-vl/bin/python" -c "
 import torch
 from PIL import Image
 from transformers import AutoProcessor, AutoModelForImageTextToText
@@ -222,12 +218,7 @@ print(result)
 "
 ```
 
-**Windows 경로 예시:**
-```bash
-"C:\Users\{USER}\OneDrive\Desktop\AI\.venvs\paddleocr-vl\Scripts\python.exe" -c "..."
-```
-
-**Linux 경로 예시:**
+**실행 예시:**
 ```bash
 ".venvs/paddleocr-vl/bin/python" -c "..."
 ```
@@ -235,7 +226,7 @@ print(result)
 ### 방법 B: PaddleOCR Python API
 
 ```bash
-"{PROJECT_ROOT}/.venvs/paddleocr-vl/Scripts/python.exe" -c "
+".venvs/paddleocr-vl/bin/python" -c "
 from paddleocr import PaddleOCRVL
 
 pipeline = PaddleOCRVL()
@@ -285,7 +276,7 @@ Step 2: Marker 실행 (Tier 2)
   → 실패? → Step 3
 
 Step 3: PaddleOCR-VL-1.5 가용성 체크 (Tier 3)
-  venv 존재 확인: .venvs/paddleocr-vl/Scripts/python.exe
+  venv 존재 확인: .venvs/paddleocr-vl/bin/python
   → 존재? → Step 4
   → 미설치? → Step 5 (Gemini 폴백)
 
@@ -452,6 +443,5 @@ docker run --rm --gpus all --network host \
     km-paddleocr-vl.md        ← 이 파일 (스킬 문서)
 .venvs/
   paddleocr-vl/               ← 설치 시 생성되는 Python venv
-    Scripts/python.exe         (Windows)
-    bin/python                 (Linux/macOS)
+    bin/python
 ```

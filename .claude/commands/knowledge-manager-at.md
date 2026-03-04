@@ -29,6 +29,31 @@ Lead (Main) - Opus 1M
 
 ---
 
+## STEP 0-PRE: Config 읽기 (CRITICAL — 모든 작업 전에 실행)
+
+**km-config.json에서 사용자별 설정을 로드합니다.**
+
+```
+config = Read("km-config.json")
+
+if (!config) {
+  → "km-config.json이 없습니다. '/knowledge-manager-setup'을 먼저 실행해주세요." 안내 후 중단
+}
+
+// 저장소
+vaultPath = config.storage?.obsidian?.vaultPath ?? ""
+
+// 카카오톡
+kakaoSelfName = config.kakao?.selfName ?? ""
+
+// 알림
+ntfyTopic = config.notification?.ntfyTopic ?? ""
+```
+
+> **이후 모든 STEP에서 하드코딩 경로 대신 위 config 변수를 사용합니다.**
+
+---
+
 ## STEP 0: 환경 확인 (가장 먼저 실행!)
 
 **환경 확인 후 Agent Office URL을 사용자에게 항상 표시합니다.**
@@ -83,11 +108,22 @@ Bash("ls .team-os/spawn-prompts/*.md 2>/dev/null | wc -l")
 ### 0-2. Obsidian 환경 확인 (3-Tier)
 
 ```bash
+# Obsidian CLI 자동 감지 (크로스 플랫폼)
+# Windows/WSL
 OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+"$OBSIDIAN_CLI" version 2>/dev/null && CLI_FOUND=true
+# macOS (Windows 실패 시)
+if [ "$CLI_FOUND" != "true" ]; then
+  OBSIDIAN_CLI="/Applications/Obsidian.app/Contents/MacOS/Obsidian"
+  "$OBSIDIAN_CLI" --version 2>/dev/null && CLI_FOUND=true
+fi
+# Linux (Mac도 실패 시)
+if [ "$CLI_FOUND" != "true" ]; then
+  OBSIDIAN_CLI=$(which obsidian 2>/dev/null || echo "")
+fi
 
 # Tier 1: CLI 확인 (우선)
-"$OBSIDIAN_CLI" version 2>/dev/null
-→ 응답 있으면: obsidian_method = "cli"
+→ CLI_FOUND이면: obsidian_method = "cli"
 
 # Tier 2: CLI 실패 시 MCP 확인
 mcp__obsidian__list_notes({}) → 응답 여부
@@ -876,15 +912,15 @@ Write({ file_path: "{vault_absolute_path}/적절한/경로/파일명.md", conten
    - 각 이미지의 Type, Source, URL/Path, Context, Placement 확인
 
 2. Resources/images/{topic-folder}/ 디렉토리 생성:
-   Bash("mkdir -p /home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/")
+   Bash("mkdir -p {vaultPath}/Resources/images/{topic-folder}/")
 
 3. 각 이미지 다운로드/복사:
 
    웹 이미지:
-   Bash("curl -sLo '/home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}' '{url}'")
+   Bash("curl -sLo '{vaultPath}/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}' '{url}'")
 
    PDF 이미지 (marker 출력):
-   Bash("cp km-temp/{name}/images/{file} '/home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}'")
+   Bash("cp km-temp/{name}/images/{file} '{vaultPath}/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}'")
 
 4. 다운로드 실패 시 Playwright 스크린샷 폴백:
    - 원본 URL로 navigate

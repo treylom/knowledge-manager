@@ -508,6 +508,17 @@ const config = {
   defaults: {
     detailLevel: 2,
     connectionLevel: "normal"
+  },
+
+  kakao: {
+    enabled: false,
+    selfName: "",
+    scriptPath: ".claude/scripts/send_kakao.py",
+    readMethod: "auto"
+  },
+
+  notification: {
+    ntfyTopic: ""
   }
 }
 

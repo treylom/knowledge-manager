@@ -620,7 +620,12 @@ Advanced 티어지만 일부만 설치하고 싶을 때:
 
 ```bash
 # Step 1: Obsidian CLI 확인 (우선)
-OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+# Obsidian CLI 자동 감지 (크로스 플랫폼)
+# Windows/WSL: "/mnt/c/Program Files/Obsidian/Obsidian.com"
+# macOS: "/Applications/Obsidian.app/Contents/MacOS/Obsidian"
+# Linux: which obsidian
+# → km-environment-detection.md 스킬의 3-Tier 감지 참조
+OBSIDIAN_CLI="(환경에 따라 자동 감지)"
 "$OBSIDIAN_CLI" version 2>/dev/null
 # 응답 있으면 → obsidian_method = "cli"
 

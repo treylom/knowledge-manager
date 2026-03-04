@@ -102,7 +102,13 @@ Task 도구로 호출된 경우:
 | **Obsidian 노트** | Tier 1: `"$OBSIDIAN_CLI" create` → Tier 2: `mcp__obsidian__create_note` → Tier 3: `Write` | JSON 출력만 금지 |
 | **Notion** | `Bash + curl` (직접 API 호출) | MCP 도구 사용 금지 |
 
-> `OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"`
+> ```bash
+> # Obsidian CLI 자동 감지 (크로스 플랫폼)
+> # Windows/WSL: "/mnt/c/Program Files/Obsidian/Obsidian.com"
+> # macOS: "/Applications/Obsidian.app/Contents/MacOS/Obsidian"
+> # Linux: which obsidian
+> OBSIDIAN_CLI="(환경에 따라 자동 감지)"
+> ```
 
 ### ❌ 절대 금지 패턴
 
@@ -177,10 +183,10 @@ Read("{PDF경로}")
 ```bash
 # Python 3.12 필수 (Python 3.14는 미지원)
 mkdir -p ./km-temp
-"C:\Users\treyl\AppData\Local\Programs\Python\Python312\Scripts\marker_single.exe" "{PDF경로}" --output_format markdown --output_dir ./km-temp
+marker_single "{PDF경로}" --output_format markdown --output_dir ./km-temp
 
 # 스캔 PDF의 경우 OCR 강제
-"C:\Users\treyl\AppData\Local\Programs\Python\Python312\Scripts\marker_single.exe" "{PDF경로}" --output_format markdown --output_dir ./km-temp --force_ocr
+marker_single "{PDF경로}" --output_format markdown --output_dir ./km-temp --force_ocr
 
 # 출력: ./km-temp/{파일명}/{파일명}.md
 Read("./km-temp/{파일명}/{파일명}.md")
@@ -227,7 +233,7 @@ print(response.text)
 ## CRITICAL: Path Configuration
 
 **IMPORTANT**: Obsidian vault root = `AI_Second_Brain` 폴더입니다.
-- Vault 경로: `C:\Users\treyl\OneDrive\Desktop\AI\AI_Second_Brain`
+- Vault 경로: `{vaultPath}`
 - Obsidian MCP 사용 시 경로는 vault root 기준 **상대 경로**
 - **NEVER** prefix paths with `AI_Second_Brain/` - 중첩 폴더 생성됨!
 
@@ -553,7 +559,11 @@ mcp__playwright__browser_click({ element: "Share", ref: "{버튼 ref}" })
 
 ```bash
 # Tier 1: Obsidian CLI (우선):
-OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+# Obsidian CLI 자동 감지 (크로스 플랫폼)
+# Windows/WSL: "/mnt/c/Program Files/Obsidian/Obsidian.com"
+# macOS: "/Applications/Obsidian.app/Contents/MacOS/Obsidian"
+# Linux: which obsidian
+OBSIDIAN_CLI="(환경에 따라 자동 감지)"
 "$OBSIDIAN_CLI" create path="Zettelkasten/AI-연구/note.md" content="[노트 내용]"
 ```
 
@@ -565,7 +575,7 @@ mcp__obsidian__create_note
 
 // Tier 3: Write 도구 (MCP도 실패 시):
 Write
-- file_path: "C:\...\AI_Second_Brain\Zettelkasten\AI-연구\note.md"
+- file_path: "{vaultPath}/Zettelkasten/AI-연구/note.md"
 - content: "[노트 내용]"
 ```
 
@@ -588,7 +598,7 @@ Write
 **Step 1: JSON 페이로드 파일 생성**
 ```javascript
 Write({
-  file_path: "C:\\Users\\treyl\\OneDrive\\Desktop\\AI\\km-temp\\notion_payload.json",
+  file_path: "./km-temp/notion_payload.json",
   content: JSON.stringify({
     parent: { type: "database_id", database_id: "2a6e5818-0d0e-80ae-a6e3-cc8853fda844" },
     properties: {
@@ -604,13 +614,13 @@ Write({
 **Step 2: PowerShell 스크립트 생성**
 ```javascript
 Write({
-  file_path: "C:\\Users\\treyl\\OneDrive\\Desktop\\AI\\km-temp\\notion_upload.ps1",
+  file_path: "./km-temp/notion_upload.ps1",
   content: `$headers = @{
     'Authorization' = 'Bearer $env:NOTION_API_KEY'
     'Notion-Version' = '2022-06-28'
     'Content-Type' = 'application/json'
 }
-$body = Get-Content -Raw 'C:\\Users\\treyl\\OneDrive\\Desktop\\AI\\km-temp\\notion_payload.json' -Encoding UTF8
+$body = Get-Content -Raw './km-temp/notion_payload.json' -Encoding UTF8
 $response = Invoke-RestMethod -Uri 'https://api.notion.com/v1/pages' -Method POST -Headers $headers -Body ([System.Text.Encoding]::UTF8.GetBytes($body))
 $response | ConvertTo-Json -Depth 10`
 })
@@ -618,7 +628,7 @@ $response | ConvertTo-Json -Depth 10`
 
 **Step 3: PowerShell 실행**
 ```bash
-powershell -ExecutionPolicy Bypass -File "C:\Users\treyl\OneDrive\Desktop\AI\km-temp\notion_upload.ps1"
+powershell -ExecutionPolicy Bypass -File "./km-temp/notion_upload.ps1"
 ```
 
 ### 기본 데이터베이스 ID

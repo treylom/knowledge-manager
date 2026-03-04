@@ -29,6 +29,31 @@ Main (사용자 선택 모델, 단일 세션)
 
 ---
 
+## STEP 0-PRE: Config 읽기 (CRITICAL — 모든 작업 전에 실행)
+
+**km-config.json에서 사용자별 설정을 로드합니다.**
+
+```
+config = Read("km-config.json")
+
+if (!config) {
+  → "km-config.json이 없습니다. '/knowledge-manager-setup'을 먼저 실행해주세요." 안내 후 중단
+}
+
+// 저장소
+vaultPath = config.storage?.obsidian?.vaultPath ?? ""
+
+// 카카오톡
+kakaoSelfName = config.kakao?.selfName ?? ""
+
+// 알림
+ntfyTopic = config.notification?.ntfyTopic ?? ""
+```
+
+> **이후 모든 STEP에서 하드코딩 경로 대신 위 config 변수를 사용합니다.**
+
+---
+
 ## STEP 0: 환경 확인 (간소화)
 
 **사용자에게 표시할 필요 없음. 내부적으로 판단만 수행.**
@@ -36,7 +61,19 @@ Main (사용자 선택 모델, 단일 세션)
 ### Obsidian 접근 방식 확인 (3-Tier)
 
 ```bash
+# Obsidian CLI 자동 감지 (크로스 플랫폼)
+# Windows/WSL
 OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+"$OBSIDIAN_CLI" version 2>/dev/null && CLI_FOUND=true
+# macOS (Windows 실패 시)
+if [ "$CLI_FOUND" != "true" ]; then
+  OBSIDIAN_CLI="/Applications/Obsidian.app/Contents/MacOS/Obsidian"
+  "$OBSIDIAN_CLI" --version 2>/dev/null && CLI_FOUND=true
+fi
+# Linux (Mac도 실패 시)
+if [ "$CLI_FOUND" != "true" ]; then
+  OBSIDIAN_CLI=$(which obsidian 2>/dev/null || echo "")
+fi
 
 # Tier 1: CLI 확인 (우선)
 "$OBSIDIAN_CLI" version 2>/dev/null
@@ -274,7 +311,7 @@ Main이 입력 소스를 직접 추출합니다. 스킬 참조: `km-content-extr
 ```
 1. Hub 노트 식별:
    - Grep으로 [[키워드]] 패턴 검색
-     Grep({ pattern: "\\[\\[.*{키워드}.*\\]\\]", path: "/mnt/c/Users/treyl/OneDrive/Desktop/AI/AI_Second_Brain" })
+     Grep({ pattern: "\\[\\[.*{키워드}.*\\]\\]", path: "{vaultPath}" })
    - 가장 많이 참조되는 노트 = Hub 노트 (최소 2개 식별)
 
 2. 1-hop 추적:
@@ -426,7 +463,7 @@ Write({ file_path: "{vault_absolute_path}/적절한/경로/파일명.md", conten
 
 ```
 1. Resources/images/{topic-folder}/ 디렉토리 생성:
-   Bash("mkdir -p /home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/")
+   Bash("mkdir -p {vaultPath}/Resources/images/{topic-folder}/")
 
 2. 수집된 이미지 다운로드:
    웹 이미지: Bash("curl -sLo '{경로}' '{url}'")
