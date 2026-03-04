@@ -102,7 +102,7 @@ Task 도구로 호출된 경우:
 | **Obsidian 노트** | Tier 1: `"$OBSIDIAN_CLI" create` → Tier 2: `mcp__obsidian__create_note` → Tier 3: `Write` | JSON 출력만 금지 |
 | **Notion** | `Bash + curl` (직접 API 호출) | MCP 도구 사용 금지 |
 
-> `OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"`
+> `OBSIDIAN_CLI`는 STEP 0-PRE에서 크로스 플랫폼 감지 완료
 
 ### ❌ 절대 금지 패턴
 
@@ -177,10 +177,10 @@ Read("{PDF경로}")
 ```bash
 # Python 3.12 필수 (Python 3.14는 미지원)
 mkdir -p ./km-temp
-"C:\Users\treyl\AppData\Local\Programs\Python\Python312\Scripts\marker_single.exe" "{PDF경로}" --output_format markdown --output_dir ./km-temp
+marker_single "{PDF경로}" --output_format markdown --output_dir ./km-temp
 
 # 스캔 PDF의 경우 OCR 강제
-"C:\Users\treyl\AppData\Local\Programs\Python\Python312\Scripts\marker_single.exe" "{PDF경로}" --output_format markdown --output_dir ./km-temp --force_ocr
+marker_single "{PDF경로}" --output_format markdown --output_dir ./km-temp --force_ocr
 
 # 출력: ./km-temp/{파일명}/{파일명}.md
 Read("./km-temp/{파일명}/{파일명}.md")
@@ -189,7 +189,7 @@ Read("./km-temp/{파일명}/{파일명}.md")
 **Step 3: GLM-OCR (3순위 - Marker 실패 또는 특수 인식 필요 시)**
 ```bash
 # venv 가용성 체크 (필수!)
-# Windows: .venvs\paddleocr-vl\Scripts\python.exe 존재 여부 (GLM-OCR도 같은 venv 사용 가능)
+# 크로스 플랫폼: .venvs/paddleocr-vl/bin/python 또는 .venvs/paddleocr-vl/Scripts/python.exe 존재 여부 (GLM-OCR도 같은 venv 사용 가능)
 # 미설치 → Step 4로 폴백
 
 # Transformers API 사용
@@ -552,8 +552,7 @@ mcp__playwright__browser_click({ element: "Share", ref: "{버튼 ref}" })
 ### ✅ 필수 패턴 (3-Tier)
 
 ```bash
-# Tier 1: Obsidian CLI (우선):
-OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+# Tier 1: Obsidian CLI (우선 — OBSIDIAN_CLI는 STEP 0-PRE에서 감지):
 "$OBSIDIAN_CLI" create path="Zettelkasten/AI-연구/note.md" content="[노트 내용]"
 ```
 

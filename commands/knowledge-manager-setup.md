@@ -463,6 +463,17 @@ const config = {
     provider: "playwright"  // 기본값: Playwright
   },
 
+  kakao: {
+    enabled: false,
+    selfName: kakaoSelfName || "",
+    scriptPath: ".claude/scripts/send_kakao.py",
+    readMethod: "auto"
+  },
+
+  notification: {
+    ntfyTopic: ntfyTopic || ""
+  },
+
   defaults: {
     detailLevel: 2,
     connectionLevel: "normal"
@@ -494,6 +505,79 @@ Bash(`claude mcp list`)
 
 ---
 
+## Phase 4.5: 카카오톡 & 알림 설정 (선택)
+
+### 카카오톡 전송 설정 (Windows/WSL 환경 전용)
+
+```
+AskUserQuestion:
+  question: "카카오톡 전송 기능을 설정할까요?"
+  header: "카카오톡"
+  options:
+    - label: "아니요, 건너뛸게요"
+      description: "카카오톡 전송 기능 없이 진행"
+    - label: "네, 설정할래요"
+      description: "Windows/WSL 환경에서 카카오톡 자동 전송 (PowerShell 필요)"
+```
+
+카카오톡 설정 승인 시:
+```
+카카오톡 전송 기능을 설정할게요.
+
+카카오톡에서 "나에게 보내기"를 사용하려면
+본인 채팅방 이름(실명)이 필요해요.
+
+⚠️ 중요: 카카오톡 셀프 채팅방 이름은 "나"가 아니라 본인 실명입니다!
+    예: "홍길동", "김철수"
+
+본인 카카오톡 채팅방 이름을 입력해주세요:
+```
+
+```javascript
+kakaoSelfName = 사용자 입력값
+config.kakao.enabled = true
+config.kakao.selfName = kakaoSelfName
+```
+
+### ntfy 알림 설정 (모바일 푸시 알림)
+
+```
+AskUserQuestion:
+  question: "작업 완료 시 모바일 알림을 받으시겠어요?"
+  header: "ntfy 알림"
+  options:
+    - label: "아니요, 괜찮아요"
+      description: "알림 없이 진행"
+    - label: "네, 설정할래요"
+      description: "ntfy.sh로 무료 모바일 푸시 알림 수신"
+```
+
+ntfy 설정 승인 시:
+```
+ntfy.sh는 무료 푸시 알림 서비스예요! 📱
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📲 ntfy 설정 방법 (2분!)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. 스마트폰에 ntfy 앱 설치
+   Android: Play Store에서 "ntfy" 검색
+   iOS: App Store에서 "ntfy" 검색
+
+2. 앱에서 토픽 구독
+   앱 열기 → + 버튼 → 토픽 이름 입력
+   예: my-km-alerts (아무 이름이나 OK!)
+
+3. 여기에 같은 토픽 이름을 입력해주세요:
+```
+
+```javascript
+ntfyTopic = 사용자 입력값
+config.notification.ntfyTopic = ntfyTopic
+```
+
+---
+
 ## Phase 5: 완료!
 
 ```
@@ -509,6 +593,12 @@ Bash(`claude mcp list`)
   🔌 설치된 도구
      ✅ Playwright (웹 콘텐츠 추출)
      ${hasObsidianMcp ? "✅ Obsidian 연결" : "⬜ Obsidian (나중에 연결 가능)"}
+
+  💬 카카오톡 전송
+     ${config.kakao.enabled ? "✅ 활성화 (채팅방: " + config.kakao.selfName + ")" : "⬜ 비활성화"}
+
+  🔔 모바일 알림
+     ${config.notification.ntfyTopic ? "✅ ntfy.sh/" + config.notification.ntfyTopic : "⬜ 비활성화"}
 
 ═══════════════════════════════════════════════════════════
 

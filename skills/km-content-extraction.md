@@ -237,7 +237,7 @@ Step 3: 결과 통합
 → 여러 검색 쿼리 병렬 실행:
 
 # 1순위: Obsidian CLI search (병렬 Bash 호출)
-OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+# OBSIDIAN_CLI는 STEP 0-PRE에서 크로스 플랫폼 감지 완료
 동일 메시지에서:
 1. "$OBSIDIAN_CLI" search query="AI 에이전트" format=json
 2. "$OBSIDIAN_CLI" search query="MCP 프로토콜" format=json
@@ -419,13 +419,13 @@ Read 실패 시 Marker 사용 (속도 7배, Markdown 구조화 네이티브):
 py -3.12 -m pip install marker-pdf
 
 # 변환 명령어 (Python 3.12 Scripts 경로)
-"C:\Users\treyl\AppData\Local\Programs\Python\Python312\Scripts\marker_single.exe" "document.pdf" --output_format markdown --output_dir ./output
+marker_single "document.pdf" --output_format markdown --output_dir ./output
 
 # 스캔 PDF (OCR 강제)
-"C:\Users\treyl\AppData\Local\Programs\Python\Python312\Scripts\marker_single.exe" "scanned.pdf" --output_format markdown --output_dir ./output --force_ocr
+marker_single "scanned.pdf" --output_format markdown --output_dir ./output --force_ocr
 
 # 최고 품질 (LLM 향상)
-"C:\Users\treyl\AppData\Local\Programs\Python\Python312\Scripts\marker_single.exe" "complex.pdf" --output_format markdown --output_dir ./output --use_llm --force_ocr
+marker_single "complex.pdf" --output_format markdown --output_dir ./output --use_llm --force_ocr
 
 Marker Output: ./output/{filename}/{filename}.md + images folder
 ```
@@ -438,8 +438,7 @@ Marker 실패 시 또는 수식/테이블/코드 정밀 추출 필요 시:
 상세 스킬: → km-glm-ocr.md
 
 # venv 가용성 체크 (필수!)
-# Windows: .venvs\paddleocr-vl\Scripts\python.exe 존재 여부 (GLM-OCR도 같은 venv 사용 가능)
-# Linux: .venvs/paddleocr-vl/bin/python 존재 여부
+# 크로스 플랫폼: .venvs/paddleocr-vl/bin/python 또는 .venvs/paddleocr-vl/Scripts/python.exe 존재 여부 (GLM-OCR도 같은 venv 사용 가능)
 # 미설치 → 4순위 (Gemini)로 폴백
 
 # 모델: zai-org/GLM-OCR
@@ -753,7 +752,7 @@ image_extraction = "auto" 시 추가 제한 적용:
 ### Step 2: 관련 노트 검색 및 수집
 
 ```
-OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+# OBSIDIAN_CLI는 STEP 0-PRE에서 크로스 플랫폼 감지 완료
 
 # 1순위: Obsidian CLI search
 "$OBSIDIAN_CLI" search query="[주제 키워드]" format=json
@@ -762,11 +761,11 @@ OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
 mcp__obsidian__search_vault({ query: "[주제 키워드]" })
 
 # MCP 실패 시: Grep fallback
-Grep(pattern="[키워드]", path="/home/tofu/AI/AI_Second_Brain/")
+Grep(pattern="[키워드]", path="{vaultPath}/")
 
 # 폴더별 목록 (옵션)
 # 1순위: Bash ls 또는 Glob
-Glob(pattern="**/*.md", path="/home/tofu/AI/AI_Second_Brain/[특정 폴더]/")
+Glob(pattern="**/*.md", path="{vaultPath}/[특정 폴더]/")
 # 2순위: mcp__obsidian__list_notes({ folder: "[특정 폴더]" })
 
 필터링 기준:
@@ -779,7 +778,7 @@ Glob(pattern="**/*.md", path="/home/tofu/AI/AI_Second_Brain/[특정 폴더]/")
 ### Step 3: 노트 읽기 및 분석
 
 ```
-OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+# OBSIDIAN_CLI는 STEP 0-PRE에서 크로스 플랫폼 감지 완료
 
 # 1순위: Obsidian CLI read (순차 루프)
 for path in [관련 노트 경로 배열]:
@@ -789,7 +788,7 @@ for path in [관련 노트 경로 배열]:
 mcp__obsidian__read_multiple_notes({ paths: [관련 노트 경로 배열] })
 
 # MCP 실패 시: Read 도구 fallback
-Read(file_path="/home/tofu/AI/AI_Second_Brain/{path}")
+Read(file_path="{vaultPath}/{path}")
 
 각 노트에서 추출:
 - 핵심 개념 (핵심 개념 섹션)

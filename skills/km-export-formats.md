@@ -684,11 +684,11 @@ Step 3: 콘텐츠 구조화
 Step 3.5: 이미지 저장 및 임베딩 (이미지 추출 활성 시)
   - 참조 스킬: km-image-pipeline.md
   - 디렉토리 생성:
-    Bash: mkdir -p /home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/
+    Bash: mkdir -p {vaultPath}/Resources/images/{topic-folder}/
   - 웹 이미지 다운로드:
-    Bash: curl -sLo "/home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}" "{url}"
+    Bash: curl -sLo "{vaultPath}/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}" "{url}"
   - PDF 이미지 복사:
-    Bash: cp km-temp/{name}/images/{file} "/home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}"
+    Bash: cp km-temp/{name}/images/{file} "{vaultPath}/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}"
   - 다운로드 실패(403/404) 시 Playwright 스크린샷 폴백:
     mcp__playwright__browser_take_screenshot({ ref: "{element-ref}", filename: "{path}" })
   - 노트 콘텐츠에 임베드 구문 삽입 (본문 흐름 배치):

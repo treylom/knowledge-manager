@@ -32,6 +32,37 @@ Main (단일 세션, AskUserQuestion 없음)
 
 ---
 
+## STEP 0-PRE: Config 읽기 (가장 먼저!)
+
+**반드시 다른 모든 단계 전에 실행합니다.**
+
+```
+config = Read("km-config.json")
+
+# 핵심 설정 추출
+vaultPath = config.storage.obsidian.vaultPath    # 예: "/home/user/Documents/MyVault"
+kakaoSelfName = config.kakao.selfName            # 예: "홍길동" (빈 문자열이면 카카오 비활성화)
+ntfyTopic = config.notification.ntfyTopic        # 예: "my-km-alerts" (빈 문자열이면 알림 비활성화)
+
+# Obsidian CLI 크로스 플랫폼 감지
+Bash:
+  if which obsidian >/dev/null 2>&1; then
+    OBSIDIAN_CLI="obsidian"
+  elif [ -f "/mnt/c/Program Files/Obsidian/Obsidian.com" ]; then
+    OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+  else
+    OBSIDIAN_CLI=""
+  fi
+→ OBSIDIAN_CLI가 비어있으면 CLI Tier 스킵 (MCP/filesystem으로 폴백)
+
+# marker_single 크로스 플랫폼 감지
+Bash("which marker_single 2>/dev/null || echo NOT_FOUND")
+→ PATH에 있으면: marker_single (그대로 사용)
+→ NOT_FOUND: PDF Read 도구 폴백
+```
+
+---
+
 ## STEP 0: 환경 확인 (간소화)
 
 **사용자에게 표시할 필요 없음. 내부적으로 판단만 수행.**
@@ -39,9 +70,9 @@ Main (단일 세션, AskUserQuestion 없음)
 ### Obsidian 접근 방식 확인 (3-Tier)
 
 ```bash
-OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+# OBSIDIAN_CLI는 STEP 0-PRE에서 크로스 플랫폼 감지 완료
 
-# Tier 1: CLI 확인 (우선)
+# Tier 1: CLI 확인 (OBSIDIAN_CLI가 비어있지 않으면)
 "$OBSIDIAN_CLI" version 2>/dev/null
 → 응답 있으면: obsidian_method = "cli"
 
@@ -166,12 +197,12 @@ PDF 파일 감지 시:
 
 | $ARGUMENTS 키워드 | kakao_recipient | 질문 여부 |
 |---|---|---|
-| "카카오 나에게", "나한테 보내", "카톡 나에게" | **"김재경"** | 질문 안 함 |
+| "카카오 나에게", "나한테 보내", "카톡 나에게" | **"{kakaoSelfName}"** | 질문 안 함 |
 | "카카오 {이름}", "카톡 {이름}" | "{이름}" | 질문 안 함 |
 | "카카오", "카톡" (이름 없음) | 미정 | **1회 질문** |
 | (카카오/카톡 키워드 없음) | 미정 | **1회 질문 (첫 사용 시)** |
 
-> **CRITICAL**: 카카오톡 셀프 채팅방 이름은 "나"가 아니라 **"김재경"** (본인 실명)입니다.
+> **CRITICAL**: 카카오톡 셀프 채팅방 이름은 "나"가 아니라 **"{kakaoSelfName}"** (본인 실명)입니다.
 > "나"로 검색하면 "나"가 포함된 다른 채팅방("~누나" 등)이 열려 혼란 발생.
 
 **카카오 키워드 없는 경우 — 세션 첫 사용 시 AskUserQuestion 1회 (배포 환경 대응):**
@@ -186,13 +217,13 @@ AskUserQuestion:
   question: "카카오톡 어느 채팅방으로 보낼까요?"
   header: "카카오 수신자"
   options:
-    - label: "나에게 (김재경)"
+    - label: "나에게 ({kakaoSelfName})"
       description: "본인 채팅방으로 전송"
     - label: "전송 안함"
       description: "카카오 전송 건너뛰기"
   multiSelect: false
 
-→ "나에게 (김재경)" 선택 시: kakao_recipient = "김재경"
+→ "나에게 ({kakaoSelfName})" 선택 시: kakao_recipient = "{kakaoSelfName}"
 → "전송 안함" 선택 시: kakao_recipient = null
 → Other 입력 시: kakao_recipient = 입력한 채팅방 이름
 ```
@@ -274,7 +305,7 @@ Main이 입력 소스를 직접 추출합니다. 스킬 참조: `km-content-extr
 ```
 1. Hub 노트 식별:
    - Grep으로 [[키워드]] 패턴 검색
-     Grep({ pattern: "\\[\\[.*{키워드}.*\\]\\]", path: "/mnt/c/Users/treyl/OneDrive/Desktop/AI/AI_Second_Brain" })
+     Grep({ pattern: "\\[\\[.*{키워드}.*\\]\\]", path: "{vaultPath}" })
    - 가장 많이 참조되는 노트 = Hub 노트 (최소 2개 식별)
 
 2. 1-hop 추적:
@@ -426,7 +457,7 @@ Write({ file_path: "{vault_absolute_path}/적절한/경로/파일명.md", conten
 
 ```
 1. Resources/images/{topic-folder}/ 디렉토리 생성:
-   Bash("mkdir -p /home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/")
+   Bash("mkdir -p {vaultPath}/Resources/images/{topic-folder}/")
 
 2. 수집된 이미지 다운로드:
    웹 이미지: Bash("curl -sLo '{경로}' '{url}'")
@@ -540,7 +571,8 @@ Write("/tmp/km-kakao-msg.md", kakao_content)
 
 ```
 Bash:
-powershell.exe -Command "python '\\\\wsl.localhost\\Ubuntu\\home\\tofu\\AI\\.claude\\scripts\\send_kakao.py' -r '{kakao_recipient}' -f '\\\\wsl.localhost\\Ubuntu\\tmp\\km-kakao-msg.md' --convert-md"
+powershell.exe -Command "python '{send_kakao_wsl_path}' -r '{kakao_recipient}' -f '\\\\wsl.localhost\\Ubuntu\\tmp\\km-kakao-msg.md' --convert-md"
+# send_kakao_wsl_path는 STEP 0-PRE에서 config.kakao.scriptPath를 WSL UNC 경로로 변환하여 획득
 ```
 
 **send_kakao.py가 처리하는 것:**
@@ -573,9 +605,10 @@ curl -s \
   -H "Priority: high" \
   -H "Tags: white_check_mark,brain" \
   -d "{생성된 노트 제목} - {노트 수}개 노트, {링크 수}개 링크 추가" \
-  ntfy.sh/tofu-km
+  ntfy.sh/{ntfyTopic}
 ```
 
+- ntfyTopic이 빈 문자열이면 이 단계를 스킵합니다 (알림 비활성화)
 - kakao_recipient가 null(카카오 전송 안 함)이어도 ntfy는 발송
 - kakao_recipient가 설정되어 카카오 전송을 했어도 ntfy는 발송 (셀프 채팅 알림 안 울리므로)
 - 실패해도 중단하지 않음 (best-effort)
@@ -613,7 +646,7 @@ curl -s \
 /knowledge-manager-m https://threads.net/@user/post/123 요약해줘 카카오 나에게
 
 # 상세 분석 + 특정인에게 전송
-/knowledge-manager-m https://arxiv.org/paper 꼼꼼히 카카오 김재경
+/knowledge-manager-m https://arxiv.org/paper 꼼꼼히 카카오 {kakaoSelfName}
 
 # 실용 중심 정리
 /knowledge-manager-m https://docs.example.com 실무용

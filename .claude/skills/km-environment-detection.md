@@ -620,7 +620,14 @@ Advanced 티어지만 일부만 설치하고 싶을 때:
 
 ```bash
 # Step 1: Obsidian CLI 확인 (우선)
-OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+# Obsidian CLI 크로스 플랫폼 감지
+if which obsidian >/dev/null 2>&1; then
+  OBSIDIAN_CLI="obsidian"
+elif [ -f "/mnt/c/Program Files/Obsidian/Obsidian.com" ]; then
+  OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+else
+  OBSIDIAN_CLI=""
+fi
 "$OBSIDIAN_CLI" version 2>/dev/null
 # 응답 있으면 → obsidian_method = "cli"
 

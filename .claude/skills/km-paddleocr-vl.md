@@ -280,7 +280,7 @@ Step 1: Claude Read 시도 (Tier 1)
   → 실패? → Step 2
 
 Step 2: Marker 실행 (Tier 2)
-  marker_single.exe "{PDF경로}" --output_format markdown --output_dir ./km-temp
+  marker_single "{PDF경로}" --output_format markdown --output_dir ./km-temp
   → 성공? → 내용 처리 (종료)
   → 실패? → Step 3
 

@@ -29,6 +29,37 @@ Lead (Main) - Opus 1M
 
 ---
 
+## STEP 0-PRE: Config 읽기 (가장 먼저!)
+
+**반드시 다른 모든 단계 전에 실행합니다.**
+
+```
+config = Read("km-config.json")
+
+# 핵심 설정 추출
+vaultPath = config.storage.obsidian.vaultPath    # 예: "/home/user/Documents/MyVault"
+kakaoSelfName = config.kakao.selfName            # 예: "홍길동" (빈 문자열이면 카카오 비활성화)
+ntfyTopic = config.notification.ntfyTopic        # 예: "my-km-alerts" (빈 문자열이면 알림 비활성화)
+
+# Obsidian CLI 크로스 플랫폼 감지
+Bash:
+  if which obsidian >/dev/null 2>&1; then
+    OBSIDIAN_CLI="obsidian"
+  elif [ -f "/mnt/c/Program Files/Obsidian/Obsidian.com" ]; then
+    OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+  else
+    OBSIDIAN_CLI=""
+  fi
+→ OBSIDIAN_CLI가 비어있으면 CLI Tier 스킵 (MCP/filesystem으로 폴백)
+
+# marker_single 크로스 플랫폼 감지
+Bash("which marker_single 2>/dev/null || echo NOT_FOUND")
+→ PATH에 있으면: marker_single (그대로 사용)
+→ NOT_FOUND: PDF Read 도구 폴백
+```
+
+---
+
 ## STEP 0: 환경 확인 (가장 먼저 실행!)
 
 **환경 확인 후 Agent Office URL을 사용자에게 항상 표시합니다.**
@@ -83,9 +114,9 @@ Bash("ls .team-os/spawn-prompts/*.md 2>/dev/null | wc -l")
 ### 0-2. Obsidian 환경 확인 (3-Tier)
 
 ```bash
-OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+# OBSIDIAN_CLI는 STEP 0-PRE에서 크로스 플랫폼 감지 완료
 
-# Tier 1: CLI 확인 (우선)
+# Tier 1: CLI 확인 (OBSIDIAN_CLI가 비어있지 않으면)
 "$OBSIDIAN_CLI" version 2>/dev/null
 → 응답 있으면: obsidian_method = "cli"
 
@@ -876,15 +907,15 @@ Write({ file_path: "{vault_absolute_path}/적절한/경로/파일명.md", conten
    - 각 이미지의 Type, Source, URL/Path, Context, Placement 확인
 
 2. Resources/images/{topic-folder}/ 디렉토리 생성:
-   Bash("mkdir -p /home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/")
+   Bash("mkdir -p {vaultPath}/Resources/images/{topic-folder}/")
 
 3. 각 이미지 다운로드/복사:
 
    웹 이미지:
-   Bash("curl -sLo '/home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}' '{url}'")
+   Bash("curl -sLo '{vaultPath}/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}' '{url}'")
 
    PDF 이미지 (marker 출력):
-   Bash("cp km-temp/{name}/images/{file} '/home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}'")
+   Bash("cp km-temp/{name}/images/{file} '{vaultPath}/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}'")
 
 4. 다운로드 실패 시 Playwright 스크린샷 폴백:
    - 원본 URL로 navigate
