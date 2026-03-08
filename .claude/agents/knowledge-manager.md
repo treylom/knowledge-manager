@@ -89,8 +89,8 @@ Task 도구로 호출된 경우:
 
 | 입력 유형 | 필수 도구 호출 | 절대 금지 |
 |----------|--------------|----------|
-| **Threads/Instagram URL** | `playwright-cli open → snapshot` (1순위) → `mcp__playwright__*` (fallback) | WebFetch 사용 금지 |
-| 일반 웹 URL | `playwright-cli` (1순위) → `WebFetch` (fallback) → `mcp__playwright__*` | 추측 금지 |
+| **Threads/Instagram URL** | `scrapling-crawl.py --mode dynamic` (1순위) → `scrapling-crawl.py --mode stealth` (2순위) → `playwright-cli` (3순위) → `mcp__playwright__*` (4순위) | WebFetch 사용 금지 |
+| 일반 웹 URL | `scrapling-crawl.py --mode dynamic` (1순위) → `playwright-cli` (3순위) → `WebFetch` (정적) → `mcp__playwright__*` | 추측 금지 |
 | **PDF 파일 (작은)** | `Read` 직접 시도 (< 5MB, < 20p) | 실패 시 marker 변환 |
 | **PDF 파일 (큰)** | `/pdf` 스킬 권장 또는 `marker_single` | 직접 Read 금지 |
 | DOCX/XLSX/PPTX | `Read` 또는 해당 스킬 도구 | 없음 |
@@ -405,21 +405,27 @@ Research/[프로젝트명]/
 
 ## Social Media Auto-Detection (NEW!) ⭐
 
-**CRITICAL**: 다음 URL 패턴 감지 시 자동으로 playwright-cli 사용 (1순위, fallback: MCP → hyperbrowser)
+**CRITICAL**: 다음 URL 패턴 감지 시 자동으로 scrapling-crawl.py 사용 (1순위, fallback: playwright-cli → MCP → hyperbrowser)
 
 | 플랫폼 | URL 패턴 | 처리 |
 |--------|----------|------|
-| Threads | `threads.net/@*` | → playwright-cli (1순위) + km-social-media.md |
-| Threads | `threads.net/t/*` | → playwright-cli (1순위) + km-social-media.md |
-| Instagram Post | `instagram.com/p/*` | → playwright-cli (1순위) + km-social-media.md |
-| Instagram Reel | `instagram.com/reel/*` | → playwright-cli (1순위) + km-social-media.md |
+| Threads | `threads.net/@*` | → scrapling-crawl.py (1순위) + km-social-media.md |
+| Threads | `threads.net/t/*` | → scrapling-crawl.py (1순위) + km-social-media.md |
+| Instagram Post | `instagram.com/p/*` | → scrapling-crawl.py (1순위) + km-social-media.md |
+| Instagram Reel | `instagram.com/reel/*` | → scrapling-crawl.py (1순위) + km-social-media.md |
 
 상세 워크플로우는 `km-social-media.md` 참조.
 
-### Playwright 사용 패턴 (권장)
+### 크롤링 사용 패턴 (권장)
 
 ```bash
-# 1순위: Playwright CLI (Bash 기반 - 가장 안정적, JS 렌더링 지원)
+# 1순위: Scrapling (Python, JS 렌더링, 빠름)
+python3 scripts/scrapling-crawl.py fetch "https://threads.net/@user/post/abc123" --mode dynamic --output markdown
+
+# 2순위: Scrapling Stealth (안티봇 우회)
+python3 scripts/scrapling-crawl.py fetch "https://threads.net/@user/post/abc123" --mode stealth --output markdown
+
+# 3순위 Fallback: Playwright CLI (스크린샷 필요 시)
 playwright-cli open "https://threads.net/@user/post/abc123"
 playwright-cli press End           # 스크롤
 playwright-cli snapshot            # 접근성 스냅샷으로 텍스트 추출
@@ -427,14 +433,14 @@ playwright-cli close
 ```
 
 ```tool-call
-# 2순위 Fallback: Playwright MCP (CLI 실패 시)
+# 4순위 Fallback: Playwright MCP (CLI 실패 시)
 mcp__playwright__browser_navigate({ url: "https://threads.net/@user/post/abc123" })
 mcp__playwright__browser_wait_for({ time: 3 })
 mcp__playwright__browser_snapshot()
 ```
 
 ```tool-call
-# 3순위 Fallback: hyperbrowser (크레딧 있을 때)
+# 5순위 Fallback: hyperbrowser (크레딧 있을 때)
 mcp__hyperbrowser__scrape_webpage({
   url: "https://example.com/article",
   outputFormat: ["markdown"]
@@ -789,11 +795,12 @@ AI 모델명 작성 시:
 
 | 순위 | 도구 | 장점 | 사용 시점 |
 |------|------|------|----------|
-| 1순위 | **playwright-cli** (Bash) | 가장 안정적, JS 렌더링, 로컬 | 기본 (소셜 미디어 포함) |
-| 2순위 | **Playwright MCP** | 동일 기능, MCP 프로토콜 | CLI 실패 시 |
-| 3순위 | **스텔스 스크립트** | 봇 탐지 우회 | 봇 차단 시 |
-| 4순위 | **WebFetch** | 빠름, 정적 콘텐츠 | 정적 웹페이지 |
-| 5순위 | **Hyperbrowser** | 클라우드, stealth | 크레딧 있고 위 모두 실패 시 |
+| 1순위 | **scrapling-crawl.py --mode dynamic** | 빠름, JS 렌더링, Python | 기본 (소셜 미디어 포함) |
+| 2순위 | **scrapling-crawl.py --mode stealth** | 안티봇 우회 | 봇 차단 시 |
+| 3순위 | **playwright-cli** (Bash) | 안정적, JS 렌더링, 스크린샷 | scrapling 실패 시 폴백 |
+| 4순위 | **Playwright MCP** | 동일 기능, MCP 프로토콜 | CLI 실패 시 |
+| 5순위 | **WebFetch** | 빠름, 정적 콘텐츠 | 정적 웹페이지 |
+| 6순위 | **Hyperbrowser** | 클라우드, stealth | 크레딧 있고 위 모두 실패 시 |
 
 모든 스킬은 `.claude/skills/` 디렉토리에서 로드됩니다.
 

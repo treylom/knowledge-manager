@@ -11,14 +11,20 @@
 ### ?�구 ?�선?�위 (CRITICAL!)
 
 ```
-# 1순위: Playwright CLI (Bash)
+# 1순위: Scrapling (Python, 빠름, JS 렌더링)
+python3 scripts/scrapling-crawl.py fetch "[URL]" --mode dynamic --output markdown
+
+# 2순위: Scrapling Stealth (안티봇 우회)
+python3 scripts/scrapling-crawl.py fetch "[URL]" --mode stealth --output markdown
+
+# 3순위: Playwright CLI (Bash — 폴백 + 스크린샷)
 playwright-cli open "[URL]"            # 페이지 이동
 playwright-cli press End               # 스크롤
 playwright-cli snapshot                # 접근성 스냅샷
 playwright-cli screenshot              # 스크린샷
 playwright-cli close                   # 브라우저 닫기
 
-# 2순위: Playwright MCP (CLI 실패 시)
+# 4순위: Playwright MCP (CLI 실패 시)
 mcp__playwright__browser_navigate      # 페이지 이동
 mcp__playwright__browser_wait_for      # 대기(초/시간)
 mcp__playwright__browser_snapshot      # 접근성 스냅샷

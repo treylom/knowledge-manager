@@ -231,8 +231,8 @@ Main이 입력 소스를 직접 추출합니다. 스킬 참조: `km-content-extr
 | 입력 유형 | 추출 방법 |
 |----------|----------|
 | **YouTube** | `youtube-transcript-api` → `yt-dlp` 폴백 → 스킬: `km-youtube-transcript.md` |
-| **소셜 미디어 (Threads/Instagram)** | playwright-cli open → snapshot (1순위) → mcp__playwright__* (2순위) → WebFetch (3순위) |
-| **일반 웹 URL** | playwright-cli open → snapshot (1순위) → mcp__playwright__* (2순위) → WebFetch (3순위) |
+| **소셜 미디어 (Threads/Instagram)** | `scrapling-crawl.py --mode dynamic` (1순위) → `--mode stealth` (2순위) → `playwright-cli` (3순위) → `mcp__playwright__*` (4순위) |
+| **일반 웹 URL** | `scrapling-crawl.py --mode dynamic` (1순위) → `playwright-cli` (3순위) → `WebFetch` (정적) → `mcp__playwright__*` |
 | **PDF (작은)** | Read 직접 시도 (< 5MB, < 20p) |
 | **PDF (큰)** | /pdf 스킬 또는 marker_single |
 | **DOCX/XLSX/PPTX** | Read 또는 해당 스킬 도구 |

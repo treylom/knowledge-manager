@@ -146,10 +146,19 @@ def get_video_metadata(video_id):
     return None
 ```
 
-### 2순위: Playwright CLI (🚨 yt-dlp 실패/미설치 시 — MUST USE!)
+### 2순위: Scrapling (🚨 yt-dlp 실패/미설치 시 — MUST USE!)
 
-> **CRITICAL**: WebFetch는 YouTube 접근 불가. yt-dlp 실패 시 반드시 Playwright CLI 사용!
-> Playwright MCP(`mcp__playwright__*`)가 아닌 **`playwright-cli`** (Bash 기반)를 먼저 사용할 것.
+> **CRITICAL**: WebFetch는 YouTube 접근 불가. yt-dlp 실패 시 반드시 Scrapling 또는 Playwright CLI 사용!
+
+```bash
+# Step 1: Scrapling으로 YouTube 페이지 크롤링 (빠름)
+python3 scripts/scrapling-crawl.py fetch "https://www.youtube.com/watch?v={video_id}" --mode dynamic --output markdown
+```
+
+> Scrapling 출력에서 제목, 채널, 업로드일, 조회수, 챕터 등 파싱.
+> Scrapling 실패 시 아래 Playwright CLI 폴백:
+
+### 3순위: Playwright CLI (Scrapling 실패 시)
 
 ```bash
 # Step 1: YouTube 페이지 열기
@@ -182,7 +191,7 @@ playwright-cli close
 
 **챕터 정보가 있으면 타임라인 테이블의 타임스탬프로 사용 (자막 추정 대신 정확한 시간).**
 
-### 3순위: Playwright MCP (CLI 실패 시 폴백)
+### 4순위: Playwright MCP (CLI 실패 시 폴백)
 
 ```tool-call
 mcp__playwright__browser_navigate({ url: "https://www.youtube.com/watch?v={video_id}" })
@@ -319,8 +328,9 @@ STEP A: 트랜스크립트 추출
   ↓
 STEP B: 영상 메타데이터 + 챕터 수집 (🚨 CRITICAL — 정확성 보장!)
   1순위: yt-dlp --dump-json
-  2순위: playwright-cli open → snapshot (⭐ WebFetch 대체)
-  3순위: Playwright MCP (CLI 실패 시)
+  2순위: scrapling-crawl.py --mode dynamic (⭐ 빠름)
+  3순위: playwright-cli open → snapshot (폴백)
+  4순위: Playwright MCP (CLI 실패 시)
   → 제목, 채널, 업로드일, 길이, 조회수, 챕터 목록
   → 챕터가 있으면 STEP C 타임라인의 타임스탬프로 사용!
   ↓
