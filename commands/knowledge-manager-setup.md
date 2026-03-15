@@ -385,6 +385,54 @@ Obsidian 앱에서 실시간으로 확인할 수 있어요! 🎉
   claude mcp add obsidian -s user -e OBSIDIAN_VAULT_PATH="${normalizedPath}" -- npx -y @huangyihe/obsidian-mcp
   `)
 }
+
+// Obsidian CLI (v1.12.4) 감지 — CLI가 있으면 MCP보다 빠른 접근 가능
+// 플랫폼별 표준 경로에서 자동 감지
+const cliWin = Bash(`"/mnt/c/Program Files/Obsidian/Obsidian.com" version 2>/dev/null || echo "NOT_FOUND"`)
+const cliMac = Bash(`/Applications/Obsidian.app/Contents/MacOS/Obsidian --version 2>/dev/null || echo "NOT_FOUND"`)
+
+let detectedCliPath = null
+if (!cliWin.includes("NOT_FOUND")) {
+  detectedCliPath = "/mnt/c/Program Files/Obsidian/Obsidian.com"  // WSL/Windows
+} else if (!cliMac.includes("NOT_FOUND")) {
+  detectedCliPath = "/Applications/Obsidian.app/Contents/MacOS/Obsidian"  // macOS
+}
+
+if (detectedCliPath) {
+  // km-config.json에 CLI 경로 자동 저장
+  config.obsidianCli = { path: detectedCliPath }
+  console.log(`
+✅ Obsidian CLI (v1.12.4)가 감지되었어요!
+   경로: ${detectedCliPath}
+   MCP보다 빠른 vault 접근이 가능합니다.
+   (backlinks, orphans, deadends 등 고급 기능도 사용 가능)
+
+   주요 명령어: create, read, search, append, prepend, files,
+   backlinks, orphans, deadends, unresolved, links, move, delete,
+   property:set, property:read, property:remove, tags, properties, outline, rename
+
+   ⚠️ Obsidian 데스크톱 앱이 실행 중이어야 CLI가 통신 가능합니다.
+  `)
+} else {
+  console.log(`
+💡 Obsidian CLI (v1.12.4) 설치 안내
+
+   Obsidian 데스크톱 앱이 설치되어 있으면
+   CLI로 더 빠르게 vault에 접근할 수 있어요.
+
+   CLI 경로 (플랫폼별):
+     Windows: "C:\\Program Files\\Obsidian\\Obsidian.com"
+     WSL:     "/mnt/c/Program Files/Obsidian/Obsidian.com"
+     macOS:   /Applications/Obsidian.app/Contents/MacOS/Obsidian
+
+   필수 조건:
+     - Obsidian 데스크톱 앱 설치 (https://obsidian.md/download)
+     - Local REST API 플러그인 활성화
+     - 앱 실행 중이어야 CLI 통신 가능
+
+   CLI 없이도 MCP로 정상 작동하니, 지금은 건너뛰셔도 괜찮아요!
+  `)
+}
 ```
 
 ### Notion MCP 설치 (선택)

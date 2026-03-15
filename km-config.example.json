@@ -34,6 +34,18 @@
     }
   },
 
+  "obsidianCli": {
+    "path": "",
+    "_path_help": "Obsidian CLI (v1.12.4) 실행 파일 경로. /knowledge-manager-setup 실행 시 자동 감지됩니다.",
+    "_path_examples": {
+      "windows": "C:\\Program Files\\Obsidian\\Obsidian.com",
+      "wsl": "/mnt/c/Program Files/Obsidian/Obsidian.com",
+      "mac": "/Applications/Obsidian.app/Contents/MacOS/Obsidian"
+    },
+    "_requirements": "Obsidian 데스크톱 앱 설치 + Local REST API 플러그인 활성화 + 앱 실행 중",
+    "_commands": "create, read, search, append, prepend, files, backlinks, orphans, deadends, unresolved, links, move, delete, property:set, property:read, property:remove, tags, properties, outline, rename"
+  },
+
   "browser": {
     "provider": "playwright",
     "_provider_help": "기본값 playwright 권장. 대부분의 웹사이트에서 작동합니다.",

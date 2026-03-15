@@ -83,7 +83,8 @@ Bash("ls .team-os/spawn-prompts/*.md 2>/dev/null | wc -l")
 ### 0-2. Obsidian 환경 확인 (3-Tier)
 
 ```bash
-OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+# km-config.json에서 obsidianCli.path 로드 (설정: /knowledge-manager-setup 참조)
+OBSIDIAN_CLI=$(cat km-config.json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('obsidianCli',{}).get('path',''))" 2>/dev/null)
 
 # Tier 1: CLI 확인 (우선)
 "$OBSIDIAN_CLI" version 2>/dev/null

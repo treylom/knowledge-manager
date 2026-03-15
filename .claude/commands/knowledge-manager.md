@@ -36,7 +36,8 @@ Main (사용자 선택 모델, 단일 세션)
 ### Obsidian 접근 방식 확인 (3-Tier)
 
 ```bash
-OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+# km-config.json에서 obsidianCli.path 로드 (설정: /knowledge-manager-setup 참조)
+OBSIDIAN_CLI=$(cat km-config.json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('obsidianCli',{}).get('path',''))" 2>/dev/null)
 
 # Tier 1: CLI 확인 (우선)
 "$OBSIDIAN_CLI" version 2>/dev/null

@@ -198,10 +198,10 @@ Task 1 (@graph-navigator):
   prompt: |
     vault에서 '{주제}' 관련 wikilink 그래프 탐색:
     1. CLI backlinks로 Hub 노트 식별:
-       Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" backlinks path="{주제관련노트}" format=json
+       Bash: "$OBSIDIAN_CLI" backlinks path="{주제관련노트}" format=json
        CLI 실패 시: Grep [[.*{주제}.*]] → Hub 노트 TOP 5 식별
     2. 각 Hub 노트의 wikilinks 추출 (1-hop):
-       Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" links path="{hub노트}"
+       Bash: "$OBSIDIAN_CLI" links path="{hub노트}"
        CLI 실패 시: Read로 노트 내용 확인 후 wikilink 파싱
     3. 1-hop 노트의 wikilinks 추출 (2-hop)
     4. 관계 그래프를 텍스트로 정리: 노드 목록 + 엣지 목록
@@ -212,7 +212,7 @@ Task 2 (@retrieval-specialist):
   prompt: |
     vault에서 '{주제}' 키워드+태그+폴더 기반 넓은 검색:
     1. CLI search로 vault 전체 검색:
-       Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" search query="{키워드}" format=json
+       Bash: "$OBSIDIAN_CLI" search query="{키워드}" format=json
        CLI 실패 시: mcp__obsidian__search_vault 또는 Grep 사용
     2. 관련 태그 검색, 관련 폴더 탐색
     3. 관련 파일 TOP 20을 관련성 순으로 정리
@@ -304,8 +304,8 @@ Agent Team 구성:
 2. 관련 폴더/태그를 파악한 후 targeted 검색
 3. CLI backlinks/links로 기존 관계 먼저 확인:
    ```bash
-   "/mnt/c/Program Files/Obsidian/Obsidian.com" backlinks path="{노트}" format=json
-   "/mnt/c/Program Files/Obsidian/Obsidian.com" links path="{노트}"
+   "$OBSIDIAN_CLI" backlinks path="{노트}" format=json
+   "$OBSIDIAN_CLI" links path="{노트}"
    ```
    CLI 실패 시: Wikilink Grep 패턴(`\[\[키워드\]\]`)으로 기존 관계 확인
 4. 그 후 키워드 검색으로 보완
@@ -663,7 +663,7 @@ Research/[프로젝트명]/
 
 **Tier 1: Obsidian CLI (최우선) - YOU MUST CALL:**
 ```bash
-"/mnt/c/Program Files/Obsidian/Obsidian.com" create path="Zettelkasten/카테고리/파일명.md" content="노트 전체 내용"
+"$OBSIDIAN_CLI" create path="Zettelkasten/카테고리/파일명.md" content="노트 전체 내용"
 ```
 
 **Tier 2: Obsidian MCP (CLI 실패 시) - YOU MUST CALL:**
@@ -767,8 +767,8 @@ AT 모드에서는 content-extractor가 Image Catalog 생성 → Lead가 Phase 5
     ↓
 2. Vault 전체 검색으로 관련 노트 탐색
    - Tier 1: CLI backlinks + search
-     "/mnt/c/Program Files/Obsidian/Obsidian.com" backlinks path="{새노트}" format=json
-     "/mnt/c/Program Files/Obsidian/Obsidian.com" search query="{키워드}" format=json
+     "$OBSIDIAN_CLI" backlinks path="{새노트}" format=json
+     "$OBSIDIAN_CLI" search query="{키워드}" format=json
    - CLI 실패 시: mcp__obsidian__search_vault 사용
    - 관련성 점수 계산
     ↓
@@ -782,7 +782,7 @@ AT 모드에서는 content-extractor가 Image Catalog 생성 → Lead가 Phase 5
     ↓
 5. 관련 노트에 역방향 링크 추가
    - Tier 1: CLI append (섹션 추가용)
-     "/mnt/c/Program Files/Obsidian/Obsidian.com" append path="{기존노트}" content="{링크텍스트}"
+     "$OBSIDIAN_CLI" append path="{기존노트}" content="{링크텍스트}"
    - CLI 실패 시: mcp__obsidian__update_note 사용 (surgical edit)
    - 양방향 연결 완성
     ↓

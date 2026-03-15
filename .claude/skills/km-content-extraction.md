@@ -243,7 +243,8 @@ Step 3: 결과 통합
 → 여러 검색 쿼리 병렬 실행:
 
 # 1순위: Obsidian CLI search (병렬 Bash 호출)
-OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+# Obsidian CLI 경로 (km-config.json obsidianCli.path 또는 /knowledge-manager-setup 참조)
+OBSIDIAN_CLI="$OBSIDIAN_CLI"
 동일 메시지에서:
 1. "$OBSIDIAN_CLI" search query="AI 에이전트" format=json
 2. "$OBSIDIAN_CLI" search query="MCP 프로토콜" format=json
@@ -765,7 +766,8 @@ image_extraction = "auto" 시 추가 제한 적용:
 ### Step 2: 관련 노트 검색 및 수집
 
 ```
-OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+# Obsidian CLI 경로 (km-config.json obsidianCli.path 또는 /knowledge-manager-setup 참조)
+OBSIDIAN_CLI="$OBSIDIAN_CLI"
 
 # 1순위: Obsidian CLI search
 "$OBSIDIAN_CLI" search query="[주제 키워드]" format=json
@@ -791,7 +793,8 @@ Glob(pattern="**/*.md", path="/home/tofu/AI/AI_Second_Brain/[특정 폴더]/")
 ### Step 3: 노트 읽기 및 분석
 
 ```
-OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+# Obsidian CLI 경로 (km-config.json obsidianCli.path 또는 /knowledge-manager-setup 참조)
+OBSIDIAN_CLI="$OBSIDIAN_CLI"
 
 # 1순위: Obsidian CLI read (순차 루프)
 for path in [관련 노트 경로 배열]:

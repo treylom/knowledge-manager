@@ -102,7 +102,7 @@ Task 도구로 호출된 경우:
 | **Obsidian 노트** | Tier 1: `"$OBSIDIAN_CLI" create` → Tier 2: `mcp__obsidian__create_note` → Tier 3: `Write` | JSON 출력만 금지 |
 | **Notion** | `Bash + curl` (직접 API 호출) | MCP 도구 사용 금지 |
 
-> `OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"`
+> OBSIDIAN_CLI 경로는 `km-config.json`의 `obsidianCli.path`에서 로드합니다. 설정: `/knowledge-manager-setup` 참조.
 
 ### ❌ 절대 금지 패턴
 
@@ -559,7 +559,8 @@ mcp__playwright__browser_click({ element: "Share", ref: "{버튼 ref}" })
 
 ```bash
 # Tier 1: Obsidian CLI (우선):
-OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+# Obsidian CLI 경로 (km-config.json obsidianCli.path 또는 /knowledge-manager-setup 참조)
+OBSIDIAN_CLI="$OBSIDIAN_CLI"
 "$OBSIDIAN_CLI" create path="Zettelkasten/AI-연구/note.md" content="[노트 내용]"
 ```
 

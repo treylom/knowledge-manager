@@ -12,7 +12,7 @@
 
 **Tier 1: Obsidian CLI (최우선)**
 ```bash
-"/mnt/c/Program Files/Obsidian/Obsidian.com" create path="Zettelkasten/카테고리/노트제목 - YYYY-MM-DD-HHmm.md" content="[노트 전체 내용]"
+"$OBSIDIAN_CLI" create path="Zettelkasten/카테고리/노트제목 - YYYY-MM-DD-HHmm.md" content="[노트 전체 내용]"
 ```
 
 **Tier 2: Obsidian MCP (CLI 실패 시)**
@@ -172,7 +172,7 @@ Step 2: 병렬 저장 (동시 실행!)
   같은 응답에서 두 도구 호출:
 
   [도구 1] Bash (Obsidian CLI — Tier 1)
-    "/mnt/c/Program Files/Obsidian/Obsidian.com" create path="Zettelkasten/AI-연구/주제.md" content="[Obsidian 마크다운]"
+    "$OBSIDIAN_CLI" create path="Zettelkasten/AI-연구/주제.md" content="[Obsidian 마크다운]"
     CLI 실패 시: mcp__obsidian__create_note (Tier 2) → Write (Tier 3)
 
   [도구 2] Bash (Notion curl 호출) ⚠️ MCP 도구 사용 금지!
@@ -531,9 +531,9 @@ chapter: N
 
 ```
 Step 1: 모든 원자 노트 병렬 생성 (N개 동시)
-  [도구 1] Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" create path="..." content="..." (원자노트1)
-  [도구 2] Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" create path="..." content="..." (원자노트2)
-  [도구 3] Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" create path="..." content="..." (원자노트3)
+  [도구 1] Bash: "$OBSIDIAN_CLI" create path="..." content="..." (원자노트1)
+  [도구 2] Bash: "$OBSIDIAN_CLI" create path="..." content="..." (원자노트2)
+  [도구 3] Bash: "$OBSIDIAN_CLI" create path="..." content="..." (원자노트3)
   ... (최대 10개 병렬)
   CLI 실패 시: mcp__obsidian__create_note (Tier 2) → Write (Tier 3)
 
@@ -719,7 +719,7 @@ Step 4: Vault에 저장
 
 ```
 Tier 1: Obsidian CLI (최우선)
-Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" create path="Zettelkasten/AI-연구/노트제목 - 2026-01-03-1430.md" content="[전체 노트 내용]"
+Bash: "$OBSIDIAN_CLI" create path="Zettelkasten/AI-연구/노트제목 - 2026-01-03-1430.md" content="[전체 노트 내용]"
 
 CLI 실패 시:
 Tier 2: Obsidian MCP
@@ -962,7 +962,7 @@ Step 6: 노트에 링크 추가
 
 ```
 // Tier 1: Obsidian CLI (최우선):
-Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" create path="Research/note.md" content="..."
+Bash: "$OBSIDIAN_CLI" create path="Research/note.md" content="..."
 
 // CLI 실패 시 Tier 2: Obsidian MCP:
 mcp__obsidian__create_note(path="Research/note.md", content="...")

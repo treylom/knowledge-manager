@@ -619,10 +619,22 @@ Advanced 티어지만 일부만 설치하고 싶을 때:
 **CRITICAL**: 티어만으로 판단하지 않음. 실제 MCP 서버 존재 여부를 확인.
 
 ```bash
-# Step 1: Obsidian CLI 확인 (우선)
-OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+# Step 1: Obsidian CLI (v1.12.4) 확인 (우선)
+# km-config.json에서 CLI 경로 로드 (없으면 플랫폼별 자동 감지)
+OBSIDIAN_CLI=$(cat km-config.json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('obsidianCli',{}).get('path',''))" 2>/dev/null)
+
+# config에 경로가 없으면 플랫폼별 표준 경로 시도
+if [ -z "$OBSIDIAN_CLI" ]; then
+  if "/mnt/c/Program Files/Obsidian/Obsidian.com" version 2>/dev/null; then
+    OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+  elif /Applications/Obsidian.app/Contents/MacOS/Obsidian --version 2>/dev/null; then
+    OBSIDIAN_CLI="/Applications/Obsidian.app/Contents/MacOS/Obsidian"
+  fi
+fi
+
 "$OBSIDIAN_CLI" version 2>/dev/null
 # 응답 있으면 → obsidian_method = "cli"
+# ⚠️ Obsidian 데스크톱 앱이 실행 중이어야 CLI 통신 가능
 
 # Step 2: CLI 실패 시 MCP 확인
 # mcp__obsidian__list_notes({}) 호출
@@ -635,7 +647,7 @@ claude mcp list
 ```
 
 확인 항목:
-- Obsidian CLI v1.12+ → `obsidian_method = "cli"` (검색/역링크/고아노트 네이티브)
+- Obsidian CLI (v1.12.4) → `obsidian_method = "cli"` (검색/역링크/고아노트 네이티브)
 - Obsidian MCP → `obsidian_method = "mcp"` (search_vault, update_note 사용 가능)
 - `chroma` → 벡터 유사도 검색 사용 가능
 - `neo4j` → 그래프 순회 검색 사용 가능

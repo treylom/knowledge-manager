@@ -244,7 +244,8 @@ convert "{input}" -resize 1920x1920\> -quality 85 "{output}"
 이미지 임베드가 포함된 노트를 Obsidian에 생성할 때의 도구 우선순위:
 
 ```bash
-OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+# Obsidian CLI 경로 (km-config.json obsidianCli.path 또는 /knowledge-manager-setup 참조)
+OBSIDIAN_CLI="$OBSIDIAN_CLI"
 
 # 1순위: Obsidian CLI create
 "$OBSIDIAN_CLI" create path="Zettelkasten/[카테고리]/[노트명].md" content="[이미지 임베드 포함 마크다운]"
