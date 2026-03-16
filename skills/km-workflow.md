@@ -194,7 +194,7 @@ Main Agent:
 
 Task 1 (@graph-navigator):
   subagent_type: "Explore"
-  model: "sonnet"
+  model: "sonnet[1m]"
   prompt: |
     vault에서 '{주제}' 관련 wikilink 그래프 탐색:
     1. CLI backlinks로 Hub 노트 식별:
@@ -208,7 +208,7 @@ Task 1 (@graph-navigator):
 
 Task 2 (@retrieval-specialist):
   subagent_type: "Explore"
-  model: "sonnet"
+  model: "sonnet[1m]"
   prompt: |
     vault에서 '{주제}' 키워드+태그+폴더 기반 넓은 검색:
     1. CLI search로 vault 전체 검색:
@@ -220,7 +220,7 @@ Task 2 (@retrieval-specialist):
 
 Task 3 (@deep-reader — Complex만):
   subagent_type: "Explore"
-  model: "sonnet"  (깊은 분석 필요 시 "opus")
+  model: "sonnet[1m]"  (깊은 분석 필요 시 "opus[1m]")
   prompt: |
     Hub 노트 TOP 5~7을 실제로 Read하고:
     1. 각 노트 핵심 내용 요약 (3-5줄)

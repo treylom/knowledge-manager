@@ -2,9 +2,9 @@
 name: knowledge-manager-at
 description: Knowledge Manager Agent Teams - 풀스케일 병렬 처리 (Category Lead + RALPH + DA)
 tools: hyperbrowser, obsidian, notion, file-operations, read, write, bash, drawio, playwright, notebooklm
-model: opus
+model: opus[1m]
 permissionMode: default
-skills: km-workflow, km-content-extraction, km-glm-ocr, km-social-media, km-export-formats, km-link-strengthening, km-link-audit, stealth-browsing, zettelkasten-note, pdf, xlsx, docx, pptx, baoyu-slide-deck, notion-knowledge-capture, notion-research-documentation, drawio-diagram
+skills: km-workflow, km-content-extraction, km-glm-ocr, km-social-media, km-export-formats, km-link-strengthening, km-link-audit, stealth-browsing, zettelkasten-note, pdf, xlsx, docx, pptx, baoyu-slide-deck, notion-knowledge-capture, notion-research-documentation, drawio-diagram, km-graphrag-workflow, km-graphrag-ontology, km-graphrag-search, km-graphrag-report, km-graphrag-sync
 ---
 
 # Knowledge Manager - Agent Teams Version
@@ -22,19 +22,40 @@ Category Lead 계층 구조 + RALPH Loop + Devil's Advocate로 최고 품질의 
 Lead (Main) - Opus 1M
  |
  +-- vault-intel-lead (Sonnet 1M, Category Lead)
- |    +-- @graph-navigator (Sonnet, Explore)
- |    +-- @retrieval-specialist (Sonnet, Explore)
+ |    +-- @graph-navigator (Sonnet 1M, Explore)
+ |    +-- @retrieval-specialist (Sonnet 1M, Explore)
  |    +-- @link-curator (Haiku, Explore)
  |
  +-- content-proc-lead (Sonnet 1M, Category Lead)
- |    +-- @content-extractor (Sonnet, general-purpose)
- |    +-- @deep-reader (Sonnet, Explore)
- |    +-- @content-analyzer (Sonnet, general-purpose)
+ |    +-- @content-extractor (Sonnet 1M, general-purpose)
+ |    +-- @deep-reader (Sonnet 1M, Explore)
+ |    +-- @content-analyzer (Sonnet 1M, general-purpose)
  |
- +-- @devils-advocate (Sonnet 4.6, general-purpose)
+ +-- @devils-advocate (Sonnet 1M, general-purpose)
 ```
 
 총 9명: Lead 1 + Category Lead 2 + Worker 6 + DA 1
+
+---
+
+## Mode G 팀 아키텍처 (GraphRAG)
+
+```
+Lead (Main) - Opus 1M
+ |
+ +-- graph-build-lead (Sonnet 1M, Category Lead)
+ |    +-- @ontology-designer (Sonnet 1M, Explore)
+ |    +-- @entity-extractor (Sonnet 1M, Explore)
+ |    +-- @community-analyst (Sonnet 1M, Explore)
+ |
+ +-- graph-query-lead (Sonnet 1M, Category Lead)
+ |    +-- @insight-researcher (Sonnet 1M, Explore)
+ |    +-- @panorama-scanner (Sonnet 1M, Explore)
+ |
+ +-- @devils-advocate (Sonnet)
+```
+
+Mode G 팀: Lead 1 + Category Lead 2 + Worker 5 + DA 1 = 총 9명
 
 ---
 

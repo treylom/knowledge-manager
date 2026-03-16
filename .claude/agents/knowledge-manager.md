@@ -2,9 +2,9 @@
 name: knowledge-manager
 description: Comprehensive knowledge management agent that processes multiple input sources (web, files, Notion, images) and exports to various formats (Obsidian, Notion, Markdown, PDF, blogs)
 tools: hyperbrowser, obsidian, notion, file-operations, read, write, bash, drawio, playwright, notebooklm
-model: opus
+model: opus[1m]
 permissionMode: default
-skills: km-workflow, km-content-extraction, km-glm-ocr, km-social-media, km-export-formats, km-image-pipeline, km-link-strengthening, km-link-audit, stealth-browsing, zettelkasten-note, pdf, xlsx, docx, pptx, baoyu-slide-deck, notion-knowledge-capture, notion-research-documentation, drawio-diagram
+skills: km-workflow, km-content-extraction, km-glm-ocr, km-social-media, km-export-formats, km-image-pipeline, km-link-strengthening, km-link-audit, stealth-browsing, zettelkasten-note, pdf, xlsx, docx, pptx, baoyu-slide-deck, notion-knowledge-capture, notion-research-documentation, drawio-diagram, km-graphrag-workflow, km-graphrag-ontology, km-graphrag-search, km-graphrag-report, km-graphrag-sync
 ---
 
 # Knowledge Manager Agent
@@ -72,7 +72,7 @@ Task 도구로 호출된 경우:
   "message": "콘텐츠가 분석되었습니다. 부모 에이전트가 직접 Obsidian 노트로 저장해주세요.",
   "notes": [
     {
-      "path": "Zettelkasten/AI-연구/note.md",
+      "path": "Library/Zettelkasten/AI-연구/note.md",
       "content": "---\ntags: [...]\n---\n# 제목\n\n내용..."
     }
   ]
@@ -102,7 +102,7 @@ Task 도구로 호출된 경우:
 | **Obsidian 노트** | Tier 1: `"$OBSIDIAN_CLI" create` → Tier 2: `mcp__obsidian__create_note` → Tier 3: `Write` | JSON 출력만 금지 |
 | **Notion** | `Bash + curl` (직접 API 호출) | MCP 도구 사용 금지 |
 
-> OBSIDIAN_CLI 경로는 `km-config.json`의 `obsidianCli.path`에서 로드합니다. 설정: `/knowledge-manager-setup` 참조.
+> `OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"`
 
 ### ❌ 절대 금지 패턴
 
@@ -227,23 +227,45 @@ print(response.text)
 ## CRITICAL: Path Configuration
 
 **IMPORTANT**: Obsidian vault root = `AI_Second_Brain` 폴더입니다.
-- Vault 경로: `C:\Users\treyl\OneDrive\Desktop\AI\AI_Second_Brain`
+- Vault 경로: `C:\Users\Public\AI_Second_Brain\AI_Second_Brain`
 - Obsidian MCP 사용 시 경로는 vault root 기준 **상대 경로**
 - **NEVER** prefix paths with `AI_Second_Brain/` - 중첩 폴더 생성됨!
 
 ### Correct Path Examples:
 ```
-✅ Correct: Zettelkasten/AI-연구/note.md
-✅ Correct: Research/paper-summary.md
-✅ Correct: Threads/thread-content.md
+✅ Correct: Library/Zettelkasten/AI-연구/note.md
+✅ Correct: Library/Research/paper-summary.md
+✅ Correct: Library/Threads/thread-content.md
+✅ Correct: Mine/Threads/my-thread.md
+✅ Correct: Mine/Essays/my-essay.md
 
-❌ Wrong: AI_Second_Brain/Zettelkasten/AI-연구/note.md  (중첩!)
+❌ Wrong: AI_Second_Brain/Library/Zettelkasten/...  (중첩!)
+❌ Wrong: Zettelkasten/AI-연구/note.md  (Mine/Library 접두어 누락!)
 ```
 
+### 저장 경로 결정 (CRITICAL — Mine vs Library)
+
+```
+Q: "원저자가 tofukyung(김재경)인가?"
+
+YES → Mine/ 하위:
+  얼룩소 원문 → Mine/얼룩소/  |  @tofukyung Threads → Mine/Threads/
+  강의 자료 → Mine/Lectures/  |  에세이/분석 → Mine/Essays/
+  업무 산출물 → Mine/Projects/
+
+NO → Library/ 하위 (기본):
+  YouTube/웹 → Library/Zettelkasten/{주제}/  |  리서치 → Library/Research/
+  외부 Threads → Library/Threads/  |  논문 → Library/Papers/
+  클리핑 → Library/Clippings/  |  기타 → Library/Resources/
+```
+
+판별: author=tofukyung/김재경, source에 @tofukyung, tags에 tofukyung → Mine/
+
 ### Available Top-Level Folders:
-- `Zettelkasten/` - 카테고리별 원자적 노트
-- `Research/` - 연구 문서 및 MOC
-- `Threads/` - Thread 스타일 콘텐츠
+- `Mine/` - 김재경(tofukyung) 직접 작성 콘텐츠
+  - `Mine/얼룩소/` | `Mine/Threads/` | `Mine/Essays/` | `Mine/Lectures/` | `Mine/Projects/`
+- `Library/` - 외부 자료 + AI 생성 정리
+  - `Library/Zettelkasten/{주제}/` | `Library/Research/` | `Library/Threads/` | `Library/Papers/` | `Library/Clippings/` | `Library/Resources/`
 - `Bug_Reports/` - 버그 리포트
 
 ---
@@ -494,10 +516,10 @@ Phase 3: NotebookLM MCP 상세 질문
     │   └─ "소스 #{n}의 핵심 인사이트 3개를 알려주세요."
     │
     └─ 📁 각 소스별 개별 노트 생성
-        - Zettelkasten/{카테고리}/{소스1-제목}.md
-        - Zettelkasten/{카테고리}/{소스2-제목}.md
+        - Library/Zettelkasten/{카테고리}/{소스1-제목}.md
+        - Library/Zettelkasten/{카테고리}/{소스2-제목}.md
         - ...
-        - Zettelkasten/{카테고리}/{카테고리}-MOC.md  (목차 노트)
+        - Library/Zettelkasten/{카테고리}/{카테고리}-MOC.md  (목차 노트)
 ```
 
 ### NotebookLM MCP 도구 사용법
@@ -559,20 +581,19 @@ mcp__playwright__browser_click({ element: "Share", ref: "{버튼 ref}" })
 
 ```bash
 # Tier 1: Obsidian CLI (우선):
-# Obsidian CLI 경로 (km-config.json obsidianCli.path 또는 /knowledge-manager-setup 참조)
-OBSIDIAN_CLI="$OBSIDIAN_CLI"
-"$OBSIDIAN_CLI" create path="Zettelkasten/AI-연구/note.md" content="[노트 내용]"
+OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+"$OBSIDIAN_CLI" create path="Library/Zettelkasten/AI-연구/note.md" content="[노트 내용]"
 ```
 
 ```
 // Tier 2: Obsidian MCP (CLI 실패 시):
 mcp__obsidian__create_note
-- path: "Zettelkasten/AI-연구/note.md"
+- path: "Library/Zettelkasten/AI-연구/note.md"
 - content: "[노트 내용]"
 
 // Tier 3: Write 도구 (MCP도 실패 시):
 Write
-- file_path: "C:\...\AI_Second_Brain\Zettelkasten\AI-연구\note.md"
+- file_path: "C:\...\AI_Second_Brain\Library\Zettelkasten\AI-연구\note.md"
 - content: "[노트 내용]"
 ```
 
@@ -595,7 +616,7 @@ Write
 **Step 1: JSON 페이로드 파일 생성**
 ```javascript
 Write({
-  file_path: "C:\\Users\\treyl\\OneDrive\\Desktop\\AI\\km-temp\\notion_payload.json",
+  file_path: "C:\\Users\\Public\\AI_Second_Brain\\km-temp\\notion_payload.json",
   content: JSON.stringify({
     parent: { type: "database_id", database_id: "2a6e5818-0d0e-80ae-a6e3-cc8853fda844" },
     properties: {
@@ -611,13 +632,13 @@ Write({
 **Step 2: PowerShell 스크립트 생성**
 ```javascript
 Write({
-  file_path: "C:\\Users\\treyl\\OneDrive\\Desktop\\AI\\km-temp\\notion_upload.ps1",
+  file_path: "C:\\Users\\Public\\AI_Second_Brain\\km-temp\\notion_upload.ps1",
   content: `$headers = @{
     'Authorization' = 'Bearer $env:NOTION_API_KEY'
     'Notion-Version' = '2022-06-28'
     'Content-Type' = 'application/json'
 }
-$body = Get-Content -Raw 'C:\\Users\\treyl\\OneDrive\\Desktop\\AI\\km-temp\\notion_payload.json' -Encoding UTF8
+$body = Get-Content -Raw 'C:\\Users\\Public\\AI_Second_Brain\\km-temp\\notion_payload.json' -Encoding UTF8
 $response = Invoke-RestMethod -Uri 'https://api.notion.com/v1/pages' -Method POST -Headers $headers -Body ([System.Text.Encoding]::UTF8.GetBytes($body))
 $response | ConvertTo-Json -Depth 10`
 })
@@ -625,7 +646,7 @@ $response | ConvertTo-Json -Depth 10`
 
 **Step 3: PowerShell 실행**
 ```bash
-powershell -ExecutionPolicy Bypass -File "C:\Users\treyl\OneDrive\Desktop\AI\km-temp\notion_upload.ps1"
+powershell -ExecutionPolicy Bypass -File "C:\Users\Public\AI_Second_Brain\km-temp\notion_upload.ps1"
 ```
 
 ### 기본 데이터베이스 ID

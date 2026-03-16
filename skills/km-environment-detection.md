@@ -1,3 +1,8 @@
+---
+name: km-environment-detection
+description: Use when needing Knowledge Manager 환경 감지 스킬. WSL/Windows/macOS 환경별 도구 가용성 자동 판별 및 3-Tier 폴백 설정.
+---
+
 # Knowledge Manager 환경 감지 및 RAG 최적화 스킬
 
 > 사용자 시스템을 자동 감지하고, 스펙에 맞는 최적의 검색 기능을 추천·설정합니다.
@@ -618,23 +623,30 @@ Advanced 티어지만 일부만 설치하고 싶을 때:
 
 **CRITICAL**: 티어만으로 판단하지 않음. 실제 MCP 서버 존재 여부를 확인.
 
+#### GraphRAG 의존성 확인
+
 ```bash
-# Step 1: Obsidian CLI (v1.12.4) 확인 (우선)
-# km-config.json에서 CLI 경로 로드 (없으면 플랫폼별 자동 감지)
-OBSIDIAN_CLI=$(cat km-config.json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('obsidianCli',{}).get('path',''))" 2>/dev/null)
+# GraphRAG Python 의존성 체크
+python3 -c 'import networkx; import community; print("GraphRAG deps OK")' 2>/dev/null
+```
 
-# config에 경로가 없으면 플랫폼별 표준 경로 시도
-if [ -z "$OBSIDIAN_CLI" ]; then
-  if "/mnt/c/Program Files/Obsidian/Obsidian.com" version 2>/dev/null; then
-    OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
-  elif /Applications/Obsidian.app/Contents/MacOS/Obsidian --version 2>/dev/null; then
-    OBSIDIAN_CLI="/Applications/Obsidian.app/Contents/MacOS/Obsidian"
-  fi
-fi
+| 결과 | 상태 | 영향 |
+|------|------|------|
+| `GraphRAG deps OK` | ✅ GraphRAG 사용 가능 | Mode G 풀 기능 활성화 |
+| ImportError | ❌ 의존성 미설치 | Mode G 제한 (그래프 구축 불가) |
 
+**의존성 미설치 시 안내:**
+```
+GraphRAG 의존성이 설치되지 않았습니다.
+Mode G (GraphRAG) 사용을 위해 설치하세요:
+  pip install networkx python-louvain
+```
+
+```bash
+# Step 1: Obsidian CLI 확인 (우선)
+OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
 "$OBSIDIAN_CLI" version 2>/dev/null
 # 응답 있으면 → obsidian_method = "cli"
-# ⚠️ Obsidian 데스크톱 앱이 실행 중이어야 CLI 통신 가능
 
 # Step 2: CLI 실패 시 MCP 확인
 # mcp__obsidian__list_notes({}) 호출
@@ -647,7 +659,7 @@ claude mcp list
 ```
 
 확인 항목:
-- Obsidian CLI (v1.12.4) → `obsidian_method = "cli"` (검색/역링크/고아노트 네이티브)
+- Obsidian CLI v1.12+ → `obsidian_method = "cli"` (검색/역링크/고아노트 네이티브)
 - Obsidian MCP → `obsidian_method = "mcp"` (search_vault, update_note 사용 가능)
 - `chroma` → 벡터 유사도 검색 사용 가능
 - `neo4j` → 그래프 순회 검색 사용 가능
@@ -721,13 +733,13 @@ Phase 0에서 감지:
 ```
 Main Agent (Coordinator + Generator)
     │
-    ├── Task 1 @graph-navigator (Explore, sonnet)
+    ├── Task 1 @graph-navigator (Explore, sonnet[1m])
     │   → wikilink 체인 2-hop 추적 → 관계 그래프 반환
     │
-    ├── Task 2 @retrieval-specialist (Explore, sonnet)
+    ├── Task 2 @retrieval-specialist (Explore, sonnet[1m])
     │   → 키워드+태그+폴더 넓은 검색 → 고립 노트 발견
     │
-    └── Task 3 @deep-reader (Explore, sonnet/opus) — Complex만
+    └── Task 3 @deep-reader (Explore, sonnet[1m]/opus[1m]) — Complex만
         → Hub 노트 실제 읽기 → 요약 + 간극 분석
 
     → 모든 Task를 하나의 메시지에서 병렬 호출
@@ -752,7 +764,7 @@ Main Agent (Coordinator + Generator)
 
 | 항목 | 설명 |
 |------|------|
-| **모드** | 병렬 Task 서브에이전트 (Sonnet, 필요 시 Opus) |
+| **모드** | 병렬 Task 서브에이전트 (Sonnet 1M, 필요 시 Opus 1M) |
 | **효과** | 검색 속도 ~2x, 컨텍스트 격리 |
 | **환경** | VS Code / SDK |
 
