@@ -14,7 +14,7 @@ allowedTools: Read, Write, Bash, Glob, Grep, mcp__obsidian__*, mcp__notion__*, m
 ## 아키텍처
 
 ```
-Main (사용자 선택 모델, 단일 세션)
+Main (Opus 1M, 단일 세션)
  └── 모든 작업을 순차적으로 직접 수행:
       1. 콘텐츠 추출
       2. Vault 그래프 탐색
@@ -36,8 +36,7 @@ Main (사용자 선택 모델, 단일 세션)
 ### Obsidian 접근 방식 확인 (3-Tier)
 
 ```bash
-# km-config.json에서 obsidianCli.path 로드 (설정: /knowledge-manager-setup 참조)
-OBSIDIAN_CLI=$(cat km-config.json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('obsidianCli',{}).get('path',''))" 2>/dev/null)
+OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
 
 # Tier 1: CLI 확인 (우선)
 "$OBSIDIAN_CLI" version 2>/dev/null
@@ -63,6 +62,7 @@ mcp__obsidian__list_notes({}) → 응답 여부
 | URL, "정리해줘", "분석해줘", 외부 콘텐츠 | **Mode I** (Content Ingestion) — 기존 워크플로우 |
 | "아카이브 정리", "카테고리 재편", "일괄 링크", "대규모 재편" | **Mode R** (Archive Reorganization) |
 | 기존 vault 폴더 50+ 파일 지칭 | **Mode R 제안** (사용자에게 확인) |
+| "그래프 구축", "GraphRAG", "지식그래프", "인사이트 분석", "커뮤니티 탐색", "그래프 업데이트", "프론트매터 동기화" | **Mode G** (GraphRAG) |
 
 ### Mode R 감지 시
 
@@ -116,6 +116,26 @@ AskUserQuestion({
   ]
 })
 ```
+
+### Mode G 감지 시
+
+```
+사용자 요청이 Mode G에 해당합니다.
+그래프 구축 모드(Mode G)로 진행할까요?
+
+Mode G는 다음을 수행합니다:
+- Phase G0: Delta 감지 (frontmatter_hash 비교, 변경 노트 확인)
+- Phase G1: 온톨로지 설계 (엔티티 타입, 관계 타입 정의)
+- Phase G2: 엔티티 추출 (노트 → 그래프 엔티티 변환)
+- Phase G3: 관계 구축 (엔티티 간 typed 관계 생성)
+- Phase G4: 커뮤니티 탐지 (클러스터링, 커뮤니티 ID 부여)
+- Phase G5: 인사이트 분석 (커뮤니티 요약, 글로벌 인사이트)
+- Phase G6: Frontmatter 동기화 (graph_entity/community/connections 갱신)
+
+참조 스킬: km-graphrag-workflow.md
+```
+
+**Mode G 선택 시** → `km-graphrag-workflow.md` 스킬의 Phase G0-G6 실행. 아래 STEP 1-6 대신 Mode G 워크플로우를 따릅니다.
 
 **Mode I 선택 시** → 아래 STEP 1부터 기존 워크플로우 계속.
 
@@ -275,7 +295,7 @@ Main이 입력 소스를 직접 추출합니다. 스킬 참조: `km-content-extr
 ```
 1. Hub 노트 식별:
    - Grep으로 [[키워드]] 패턴 검색
-     Grep({ pattern: "\\[\\[.*{키워드}.*\\]\\]", path: "/mnt/c/Users/treyl/OneDrive/Desktop/AI/AI_Second_Brain" })
+     Grep({ pattern: "\\[\\[.*{키워드}.*\\]\\]", path: "/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain" })
    - 가장 많이 참조되는 노트 = Hub 노트 (최소 2개 식별)
 
 2. 1-hop 추적:
@@ -305,8 +325,9 @@ Main이 입력 소스를 직접 추출합니다. 스킬 참조: `km-content-extr
    - 관련 태그 식별 및 해당 노트 수집
 
 3. 폴더 기반 검색:
-   - Zettelkasten/ 하위 관련 폴더 식별
-   - Research/ MOC 파일 검색
+   - Library/Zettelkasten/ 하위 관련 폴더 식별
+   - Library/Research/ MOC 파일 검색
+   - Mine/ 하위 사용자 직접 작성 콘텐츠 검색
 ```
 
 ### Phase C: 교차 검증
@@ -402,6 +423,35 @@ Write({ file_path: "{vault_absolute_path}/적절한/경로/파일명.md", conten
 - Vault root = `AI_Second_Brain`
 - 경로는 vault root 기준 상대 경로
 - `AI_Second_Brain/`를 prefix로 붙이지 말 것!
+
+### 5-0. 저장 경로 결정 (CRITICAL — 모든 노트 생성 전 필수!)
+
+**Mine/ vs Library/ 라우팅**: 노트 생성 전 반드시 아래 규칙으로 경로를 결정합니다.
+
+```
+Q: "이 콘텐츠의 원저자가 tofukyung(김재경)인가?"
+
+YES → Mine/ 하위:
+  - 얼룩소 원문           → Mine/얼룩소/
+  - @tofukyung Threads    → Mine/Threads/
+  - 강의 자료             → Mine/Lectures/
+  - 에세이/분석/에버그린  → Mine/Essays/
+  - 업무 산출물 (CV 등)   → Mine/Projects/
+
+NO → Library/ 하위 (기본):
+  - YouTube/웹 정리       → Library/Zettelkasten/{적절한 주제폴더}/
+  - 대규모 리서치 (3-tier) → Library/Research/{프로젝트명}/
+  - 외부 Threads          → Library/Threads/
+  - 학술 논문             → Library/Papers/
+  - 웹 클리핑/가이드      → Library/Clippings/
+  - 기타 외부 리소스      → Library/Resources/
+```
+
+**판별 시그널 (우선순위)**:
+1. author 필드 = "tofukyung" 또는 "김재경" → Mine/
+2. source URL에 "@tofukyung" 포함 → Mine/Threads/
+3. tags에 "tofukyung" 포함 → Mine/
+4. 위 해당 없음 → Library/
 
 ### 5-2. 3-tier 구조 (해당 시)
 
@@ -515,6 +565,11 @@ Write({ file_path: "{vault_absolute_path}/적절한/경로/파일명.md", conten
 | **Mode R: 아카이브 재편** | `km-archive-reorganization.md` |
 | **Mode R: 규칙 엔진** | `km-rules-engine.md` |
 | **Mode R: 배치 실행** | `km-batch-python.md` |
+| **Mode G: GraphRAG 워크플로우** | `km-graphrag-workflow.md` |
+| **Mode G: 온톨로지 설계** | `km-graphrag-ontology.md` |
+| **Mode G: 그래프 검색** | `km-graphrag-search.md` |
+| **Mode G: 인사이트 리포트** | `km-graphrag-report.md` |
+| **Mode G: Frontmatter 동기화** | `km-graphrag-sync.md` |
 
 ---
 

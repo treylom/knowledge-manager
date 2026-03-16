@@ -16,7 +16,7 @@ allowedTools: Read, Write, Bash, Glob, Grep, mcp__obsidian__*, mcp__notion__*, m
 ## 아키텍처
 
 ```
-Main (단일 세션, AskUserQuestion 없음)
+Main (Opus 1M, 단일 세션, AskUserQuestion 없음)
  └── 키워드 기반 자동 프리셋 → 순차 실행:
       0. 환경 확인
       0.5. 모드 감지 + 자동 프리셋 결정
@@ -39,8 +39,7 @@ Main (단일 세션, AskUserQuestion 없음)
 ### Obsidian 접근 방식 확인 (3-Tier)
 
 ```bash
-# km-config.json에서 obsidianCli.path 로드 (설정: /knowledge-manager-setup 참조)
-OBSIDIAN_CLI=$(cat km-config.json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('obsidianCli',{}).get('path',''))" 2>/dev/null)
+OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
 
 # Tier 1: CLI 확인 (우선)
 "$OBSIDIAN_CLI" version 2>/dev/null
@@ -72,6 +71,7 @@ $ARGUMENTS 텍스트를 분석하여 모드를 자동 결정합니다.
 | URL, "정리해줘", "분석해줘", 외부 콘텐츠 | **Mode I** (Content Ingestion) |
 | "아카이브 정리", "카테고리 재편", "일괄 링크", "대규모 재편" | **Mode R** (Archive Reorganization) |
 | 기존 vault 폴더명 지칭 | **Mode R** (자동 진입) |
+| "그래프", "GraphRAG", "인사이트" | **Mode G** (GraphRAG) |
 
 **Mode R 자동 파라미터 (질문 없이 기본값 적용):**
 
@@ -275,7 +275,7 @@ Main이 입력 소스를 직접 추출합니다. 스킬 참조: `km-content-extr
 ```
 1. Hub 노트 식별:
    - Grep으로 [[키워드]] 패턴 검색
-     Grep({ pattern: "\\[\\[.*{키워드}.*\\]\\]", path: "/mnt/c/Users/treyl/OneDrive/Desktop/AI/AI_Second_Brain" })
+     Grep({ pattern: "\\[\\[.*{키워드}.*\\]\\]", path: "/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain" })
    - 가장 많이 참조되는 노트 = Hub 노트 (최소 2개 식별)
 
 2. 1-hop 추적:
@@ -305,8 +305,9 @@ Main이 입력 소스를 직접 추출합니다. 스킬 참조: `km-content-extr
    - 관련 태그 식별 및 해당 노트 수집
 
 3. 폴더 기반 검색:
-   - Zettelkasten/ 하위 관련 폴더 식별
-   - Research/ MOC 파일 검색
+   - Library/Zettelkasten/ 하위 관련 폴더 식별
+   - Library/Research/ MOC 파일 검색
+   - Mine/ 하위 사용자 직접 작성 콘텐츠 검색
 ```
 
 ### Phase C: 교차 검증
@@ -402,6 +403,35 @@ Write({ file_path: "{vault_absolute_path}/적절한/경로/파일명.md", conten
 - Vault root = `AI_Second_Brain`
 - 경로는 vault root 기준 상대 경로
 - `AI_Second_Brain/`를 prefix로 붙이지 말 것!
+
+### 5-0. 저장 경로 결정 (CRITICAL — 모든 노트 생성 전 필수!)
+
+**Mine/ vs Library/ 라우팅**: 노트 생성 전 반드시 아래 규칙으로 경로를 결정합니다.
+
+```
+Q: "이 콘텐츠의 원저자가 tofukyung(김재경)인가?"
+
+YES → Mine/ 하위:
+  - 얼룩소 원문           → Mine/얼룩소/
+  - @tofukyung Threads    → Mine/Threads/
+  - 강의 자료             → Mine/Lectures/
+  - 에세이/분석/에버그린  → Mine/Essays/
+  - 업무 산출물 (CV 등)   → Mine/Projects/
+
+NO → Library/ 하위 (기본):
+  - YouTube/웹 정리       → Library/Zettelkasten/{적절한 주제폴더}/
+  - 대규모 리서치 (3-tier) → Library/Research/{프로젝트명}/
+  - 외부 Threads          → Library/Threads/
+  - 학술 논문             → Library/Papers/
+  - 웹 클리핑/가이드      → Library/Clippings/
+  - 기타 외부 리소스      → Library/Resources/
+```
+
+**판별 시그널 (우선순위)**:
+1. author 필드 = "tofukyung" 또는 "김재경" → Mine/
+2. source URL에 "@tofukyung" 포함 → Mine/Threads/
+3. tags에 "tofukyung" 포함 → Mine/
+4. 위 해당 없음 → Library/
 
 ### 5-2. 3-tier 구조 (해당 시)
 
@@ -600,6 +630,8 @@ curl -s \
 | **Mode R: 아카이브 재편** | `km-archive-reorganization.md` |
 | **Mode R: 규칙 엔진** | `km-rules-engine.md` |
 | **Mode R: 배치 실행** | `km-batch-python.md` |
+| **Mode G: GraphRAG 워크플로우** | `km-graphrag-workflow.md` |
+| **Mode G: Frontmatter 동기화** | `km-graphrag-sync.md` |
 | **카카오 전송 스크립트** | `.claude/scripts/send_kakao.py` |
 
 ---

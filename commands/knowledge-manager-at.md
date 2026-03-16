@@ -17,14 +17,14 @@ allowedTools: Task, Read, Write, Bash, Glob, Grep, mcp__obsidian__*, mcp__notion
 ```
 Lead (Main) - Opus 1M
  +-- vault-intel-lead (Sonnet 1M) — Category Lead
- |    +-- @graph-navigator (Sonnet, Explore)
- |    +-- @retrieval-specialist (Sonnet, Explore)
+ |    +-- @graph-navigator (Sonnet 1M, Explore)
+ |    +-- @retrieval-specialist (Sonnet 1M, Explore)
  |    +-- @link-curator (Haiku, Explore)
  +-- content-proc-lead (Sonnet 1M) — Category Lead
- |    +-- @content-extractor (Sonnet, general-purpose)
- |    +-- @deep-reader (Sonnet, Explore)
- |    +-- @content-analyzer (Sonnet, general-purpose)
- +-- @devils-advocate (Sonnet 4.6) — DA
+ |    +-- @content-extractor (Sonnet 1M, general-purpose)
+ |    +-- @deep-reader (Sonnet 1M, Explore)
+ |    +-- @content-analyzer (Sonnet 1M, general-purpose)
+ +-- @devils-advocate (Sonnet 1M) — DA
 ```
 
 ---
@@ -83,8 +83,7 @@ Bash("ls .team-os/spawn-prompts/*.md 2>/dev/null | wc -l")
 ### 0-2. Obsidian 환경 확인 (3-Tier)
 
 ```bash
-# km-config.json에서 obsidianCli.path 로드 (설정: /knowledge-manager-setup 참조)
-OBSIDIAN_CLI=$(cat km-config.json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('obsidianCli',{}).get('path',''))" 2>/dev/null)
+OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
 
 # Tier 1: CLI 확인 (우선)
 "$OBSIDIAN_CLI" version 2>/dev/null
@@ -120,17 +119,18 @@ tmux 없으면:
 | URL, "정리해줘", "분석해줘", 외부 콘텐츠 | **Mode I** (Content Ingestion) — 기존 워크플로우 |
 | "아카이브 정리", "카테고리 재편", "일괄 링크", "대규모 재편" | **Mode R** (Archive Reorganization) |
 | 기존 vault 폴더 50+ 파일 지칭 | **Mode R 제안** (사용자에게 확인) |
+| "그래프 구축", "GraphRAG", "지식그래프", "인사이트 분석", "커뮤니티 탐색", "그래프 업데이트", "프론트매터 동기화" | **Mode G** (GraphRAG) |
 
 ### Mode R 팀 아키텍처 (AT 버전)
 
 ```
 Mode R Team:
-Lead (Opus) — 전체 조율 + 모든 파일 쓰기 (Python 배치 직접 실행)
-├── analyst-1..N (Sonnet, Explore) — Phase R1 병렬 분석
+Lead (Opus 1M) — 전체 조율 + 모든 파일 쓰기 (Python 배치 직접 실행)
+├── analyst-1..N (Sonnet 1M, Explore) — Phase R1 병렬 분석
 │   - 파일 수에 따라 2-5개 스폰
 │   - Progressive Reading (frontmatter + 첫 5줄)
 │   - 산출물: topic_clusters, series, reply_chains, hubs, cross_links
-├── @devils-advocate (Sonnet) — Phase R2/R3 규칙 검증
+├── @devils-advocate (Sonnet 1M) — Phase R2/R3 규칙 검증
 │   - CATEGORY_DESIGN.md 검증
 │   - {TARGET}_RULES.md 검증
 │   - CONCERN → 수정 → ACCEPTABLE (최대 3회)
@@ -149,6 +149,33 @@ Mode R 선택 시:
 
 Mode R 추가 질문: 대상 폴더, 재편 범위, auto-commit 여부
 (상세: km-archive-reorganization.md 사전 질문 섹션 참조)
+```
+
+### Mode G 팀 아키텍처 (AT 버전)
+
+```
+Mode G Team:
+Lead (Opus 1M)
+├── graph-build-lead (Sonnet 1M, Category Lead)
+│   ├── @ontology-designer (Sonnet 1M, Explore)
+│   ├── @entity-extractor (Sonnet 1M, Explore)
+│   └── @community-analyst (Sonnet 1M, Explore)
+├── graph-query-lead (Sonnet 1M, Category Lead)
+│   ├── @insight-researcher (Sonnet 1M, Explore)
+│   └── @panorama-scanner (Sonnet 1M, Explore)
+└── @devils-advocate (Sonnet 1M)
+```
+
+### Mode G 감지 시 분기
+
+```
+Mode G 선택 시:
+→ km-graphrag-workflow.md 스킬의 Phase G0-G6 실행
+→ 아래 STEP 1-6 (Mode I) 대신 Mode G 워크플로우
+→ 팀 구성: graph-build-lead + graph-query-lead + DA
+
+Mode G phases: G0(delta) → G1(온톨로지) → G2(엔티티 추출) → G3(관계 구축) →
+              G4(커뮤니티 탐지) → G5(인사이트 분석) → G6(frontmatter 동기화)
 ```
 
 **Mode I 선택 시** → 아래 STEP 1부터 기존 워크플로우 계속.
@@ -289,16 +316,16 @@ Write(".team-os/artifacts/TEAM_PLAN.md", """
 ## Team
 | # | name | role | model | Status |
 |---|------|------|-------|--------|
-| 1 | Lead | 총괄 오케스트레이션 (Main Lead) | opus | active |
-| 2 | vault-intel-lead | Vault Intelligence Category Lead | sonnet | pending |
-| 3 | content-proc-lead | Content Processing Category Lead | sonnet | pending |
-| 4 | @graph-navigator | Wikilink 그래프 탐색 | sonnet | pending |
-| 5 | @retrieval-specialist | 키워드+태그 검색 | sonnet | pending |
+| 1 | Lead | 총괄 오케스트레이션 (Main Lead) | opus 1M | active |
+| 2 | vault-intel-lead | Vault Intelligence Category Lead | sonnet 1M | pending |
+| 3 | content-proc-lead | Content Processing Category Lead | sonnet 1M | pending |
+| 4 | @graph-navigator | Wikilink 그래프 탐색 | sonnet 1M | pending |
+| 5 | @retrieval-specialist | 키워드+태그 검색 | sonnet 1M | pending |
 | 6 | @link-curator | 양방향 링크 추천 | haiku | pending |
-| 7 | @content-extractor | 소스 콘텐츠 추출 | sonnet | pending |
-| 8 | @deep-reader | Hub 노트 정독 + 교차 분석 | sonnet | pending |
-| 9 | @content-analyzer | 노트 구조 설계 + 태그 추천 | sonnet | pending |
-| 10 | @devils-advocate | 반론 + 교차 검증 | sonnet | pending |
+| 7 | @content-extractor | 소스 콘텐츠 추출 | sonnet 1M | pending |
+| 8 | @deep-reader | Hub 노트 정독 + 교차 분석 | sonnet 1M | pending |
+| 9 | @content-analyzer | 노트 구조 설계 + 태그 추천 | sonnet 1M | pending |
+| 10 | @devils-advocate | 반론 + 교차 검증 | sonnet 1M | pending |
 
 ## Hierarchy
 | parent | children |
@@ -437,12 +464,13 @@ spawn prompt 파일에 `<progress_update_rule>`이 이미 포함되어 있으므
 단, 변수 치환 시 `{{REPORT_TO}}`가 정확히 치환되었는지 확인.
 
 ```
+# ⚠️ 1M 컨텍스트 규칙: 모든 sonnet/opus 스폰은 model: "sonnet[1m]" / "opus[1m]" 사용. haiku만 200K.
 # 9명 동시 호출 (하나의 메시지에 모든 Task 포함):
 
 # === Category Lead: Vault Intelligence ===
 Task(@vault-intel-lead):
   subagent_type: "general-purpose"
-  model: "sonnet"
+  model: "sonnet[1m]"
   team_name: "km-at-{주제키워드}"
   name: "vault-intel-lead"
   run_in_background: true
@@ -453,7 +481,7 @@ Task(@vault-intel-lead):
 # === Category Lead: Content Processing ===
 Task(@content-proc-lead):
   subagent_type: "general-purpose"
-  model: "sonnet"
+  model: "sonnet[1m]"
   team_name: "km-at-{주제키워드}"
   name: "content-proc-lead"
   run_in_background: true
@@ -464,7 +492,7 @@ Task(@content-proc-lead):
 # === Vault Intelligence Workers ===
 Task(@graph-navigator):
   subagent_type: "Explore"
-  model: "sonnet"
+  model: "sonnet[1m]"
   team_name: "km-at-{주제키워드}"
   name: "graph-navigator"
   run_in_background: true
@@ -474,7 +502,7 @@ Task(@graph-navigator):
 
 Task(@retrieval-specialist):
   subagent_type: "Explore"
-  model: "sonnet"
+  model: "sonnet[1m]"
   team_name: "km-at-{주제키워드}"
   name: "retrieval-specialist"
   run_in_background: true
@@ -495,7 +523,7 @@ Task(@link-curator):
 # === Content Processing Workers ===
 Task(@content-extractor):
   subagent_type: "general-purpose"
-  model: "sonnet"
+  model: "sonnet[1m]"
   team_name: "km-at-{주제키워드}"
   name: "content-extractor"
   run_in_background: true
@@ -505,7 +533,7 @@ Task(@content-extractor):
 
 Task(@deep-reader):
   subagent_type: "Explore"
-  model: "sonnet"
+  model: "sonnet[1m]"
   team_name: "km-at-{주제키워드}"
   name: "deep-reader"
   run_in_background: true
@@ -515,7 +543,7 @@ Task(@deep-reader):
 
 Task(@content-analyzer):
   subagent_type: "general-purpose"
-  model: "sonnet"
+  model: "sonnet[1m]"
   team_name: "km-at-{주제키워드}"
   name: "content-analyzer"
   run_in_background: true
@@ -526,7 +554,7 @@ Task(@content-analyzer):
 # === Devil's Advocate ===
 Task(@devils-advocate):
   subagent_type: "general-purpose"
-  model: "sonnet"
+  model: "sonnet[1m]"
   team_name: "km-at-{주제키워드}"
   name: "devils-advocate"
   run_in_background: true
@@ -591,13 +619,13 @@ Knowledge Manager AT가 풀스케일 Agent Teams 모드로 실행됩니다.
 | Lead | Main | 총괄 오케스트레이션 | Opus 1M | 실행 중 |
 | Cat.Lead | vault-intel-lead | Vault 탐색 조율 | Sonnet 1M | 실행 중 |
 | Cat.Lead | content-proc-lead | 콘텐츠 처리 조율 | Sonnet 1M | 실행 중 |
-| Worker | @graph-navigator | Wikilink 그래프 탐색 | Sonnet | 실행 중 |
-| Worker | @retrieval-specialist | 키워드+태그 검색 | Sonnet | 실행 중 |
-| Worker | @content-extractor | 소스 콘텐츠 추출 | Sonnet | 실행 중 |
-| Worker | @deep-reader | 핵심 노트 정독 | Sonnet | 실행 중 |
-| Worker | @content-analyzer | 노트 구조 설계 | Sonnet | 실행 중 |
+| Worker | @graph-navigator | Wikilink 그래프 탐색 | Sonnet 1M | 실행 중 |
+| Worker | @retrieval-specialist | 키워드+태그 검색 | Sonnet 1M | 실행 중 |
+| Worker | @content-extractor | 소스 콘텐츠 추출 | Sonnet 1M | 실행 중 |
+| Worker | @deep-reader | 핵심 노트 정독 | Sonnet 1M | 실행 중 |
+| Worker | @content-analyzer | 노트 구조 설계 | Sonnet 1M | 실행 중 |
 | Worker | @link-curator | 연결 후보 추천 | Haiku | 대기 중 |
-| DA | @devils-advocate | 결과 반론 검증 | Sonnet | 대기 중 |
+| DA | @devils-advocate | 결과 반론 검증 | Sonnet 1M | 대기 중 |
 
 RALPH Loop: ON (최대 5회) | DA: ON
 팀원들이 병렬 처리 중입니다. Category Lead가 결과를 통합하여 보고합니다.
@@ -842,6 +870,35 @@ Write({ file_path: "{vault_absolute_path}/적절한/경로/파일명.md", conten
 - 경로는 vault root 기준 상대 경로
 - `AI_Second_Brain/`를 prefix로 붙이지 말 것!
 
+### 5-0. 저장 경로 결정 (CRITICAL — 모든 노트 생성 전 필수!)
+
+**Mine/ vs Library/ 라우팅**: 노트 생성 전 반드시 아래 규칙으로 경로를 결정합니다.
+
+```
+Q: "이 콘텐츠의 원저자가 tofukyung(김재경)인가?"
+
+YES → Mine/ 하위:
+  - 얼룩소 원문           → Mine/얼룩소/
+  - @tofukyung Threads    → Mine/Threads/
+  - 강의 자료             → Mine/Lectures/
+  - 에세이/분석/에버그린  → Mine/Essays/
+  - 업무 산출물 (CV 등)   → Mine/Projects/
+
+NO → Library/ 하위 (기본):
+  - YouTube/웹 정리       → Library/Zettelkasten/{적절한 주제폴더}/
+  - 대규모 리서치 (3-tier) → Library/Research/{프로젝트명}/
+  - 외부 Threads          → Library/Threads/
+  - 학술 논문             → Library/Papers/
+  - 웹 클리핑/가이드      → Library/Clippings/
+  - 기타 외부 리소스      → Library/Resources/
+```
+
+**판별 시그널 (우선순위)**:
+1. author 필드 = "tofukyung" 또는 "김재경" → Mine/
+2. source URL에 "@tofukyung" 포함 → Mine/Threads/
+3. tags에 "tofukyung" 포함 → Mine/
+4. 위 해당 없음 → Library/
+
 ### 5-2. 3-tier 구조 (해당 시)
 
 3-tier 선택 시 다음 순서로 생성:
@@ -1022,13 +1079,13 @@ PRECONDITION (셧다운 전제 조건 — DA 활성화):
 |------|------|------|------|------|
 | Cat.Lead | vault-intel-lead | Vault 탐색 조율 | Sonnet 1M | 핵심 {N}개, 관계 {N}개 |
 | Cat.Lead | content-proc-lead | 콘텐츠 처리 조율 | Sonnet 1M | 추출 완료, 구조 설계 |
-| Worker | @graph-navigator | 그래프 탐색 | Sonnet | Hub {N}개, 1-hop {N}개 |
-| Worker | @retrieval-specialist | 키워드 검색 | Sonnet | 관련 노트 {N}개 |
-| Worker | @content-extractor | 콘텐츠 추출 | Sonnet | {N} words |
-| Worker | @deep-reader | 깊이 읽기 | Sonnet | 교차 분석 {N}개 |
-| Worker | @content-analyzer | 구조 설계 | Sonnet | 노트 {N}개 제안 |
+| Worker | @graph-navigator | 그래프 탐색 | Sonnet 1M | Hub {N}개, 1-hop {N}개 |
+| Worker | @retrieval-specialist | 키워드 검색 | Sonnet 1M | 관련 노트 {N}개 |
+| Worker | @content-extractor | 콘텐츠 추출 | Sonnet 1M | {N} words |
+| Worker | @deep-reader | 깊이 읽기 | Sonnet 1M | 교차 분석 {N}개 |
+| Worker | @content-analyzer | 구조 설계 | Sonnet 1M | 노트 {N}개 제안 |
 | Worker | @link-curator | 링크 추천 | Haiku | 연결 후보 {N}개 |
-| DA | @devils-advocate | 반론 검증 | Sonnet | {반론수} 반론, {수용수} 수용 |
+| DA | @devils-advocate | 반론 검증 | Sonnet 1M | {반론수} 반론, {수용수} 수용 |
 
 ### RALPH Loop 요약
 | 이터레이션 | 대상 | 피드백 | 결과 |
@@ -1086,6 +1143,11 @@ PRECONDITION (셧다운 전제 조건 — DA 활성화):
 | **Mode R: 아카이브 재편** | `km-archive-reorganization.md` |
 | **Mode R: 규칙 엔진** | `km-rules-engine.md` |
 | **Mode R: 배치 실행** | `km-batch-python.md` |
+| **Mode G: GraphRAG 워크플로우** | `km-graphrag-workflow.md` |
+| **Mode G: 온톨로지 설계** | `km-graphrag-ontology.md` |
+| **Mode G: 그래프 검색** | `km-graphrag-search.md` |
+| **Mode G: 인사이트 리포트** | `km-graphrag-report.md` |
+| **Mode G: Frontmatter 동기화** | `km-graphrag-sync.md` |
 
 ---
 
