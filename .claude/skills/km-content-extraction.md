@@ -59,7 +59,7 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 | **YouTube** | `youtube-transcript-api` → `yt-dlp` 폴백 | 썸네일만 | → km-youtube-transcript.md |
 | **소셜 미디어** | `playwright-cli open → snapshot` ⭐ (fallback: MCP → WebFetch) | 미디어 URL 수집 | → km-social-media.md |
 | **일반 웹 페이지** | `playwright-cli open → snapshot` (fallback: MCP → WebFetch) | img/figure 파싱 + 차트 스크린샷 | 이 문서 |
-| PDF | **1순위**: `Read` → **2순위**: `marker_single` → **3순위**: `GLM-OCR` → **4순위**: Gemini OCR | marker images/ 폴더 스캔 | → pdf 스킬, km-glm-ocr |
+| PDF | **1순위**: `Read` → **2순위**: `opendataloader-pdf` → **3순위**: `marker_single` → **4순위**: `GLM-OCR` → **5순위**: Gemini OCR | ODL/marker images/ 폴더 스캔 | → pdf 스킬, km-glm-ocr |
 | Word (DOCX) | `Read` 도구 | 임베디드 이미지 설명 추출 | → docx 스킬 |
 | Excel/CSV | `Read` 도구 | 차트 없음 (데이터만) | → xlsx 스킬 |
 | PowerPoint | `Read` 도구 | 슬라이드 이미지 설명 추출 | → pptx 스킬 |
@@ -400,15 +400,16 @@ npx tsx .claude/skills/stealth-browsing/scripts/stealth-navigate-and-extract.ts 
 
 ## 2B. 로컬 파일 처리
 
-### PDF 파일 (4단계 우선순위 시스템)
+### PDF 파일 (5단계 우선순위 시스템)
 
 ```
 📋 PDF 처리 우선순위 (CRITICAL!)
 
-1순위: Claude Read 도구 (기본, 빠름)
-2순위: Marker (속도+구조 우위, Markdown 네이티브)
-3순위: GLM-OCR (스캔/수식/테이블/코드 특화, 선택적 설치, PaddleOCR 대비 5.6x 빠름)
-4순위: Gemini OCR (클라우드 폴백)
+1순위: Claude Read 도구 (기본, 빠름, 소형 PDF)
+2순위: OpenDataLoader-PDF (품질 #1, 링크/이미지/구조 보존, 대용량 추천)
+3순위: Marker (속도+구조 우위, Markdown 네이티브)
+4순위: GLM-OCR (스캔/수식/테이블/코드 특화, 선택적 설치, PaddleOCR 대비 5.6x 빠름)
+5순위: Gemini OCR (클라우드 폴백)
 ```
 
 #### 1순위: Claude Read 도구 (기본)
@@ -421,12 +422,62 @@ Read("{PDF경로}")
 - 빠름: 즉시 처리
 - 비용: API 토큰만 사용
 - 한계: 대용량 PDF(50MB+) 또는 스캔 PDF에서 실패 가능
+- 한계: 링크/이미지 참조 보존 불가
 ```
 
-#### 2순위: Marker (Read 실패 시 - 속도+구조 우위)
+#### 2순위: OpenDataLoader-PDF (Read 실패 또는 고품질 필요 시)
 
 ```
-Read 실패 시 Marker 사용 (속도 7배, Markdown 구조화 네이티브):
+Read 실패 시, 또는 링크/이미지/구조 보존이 중요한 대용량 PDF 처리 시:
+
+# 설치 (Java 11+ 필수, Python 3.10+, CPU-only)
+pip install opendataloader-pdf
+
+# 하이브리드 AI 향상 모드 (복잡한 레이아웃용)
+pip install "opendataloader-pdf[hybrid]"
+
+# Python API
+import opendataloader_pdf
+opendataloader_pdf.convert(
+    input_path=["document.pdf"],
+    output_dir="output/",
+    format="markdown",
+)
+
+# CLI
+opendataloader-pdf document.pdf -o output/ -f markdown
+
+# 배치 처리 (다수 PDF 한 번에)
+opendataloader_pdf.convert(
+    input_path=["file1.pdf", "file2.pdf", "folder/"],
+    output_dir="output/",
+    format="markdown",
+)
+
+장점:
+- 정확도 #1 (0.90, Marker 0.83, PyMuPDF 0.57)
+- 테이블 추출 SOTA (0.93)
+- 링크 보존 (PyMuPDF 0개 vs ODL 79개 — 실측)
+- 이미지 추출 (PyMuPDF 0개 vs ODL 79개 — 실측)
+- 리스트 감지 2배, 단락 구분 5배 (실측)
+- 바운딩 박스 좌표 제공 (소스 귀속 가능)
+- CPU-only (GPU 불필요), 80+ 언어 OCR
+- 다중 출력 (markdown, json, html, pdf)
+
+주의:
+- Java 11+ 런타임 필요
+- 대용량 PDF에서 Marker 대비 느릴 수 있음 (463p → 43.9초)
+
+사용 판단 기준:
+- 50+ 페이지 PDF → ODL 추천
+- 링크/이미지/구조 보존 중요 → ODL 필수
+- 단순 텍스트 추출만 필요 → Claude Read 충분
+```
+
+#### 3순위: Marker (ODL 실패 시 - 속도+구조 우위)
+
+```
+ODL 실패 시 Marker 사용 (속도 7배, Markdown 구조화 네이티브):
 
 # Python 3.12 필수 (Python 3.14는 미지원)
 py -3.12 -m pip install marker-pdf
@@ -443,7 +494,7 @@ py -3.12 -m pip install marker-pdf
 Marker Output: ./output/{filename}/{filename}.md + images folder
 ```
 
-#### 3순위: GLM-OCR (Marker 실패 또는 수식/테이블/코드 필요 시)
+#### 4순위: GLM-OCR (Marker 실패 또는 수식/테이블/코드 필요 시)
 
 ```
 Marker 실패 시 또는 수식/테이블/코드 정밀 추출 필요 시:
@@ -453,7 +504,7 @@ Marker 실패 시 또는 수식/테이블/코드 정밀 추출 필요 시:
 # venv 가용성 체크 (필수!)
 # Windows: .venvs\paddleocr-vl\Scripts\python.exe 존재 여부 (GLM-OCR도 같은 venv 사용 가능)
 # Linux: .venvs/paddleocr-vl/bin/python 존재 여부
-# 미설치 → 4순위 (Gemini)로 폴백
+# 미설치 → 5순위 (Gemini)로 폴백
 
 # 모델: zai-org/GLM-OCR
 # 태스크별 프롬프트:
@@ -474,7 +525,7 @@ Marker 실패 시 또는 수식/테이블/코드 정밀 추출 필요 시:
 - 선택적 설치 (Optional Enhancement)
 ```
 
-#### 4순위: Gemini OCR (최종 폴백)
+#### 5순위: Gemini OCR (최종 폴백)
 
 ```python
 import google.generativeai as genai
@@ -493,20 +544,34 @@ print(response.text)
 
 #### 처리 방법 비교
 
-| 방법 | 속도 | 비용 | 한국어 | 테이블 | 수식 | 사용 시점 |
-|------|------|------|--------|--------|------|----------|
-| **Claude Read** | 즉시 | API 토큰 | O | 제한적 | 제한적 | 기본 (1순위) |
-| **Marker** | 37.6초/3p | 무료 | O | **Markdown** | 제한적 | Read 실패 시 (2순위) |
-| **GLM-OCR** | 55초/3p | 무료 | O | **SOTA** | **SOTA** | Marker 실패 또는 특수 인식 (3순위) |
-| **Gemini OCR** | 빠름 | Vision 토큰 | O | O | O | 최종 폴백 (4순위) |
+| 방법 | 정확도 | 속도 | 비용 | 한국어 | 테이블 | 링크/이미지 | 사용 시점 |
+|------|--------|------|------|--------|--------|------------|----------|
+| **Claude Read** | — | 즉시 | API 토큰 | O | 제한적 | X | 기본 (1순위) |
+| **ODL** | **0.90** | 0.05초/p | 무료 | O | **0.93** | **O** | Read 실패/고품질 (2순위) |
+| **Marker** | 0.83 | 37.6초/3p | 무료 | O | Markdown | X | ODL 실패 시 (3순위) |
+| **GLM-OCR** | 0.95 | 55초/3p | 무료 | O | **SOTA** | X | 수식/코드 특화 (4순위) |
+| **Gemini OCR** | — | 빠름 | Vision 토큰 | O | O | X | 최종 폴백 (5순위) |
 
 #### 토큰 비교
 
 | 방법 | 페이지당 토큰 | 절감 |
 |------|-------------|------|
 | PDF 직접 (Claude Vision) | 1,500-3,000 | - |
+| ODL → Markdown | 800-1,000 | **50-70%** |
 | GLM-OCR → Markdown | 800-1,000 | **50-70%** |
 | Marker → Markdown | 850-1,000 | **50-70%** |
+
+#### ODL 벤치마크 (실측 — claude-master-guide.pdf, 463p)
+
+```
+             PyMuPDF    ODL         승자
+속도          2.6s      43.9s       PyMuPDF (17x)
+링크          0개       79개        ODL
+이미지 추출    0개       79개        ODL
+리스트 감지    692       1,364       ODL (2x)
+단락 구분     924       5,026       ODL (5x)
+→ 품질: ODL 5승 / PyMuPDF 2승 / 무승부 5
+```
 
 ### Word 문서 (DOCX)
 

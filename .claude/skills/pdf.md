@@ -35,9 +35,42 @@ This guide covers essential PDF processing operations using Python libraries and
 
 ## Quick Start
 
-### Recommended: Marker PDF → Markdown (Token-Optimized)
+### PDF → Markdown 우선순위
 
-For Claude Code / LLM workflows, **always use Marker first** to minimize token consumption (50-70% savings).
+```
+1순위: OpenDataLoader-PDF (품질 #1, 링크/이미지/구조 보존, 대용량 추천)
+2순위: Marker (속도 우위, Markdown 네이티브)
+3순위: Gemini OCR (클라우드 폴백)
+```
+
+### 1순위: OpenDataLoader-PDF (품질 최우선)
+
+```bash
+# 설치 (Java 11+ 필수, Python 3.10+, CPU-only)
+pip install opendataloader-pdf
+
+# CLI
+opendataloader-pdf document.pdf -o output/ -f markdown
+
+# 배치 처리
+opendataloader-pdf file1.pdf file2.pdf folder/ -o output/ -f markdown
+```
+
+```python
+# Python API
+import opendataloader_pdf
+opendataloader_pdf.convert(
+    input_path=["document.pdf"],
+    output_dir="output/",
+    format="markdown",
+)
+```
+
+- 정확도 #1 (0.90), 테이블 추출 0.93
+- 링크/이미지 보존, 바운딩 박스 좌표 제공
+- CPU-only, 80+ 언어 OCR
+
+### 2순위: Marker (ODL 실패 시)
 
 ```bash
 # Install once
@@ -57,10 +90,11 @@ marker_single "document.pdf" --output_format markdown --output_dir ./output --us
 
 ### Token Savings Comparison
 
-| Method | Tokens/Page | Use Case |
-|--------|-------------|----------|
-| PDF direct (Claude Vision) | ~1,500-3,000 | Quick glance |
-| **Marker → Markdown** | ~850-1,000 | **Recommended for analysis** |
+| Method | Accuracy | Tokens/Page | Use Case |
+|--------|----------|-------------|----------|
+| PDF direct (Claude Vision) | — | ~1,500-3,000 | Quick glance |
+| **ODL → Markdown** | **0.90** | ~800-1,000 | **Recommended (링크/이미지 보존)** |
+| **Marker → Markdown** | 0.83 | ~850-1,000 | ODL 실패 시 대안 |
 
 ### Legacy: pypdf (for programmatic PDF manipulation)
 
