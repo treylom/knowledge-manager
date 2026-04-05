@@ -866,9 +866,9 @@ Write({ file_path: "{vault_absolute_path}/적절한/경로/파일명.md", conten
 ```
 
 **경로 규칙** (CLAUDE.md 참조):
-- Vault root = `AI_Second_Brain`
+- Vault root = `{{VAULT_NAME}}`
 - 경로는 vault root 기준 상대 경로
-- `AI_Second_Brain/`를 prefix로 붙이지 말 것!
+- `{{VAULT_NAME}}/`를 prefix로 붙이지 말 것!
 
 ### 5-0. 저장 경로 결정 (CRITICAL — 모든 노트 생성 전 필수!)
 
@@ -885,8 +885,8 @@ YES → Mine/ 하위:
   - 업무 산출물 (CV 등)   → Mine/Projects/
 
 NO → Library/ 하위 (기본):
-  - YouTube/웹 정리       → Library/Zettelkasten/{적절한 주제폴더}/
-  - 대규모 리서치 (3-tier) → Library/Research/{프로젝트명}/
+  - YouTube/웹 정리       → Library/{{ZETTELKASTEN_ROOT}}/{적절한 주제폴더}/
+  - 대규모 리서치 (3-tier) → Library/{{RESEARCH_ROOT}}/{프로젝트명}/
   - 외부 Threads          → Library/Threads/
   - 학술 논문             → Library/Papers/
   - 웹 클리핑/가이드      → Library/Clippings/
@@ -934,15 +934,15 @@ NO → Library/ 하위 (기본):
    - 각 이미지의 Type, Source, URL/Path, Context, Placement 확인
 
 2. Resources/images/{topic-folder}/ 디렉토리 생성:
-   Bash("mkdir -p /home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/")
+   Bash("mkdir -p {{VAULT_PATH}}/Resources/images/{topic-folder}/")
 
 3. 각 이미지 다운로드/복사:
 
    웹 이미지:
-   Bash("curl -sLo '/home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}' '{url}'")
+   Bash("curl -sLo '{{VAULT_PATH}}/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}' '{url}'")
 
    PDF 이미지 (marker 출력):
-   Bash("cp km-temp/{name}/images/{file} '/home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}'")
+   Bash("cp km-temp/{name}/images/{file} '{{VAULT_PATH}}/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}'")
 
 4. 다운로드 실패 시 Playwright 스크린샷 폴백:
    - 원본 URL로 navigate
@@ -959,7 +959,7 @@ NO → Library/ 하위 (기본):
    - 로컬 전용 이미지: callout 블록으로 대체 — "[이미지: Resources/images/{topic-folder}/{filename}]"
 
 7. 저장 검증:
-   Glob("AI_Second_Brain/Resources/images/{topic-folder}/*") → 파일 존재 확인
+   Glob("{{VAULT_NAME}}/Resources/images/{topic-folder}/*") → 파일 존재 확인
    각 이미지 파일 크기 > 0 확인
 ```
 
@@ -1103,7 +1103,7 @@ PRECONDITION (셧다운 전제 조건 — DA 활성화):
 ### 출력 위치
 | 노트 | 경로 | 상태 |
 |------|------|------|
-| [MOC명] | Research/... | 성공 |
+| [MOC명] | {{RESEARCH_ROOT}}/... | 성공 |
 
 ### Checkpoints 요약
 | # | Checkpoint | 상태 |
