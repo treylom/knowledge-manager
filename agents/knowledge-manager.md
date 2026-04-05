@@ -72,7 +72,7 @@ Task 도구로 호출된 경우:
   "message": "콘텐츠가 분석되었습니다. 부모 에이전트가 직접 Obsidian 노트로 저장해주세요.",
   "notes": [
     {
-      "path": "Library/Zettelkasten/AI-연구/note.md",
+      "path": "Library/{{ZETTELKASTEN_ROOT}}/AI-연구/note.md",
       "content": "---\ntags: [...]\n---\n# 제목\n\n내용..."
     }
   ]
@@ -177,10 +177,10 @@ Read("{PDF경로}")
 ```bash
 # Python 3.12 필수 (Python 3.14는 미지원)
 mkdir -p ./km-temp
-"C:\Users\treyl\AppData\Local\Programs\Python\Python312\Scripts\marker_single.exe" "{PDF경로}" --output_format markdown --output_dir ./km-temp
+marker_single.exe "{PDF경로}" --output_format markdown --output_dir ./km-temp
 
 # 스캔 PDF의 경우 OCR 강제
-"C:\Users\treyl\AppData\Local\Programs\Python\Python312\Scripts\marker_single.exe" "{PDF경로}" --output_format markdown --output_dir ./km-temp --force_ocr
+marker_single.exe "{PDF경로}" --output_format markdown --output_dir ./km-temp --force_ocr
 
 # 출력: ./km-temp/{파일명}/{파일명}.md
 Read("./km-temp/{파일명}/{파일명}.md")
@@ -226,21 +226,21 @@ print(response.text)
 
 ## CRITICAL: Path Configuration
 
-**IMPORTANT**: Obsidian vault root = `AI_Second_Brain` 폴더입니다.
-- Vault 경로: `C:\Users\Public\AI_Second_Brain\AI_Second_Brain`
+**IMPORTANT**: Obsidian vault root = `{{VAULT_NAME}}` 폴더입니다.
+- Vault 경로: `{{VAULT_PATH}}`
 - Obsidian MCP 사용 시 경로는 vault root 기준 **상대 경로**
-- **NEVER** prefix paths with `AI_Second_Brain/` - 중첩 폴더 생성됨!
+- **NEVER** prefix paths with `{{VAULT_NAME}}/` - 중첩 폴더 생성됨!
 
 ### Correct Path Examples:
 ```
-✅ Correct: Library/Zettelkasten/AI-연구/note.md
-✅ Correct: Library/Research/paper-summary.md
+✅ Correct: Library/{{ZETTELKASTEN_ROOT}}/AI-연구/note.md
+✅ Correct: Library/{{RESEARCH_ROOT}}/paper-summary.md
 ✅ Correct: Library/Threads/thread-content.md
 ✅ Correct: Mine/Threads/my-thread.md
 ✅ Correct: Mine/Essays/my-essay.md
 
-❌ Wrong: AI_Second_Brain/Library/Zettelkasten/...  (중첩!)
-❌ Wrong: Zettelkasten/AI-연구/note.md  (Mine/Library 접두어 누락!)
+❌ Wrong: {{VAULT_NAME}}/Library/{{ZETTELKASTEN_ROOT}}/...  (중첩!)
+❌ Wrong: {{ZETTELKASTEN_ROOT}}/AI-연구/note.md  (Mine/Library 접두어 누락!)
 ```
 
 ### 저장 경로 결정 (CRITICAL — Mine vs Library)
@@ -254,7 +254,7 @@ YES → Mine/ 하위:
   업무 산출물 → Mine/Projects/
 
 NO → Library/ 하위 (기본):
-  YouTube/웹 → Library/Zettelkasten/{주제}/  |  리서치 → Library/Research/
+  YouTube/웹 → Library/{{ZETTELKASTEN_ROOT}}/{주제}/  |  리서치 → Library/{{RESEARCH_ROOT}}/
   외부 Threads → Library/Threads/  |  논문 → Library/Papers/
   클리핑 → Library/Clippings/  |  기타 → Library/Resources/
 ```
@@ -265,7 +265,7 @@ NO → Library/ 하위 (기본):
 - `Mine/` - 김재경(tofukyung) 직접 작성 콘텐츠
   - `Mine/얼룩소/` | `Mine/Threads/` | `Mine/Essays/` | `Mine/Lectures/` | `Mine/Projects/`
 - `Library/` - 외부 자료 + AI 생성 정리
-  - `Library/Zettelkasten/{주제}/` | `Library/Research/` | `Library/Threads/` | `Library/Papers/` | `Library/Clippings/` | `Library/Resources/`
+  - `Library/{{ZETTELKASTEN_ROOT}}/{주제}/` | `Library/{{RESEARCH_ROOT}}/` | `Library/Threads/` | `Library/Papers/` | `Library/Clippings/` | `Library/Resources/`
 - `Bug_Reports/` - 버그 리포트
 
 ---
@@ -380,7 +380,7 @@ Phase 6: 검증 및 보고
 ### 구조
 
 ```
-Research/[프로젝트명]/
+{{RESEARCH_ROOT}}/[프로젝트명]/
 ├── [제목]-MOC.md              ← 레벨 1: 메인 MOC
 ├── 01-[챕터1명]/
 │   ├── [챕터1]-MOC.md         ← 레벨 2: 카테고리 MOC
@@ -518,10 +518,10 @@ Phase 3: NotebookLM MCP 상세 질문
     │   └─ "소스 #{n}의 핵심 인사이트 3개를 알려주세요."
     │
     └─ 📁 각 소스별 개별 노트 생성
-        - Library/Zettelkasten/{카테고리}/{소스1-제목}.md
-        - Library/Zettelkasten/{카테고리}/{소스2-제목}.md
+        - Library/{{ZETTELKASTEN_ROOT}}/{카테고리}/{소스1-제목}.md
+        - Library/{{ZETTELKASTEN_ROOT}}/{카테고리}/{소스2-제목}.md
         - ...
-        - Library/Zettelkasten/{카테고리}/{카테고리}-MOC.md  (목차 노트)
+        - Library/{{ZETTELKASTEN_ROOT}}/{카테고리}/{카테고리}-MOC.md  (목차 노트)
 ```
 
 ### NotebookLM MCP 도구 사용법
@@ -584,18 +584,18 @@ mcp__playwright__browser_click({ element: "Share", ref: "{버튼 ref}" })
 ```bash
 # Tier 1: Obsidian CLI (우선):
 OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
-"$OBSIDIAN_CLI" create path="Library/Zettelkasten/AI-연구/note.md" content="[노트 내용]"
+"$OBSIDIAN_CLI" create path="Library/{{ZETTELKASTEN_ROOT}}/AI-연구/note.md" content="[노트 내용]"
 ```
 
 ```
 // Tier 2: Obsidian MCP (CLI 실패 시):
 mcp__obsidian__create_note
-- path: "Library/Zettelkasten/AI-연구/note.md"
+- path: "Library/{{ZETTELKASTEN_ROOT}}/AI-연구/note.md"
 - content: "[노트 내용]"
 
 // Tier 3: Write 도구 (MCP도 실패 시):
 Write
-- file_path: "C:\...\AI_Second_Brain\Library\Zettelkasten\AI-연구\note.md"
+- file_path: "{{VAULT_PATH}}\\Library\\{{ZETTELKASTEN_ROOT}}\\AI-연구\\note.md"
 - content: "[노트 내용]"
 ```
 
@@ -618,7 +618,7 @@ Write
 **Step 1: JSON 페이로드 파일 생성**
 ```javascript
 Write({
-  file_path: "C:\\Users\\Public\\AI_Second_Brain\\km-temp\\notion_payload.json",
+  file_path: "{{VAULT_PATH}}\\km-temp\\notion_payload.json",
   content: JSON.stringify({
     parent: { type: "database_id", database_id: "2a6e5818-0d0e-80ae-a6e3-cc8853fda844" },
     properties: {
@@ -634,13 +634,13 @@ Write({
 **Step 2: PowerShell 스크립트 생성**
 ```javascript
 Write({
-  file_path: "C:\\Users\\Public\\AI_Second_Brain\\km-temp\\notion_upload.ps1",
+  file_path: "{{VAULT_PATH}}\\km-temp\\notion_upload.ps1",
   content: `$headers = @{
     'Authorization' = 'Bearer $env:NOTION_API_KEY'
     'Notion-Version' = '2022-06-28'
     'Content-Type' = 'application/json'
 }
-$body = Get-Content -Raw 'C:\\Users\\Public\\AI_Second_Brain\\km-temp\\notion_payload.json' -Encoding UTF8
+$body = Get-Content -Raw '{{VAULT_PATH}}\\km-temp\\notion_payload.json' -Encoding UTF8
 $response = Invoke-RestMethod -Uri 'https://api.notion.com/v1/pages' -Method POST -Headers $headers -Body ([System.Text.Encoding]::UTF8.GetBytes($body))
 $response | ConvertTo-Json -Depth 10`
 })
@@ -648,7 +648,7 @@ $response | ConvertTo-Json -Depth 10`
 
 **Step 3: PowerShell 실행**
 ```bash
-powershell -ExecutionPolicy Bypass -File "C:\Users\Public\AI_Second_Brain\km-temp\notion_upload.ps1"
+powershell -ExecutionPolicy Bypass -File "{{VAULT_PATH}}\\km-temp\\notion_upload.ps1"
 ```
 
 ### 기본 데이터베이스 ID
