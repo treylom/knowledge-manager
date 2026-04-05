@@ -1,6 +1,6 @@
 ---
 name: km-batch-python
-description: Python 배치 실행 + auto-sync 보호 — 규칙서 기반 Python 스크립트의 안전한 실행 프로토콜. worktree 버그 우회, --dry-run 필수, auto-sync 경합 방지.
+description: Use when needing python 배치 실행 + auto-sync 보호 — 규칙서 기반 Python 스크립트의 안전한 실행 프로토콜. worktree 버그 우회, --dry-run 필수, auto-sync 경합 방지.
 ---
 
 # Python Batch Execution Skill

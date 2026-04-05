@@ -12,9 +12,14 @@
       "vaultPath": "/path/to/your/obsidian/vault",
       "_vaultPath_examples": {
         "windows": "C:/Users/YourName/Documents/MyVault",
+        "wsl": "/mnt/c/Users/YourName/Documents/MyVault",
         "mac": "/Users/YourName/Documents/MyVault",
         "linux": "/home/yourname/Documents/MyVault"
       },
+      "zettelkastenRoot": "Zettelkasten",
+      "_zettelkastenRoot_help": "Zettelkasten 노트 루트 (vault 상대경로). 예: 'Zettelkasten' 또는 'Library/Zettelkasten'",
+      "researchRoot": "Research",
+      "_researchRoot_help": "Research 노트 루트 (vault 상대경로). 예: 'Research' 또는 'Library/Research'",
       "defaultFolder": "Zettelkasten",
       "researchFolder": "Research",
       "threadsFolder": "Threads"

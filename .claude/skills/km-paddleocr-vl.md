@@ -1,3 +1,8 @@
+---
+name: km-paddleocr-vl
+description: Use when needing paddleOCR + Vision Language Model OCR 스킬. 한글 포함 다국어 문서/이미지 텍스트 추출 시 사용.
+---
+
 # PaddleOCR-VL-1.5 OCR 스킬
 
 > Knowledge Manager의 고품질 로컬 OCR 엔진. 테이블/수식/차트/도장 인식 지원.

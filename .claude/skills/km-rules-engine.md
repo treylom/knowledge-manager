@@ -1,6 +1,6 @@
 ---
 name: km-rules-engine
-description: 규칙서 설계 + DA 검증 패턴 — analyst 데이터에서 규칙서를 설계하고, DA 검증을 거쳐 동결하고, Python 스크립트로 자동 생성하는 재사용 가능 패턴.
+description: Use when needing 규칙서 설계 + DA 검증 패턴 — analyst 데이터에서 규칙서를 설계하고, DA 검증을 거쳐 동결하고, Python 스크립트로 자동 생성하는 재사용 가능 패턴.
 ---
 
 # Rules Engine Skill

@@ -525,6 +525,23 @@ Write({
 console.log(`
 ✅ 설정 파일 생성 완료: km-config.json
 `)
+
+// NEW: Apply vault paths to skill files
+console.log(`
+⏳ vault 경로를 스킬 파일들에 적용하고 있어요...
+(skills/, agents/, commands/ 아래의 모든 .md 파일 업데이트)
+`)
+
+const substResult = Bash(`bash scripts/configure-vault-paths.sh 2>&1`)
+console.log(substResult)
+
+console.log(`
+✅ 모든 스킬 파일에 vault 경로가 적용되었어요.
+
+💡 향후 업데이트
+   최신 버전을 받으려면: /km-update
+   vault 경로를 바꾸려면: /knowledge-manager-setup 재실행
+`)
 ```
 
 ### MCP 설치 현황 확인

@@ -1,3 +1,8 @@
+---
+name: km-youtube-transcript
+description: Use when needing youTube 영상 트랜스크립트 추출 스킬. yt-dlp/youtube-transcript-api로 자막 추출 후 KM 파이프라인 연계.
+---
+
 # YouTube Transcript Extract & Analyze
 
 YouTube 영상의 트랜스크립트(자막)를 추출하고 분석하여 Obsidian 노트로 정리합니다.

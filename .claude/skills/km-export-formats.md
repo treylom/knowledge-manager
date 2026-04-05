@@ -12,20 +12,20 @@
 
 **Tier 1: Obsidian CLI (최우선)**
 ```bash
-"$OBSIDIAN_CLI" create path="Zettelkasten/카테고리/노트제목 - YYYY-MM-DD-HHmm.md" content="[노트 전체 내용]"
+"$OBSIDIAN_CLI" create path="{{ZETTELKASTEN_ROOT}}/카테고리/노트제목 - YYYY-MM-DD-HHmm.md" content="[노트 전체 내용]"
 ```
 
 **Tier 2: Obsidian MCP (CLI 실패 시)**
 ```tool-call
 mcp__obsidian__create_note
-- path: "Zettelkasten/카테고리/노트제목 - YYYY-MM-DD-HHmm.md"
+- path: "{{ZETTELKASTEN_ROOT}}/카테고리/노트제목 - YYYY-MM-DD-HHmm.md"
 - content: "[노트 전체 내용]"
 ```
 
 **Tier 3: Write 도구 (MCP 실패 시)**
 ```tool-call
 Write
-- file_path: "C:\Users\treyl\OneDrive\Desktop\AI\AI_Second_Brain\Zettelkasten\카테고리\노트제목.md"
+- file_path: "{{VAULT_PATH}}\\{{ZETTELKASTEN_ROOT}}\\카테고리\\노트제목.md"
 - content: "[노트 전체 내용]"
 ```
 
@@ -34,7 +34,7 @@ Write
 ```json
 // ❌ 이렇게 하면 실제 저장 안 됨!
 {
-  "path": "Zettelkasten/카테고리/노트.md",
+  "path": "{{ZETTELKASTEN_ROOT}}/카테고리/노트.md",
   "content": "노트 내용..."
 }
 ```
@@ -85,14 +85,14 @@ Write
 **Step 1: JSON 페이로드 파일 생성**
 ```
 Write 도구 사용:
-- file_path: "C:\Users\treyl\OneDrive\Desktop\AI\km-temp\notion_payload.json"
+- file_path: "C:\km-temp\notion_payload.json"
 - content: JSON 형식의 Notion API 페이로드
 ```
 
 **Step 2: PowerShell 스크립트 생성**
 ```
 Write 도구 사용:
-- file_path: "C:\Users\treyl\OneDrive\Desktop\AI\km-temp\notion_upload.ps1"
+- file_path: "C:\km-temp\notion_upload.ps1"
 - content: [아래 템플릿]
 ```
 
@@ -103,14 +103,14 @@ $headers = @{
     'Notion-Version' = '2022-06-28'
     'Content-Type' = 'application/json'
 }
-$body = Get-Content -Raw 'C:\Users\treyl\OneDrive\Desktop\AI\km-temp\notion_payload.json' -Encoding UTF8
+$body = Get-Content -Raw 'C:\km-temp\notion_payload.json' -Encoding UTF8
 $response = Invoke-RestMethod -Uri 'https://api.notion.com/v1/pages' -Method POST -Headers $headers -Body ([System.Text.Encoding]::UTF8.GetBytes($body))
 $response | ConvertTo-Json -Depth 10
 ```
 
 **Step 3: PowerShell 실행**
 ```bash
-powershell -ExecutionPolicy Bypass -File "C:\Users\treyl\OneDrive\Desktop\AI\km-temp\notion_upload.ps1"
+powershell -ExecutionPolicy Bypass -File "C:\km-temp\notion_upload.ps1"
 ```
 
 ### 데이터베이스 ID 참조
@@ -172,7 +172,7 @@ Step 2: 병렬 저장 (동시 실행!)
   같은 응답에서 두 도구 호출:
 
   [도구 1] Bash (Obsidian CLI — Tier 1)
-    "$OBSIDIAN_CLI" create path="Zettelkasten/AI-연구/주제.md" content="[Obsidian 마크다운]"
+    "$OBSIDIAN_CLI" create path="{{ZETTELKASTEN_ROOT}}/AI-연구/주제.md" content="[Obsidian 마크다운]"
     CLI 실패 시: mcp__obsidian__create_note (Tier 2) → Write (Tier 3)
 
   [도구 2] Bash (Notion curl 호출) ⚠️ MCP 도구 사용 금지!
@@ -203,19 +203,19 @@ Step 2: 병렬 저장 (5개 동시 실행!)
   같은 응답에서 5개 도구 호출:
 
   [도구 1] mcp__obsidian__create_note
-    path: "Zettelkasten/AI-연구/개념A.md"
+    path: "{{ZETTELKASTEN_ROOT}}/AI-연구/개념A.md"
 
   [도구 2] mcp__obsidian__create_note
-    path: "Zettelkasten/AI-연구/개념B.md"
+    path: "{{ZETTELKASTEN_ROOT}}/AI-연구/개념B.md"
 
   [도구 3] mcp__obsidian__create_note
-    path: "Zettelkasten/AI-연구/개념C.md"
+    path: "{{ZETTELKASTEN_ROOT}}/AI-연구/개념C.md"
 
   [도구 4] mcp__obsidian__create_note
-    path: "Zettelkasten/AI-연구/개념D.md"
+    path: "{{ZETTELKASTEN_ROOT}}/AI-연구/개념D.md"
 
   [도구 5] mcp__obsidian__create_note
-    path: "Zettelkasten/AI-연구/개념E.md"
+    path: "{{ZETTELKASTEN_ROOT}}/AI-연구/개념E.md"
 
 Step 3: 결과 보고
   ✅ 5개 노트 생성 완료
@@ -285,7 +285,7 @@ Step 3: 결과 보고
 ### 생성된 파일
 | 플랫폼 | 경로/URL | 상태 |
 |--------|----------|------|
-| Obsidian | Zettelkasten/AI-연구/주제.md | ✅ |
+| Obsidian | {{ZETTELKASTEN_ROOT}}/AI-연구/주제.md | ✅ |
 | Notion | notion.so/page/xxx | ✅ |
 | PDF | exports/주제.pdf | ✅ |
 
@@ -303,7 +303,7 @@ Step 3: 결과 보고
 ### 구조 개요
 
 ```
-Research/[프로젝트명]/
+{{RESEARCH_ROOT}}/[프로젝트명]/
 ├── [제목]-MOC.md                    ← 레벨 1: 메인 MOC
 │
 ├── 01-[챕터1명]/
@@ -684,21 +684,21 @@ Step 3: 콘텐츠 구조화
 Step 3.5: 이미지 저장 및 임베딩 (이미지 추출 활성 시)
   - 참조 스킬: km-image-pipeline.md
   - 디렉토리 생성:
-    Bash: mkdir -p /home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/
+    Bash: mkdir -p {{VAULT_PATH}}/Resources/images/{topic-folder}/
   - 웹 이미지 다운로드:
-    Bash: curl -sLo "/home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}" "{url}"
+    Bash: curl -sLo "{{VAULT_PATH}}/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}" "{url}"
   - PDF 이미지 복사:
-    Bash: cp km-temp/{name}/images/{file} "/home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}"
+    Bash: cp km-temp/{name}/images/{file} "{{VAULT_PATH}}/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}"
   - 다운로드 실패(403/404) 시 Playwright 스크린샷 폴백:
     mcp__playwright__browser_take_screenshot({ ref: "{element-ref}", filename: "{path}" })
   - 노트 콘텐츠에 임베드 구문 삽입 (본문 흐름 배치):
     개념 설명 → (빈 줄) → ![[Resources/images/{topic-folder}/{filename}]] → (빈 줄) → 상세 설명
-  - 검증: Glob("AI_Second_Brain/Resources/images/{topic-folder}/*") → 파일 존재 확인
+  - 검증: Glob("{{VAULT_NAME}}/Resources/images/{topic-folder}/*") → 파일 존재 확인
 
 Step 4: Vault에 저장
-  - 경로: Zettelkasten/[category]/[title] - YYYY-MM-DD-HHmm.md
-  - CRITICAL: vault root가 이미 AI_Second_Brain 폴더
-  - "AI_Second_Brain/" 접두사 절대 사용 금지!
+  - 경로: {{ZETTELKASTEN_ROOT}}/[category]/[title] - YYYY-MM-DD-HHmm.md
+  - CRITICAL: vault root가 이미 {{VAULT_NAME}} 폴더
+  - "{{VAULT_NAME}}/" 접두사 절대 사용 금지!
   - Obsidian MCP 또는 Write 도구 사용
 ```
 
@@ -706,31 +706,31 @@ Step 4: Vault에 저장
 
 ```
 ✅ 올바른 경로:
-   Zettelkasten/AI-연구/노트제목 - 2026-01-03-1430.md
-   Research/연구문서.md
+   {{ZETTELKASTEN_ROOT}}/AI-연구/노트제목 - 2026-01-03-1430.md
+   {{RESEARCH_ROOT}}/연구문서.md
    Threads/스레드-정리.md
 
 ❌ 잘못된 경로 (중첩 폴더 생성됨!):
-   AI_Second_Brain/Zettelkasten/AI-연구/...
-   AI_Second_Brain/Research/...
+   {{VAULT_NAME}}/{{ZETTELKASTEN_ROOT}}/AI-연구/...
+   {{VAULT_NAME}}/{{RESEARCH_ROOT}}/...
 ```
 
 ### 저장 도구 호출 (3-Tier)
 
 ```
 Tier 1: Obsidian CLI (최우선)
-Bash: "$OBSIDIAN_CLI" create path="Zettelkasten/AI-연구/노트제목 - 2026-01-03-1430.md" content="[전체 노트 내용]"
+Bash: "$OBSIDIAN_CLI" create path="{{ZETTELKASTEN_ROOT}}/AI-연구/노트제목 - 2026-01-03-1430.md" content="[전체 노트 내용]"
 
 CLI 실패 시:
 Tier 2: Obsidian MCP
 mcp__obsidian__create_note
-- path: "Zettelkasten/AI-연구/노트제목 - 2026-01-03-1430.md"
+- path: "{{ZETTELKASTEN_ROOT}}/AI-연구/노트제목 - 2026-01-03-1430.md"
 - content: "[전체 노트 내용]"
 
 MCP 실패 시:
 Tier 3: Write 도구
 Write
-- file_path: "C:\Users\treyl\OneDrive\Desktop\AI\AI_Second_Brain\Zettelkasten\AI-연구\노트제목 - 2026-01-03-1430.md"
+- file_path: "{{VAULT_PATH}}\\{{ZETTELKASTEN_ROOT}}\\AI-연구\\노트제목 - 2026-01-03-1430.md"
 - content: "[전체 노트 내용]"
 ```
 
@@ -927,8 +927,8 @@ Step 4: 사용자와 반복 (선택적)
 Step 5: 내보내기 및 저장
   mcp__drawio__export_diagram
   - 저장 경로: [관련노트폴더]/[주제]-diagram-[YYYY-MM-DD].drawio
-  - 예: Zettelkasten/AI-연구/MCP-Architecture-diagram-2025-01-02.drawio
-  - CRITICAL: vault root 기준 상대경로 (AI_Second_Brain/ 접두사 금지!)
+  - 예: {{ZETTELKASTEN_ROOT}}/AI-연구/MCP-Architecture-diagram-2025-01-02.drawio
+  - CRITICAL: vault root 기준 상대경로 ({{VAULT_NAME}}/ 접두사 금지!)
 
 Step 6: 노트에 링크 추가
   관련 노트에 다이어그램 참조:
@@ -962,13 +962,13 @@ Step 6: 노트에 링크 추가
 
 ```
 // Tier 1: Obsidian CLI (최우선):
-Bash: "$OBSIDIAN_CLI" create path="Research/note.md" content="..."
+Bash: "$OBSIDIAN_CLI" create path="{{RESEARCH_ROOT}}/note.md" content="..."
 
 // CLI 실패 시 Tier 2: Obsidian MCP:
-mcp__obsidian__create_note(path="Research/note.md", content="...")
+mcp__obsidian__create_note(path="{{RESEARCH_ROOT}}/note.md", content="...")
 
 // MCP 실패 시 Tier 3: Write 도구:
-Write(file_path="C:\...\AI_Second_Brain\Research\note.md", content="...")
+Write(file_path="{{VAULT_PATH}}\\{{RESEARCH_ROOT}}\\note.md", content="...")
 ```
 
 ### ❌ 금지 패턴
@@ -976,7 +976,7 @@ Write(file_path="C:\...\AI_Second_Brain\Research\note.md", content="...")
 ```json
 // 이렇게 하면 실제 저장 안 됨!
 {
-  "path": "Research/note.md",
+  "path": "{{RESEARCH_ROOT}}/note.md",
   "content": "..."
 }
 ```

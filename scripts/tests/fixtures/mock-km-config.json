@@ -1,0 +1,12 @@
+{
+  "storage": {
+    "obsidian": {
+      "vaultPath": "/home/testuser/MyVault",
+      "zettelkastenRoot": "Zettelkasten",
+      "researchRoot": "Research"
+    }
+  },
+  "obsidianCli": {
+    "path": "/usr/local/bin/obsidian"
+  }
+}
