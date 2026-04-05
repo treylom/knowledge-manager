@@ -873,6 +873,78 @@ claude mcp list
 
 ---
 
+## Installation & Configuration
+
+knowledge-manager is distributed as a git repository that adapts to **your** Obsidian vault at install time. The skill, agent, and command files in this repo contain placeholder tokens (e.g. `{{VAULT_PATH}}`) that get substituted with your real paths the first time you run the setup wizard. After that, `git pull` + `/km-update` keeps you current without ever touching your personal config.
+
+### First-time setup
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/treylom/knowledge-manager.git
+cd knowledge-manager
+
+# 2. (Optional) Install Node.js 18+ and Playwright MCP — see Requirements section above
+
+# 3. Run the setup wizard inside Claude Code
+#    Inside Claude Code, type:
+/knowledge-manager-setup
+```
+
+The setup wizard will:
+
+1. Ask for your Obsidian vault path (e.g. `/home/you/Documents/MyVault` or `C:/Users/You/Documents/MyVault`).
+2. Auto-detect your Obsidian CLI executable (v1.12.4+) if Obsidian desktop is installed.
+3. Generate `km-config.json` in the repo root (this file is gitignored — your personal config stays local).
+4. Run `scripts/configure-vault-paths.sh` which replaces every `{{VAULT_PATH}}`, `{{VAULT_NAME}}`, `{{OBSIDIAN_CLI}}`, `{{ZETTELKASTEN_ROOT}}`, and `{{RESEARCH_ROOT}}` placeholder in `skills/`, `agents/`, `commands/`, and `.claude/` with your real values.
+5. Mark the substituted files with `git update-index --skip-worktree` so the replacements never show up as dirty in `git status`.
+
+When the wizard finishes, every skill and command file points to **your** vault — no manual find-and-replace required.
+
+### Updating to the latest version
+
+When you want to pull upstream improvements, use the `/km-update` slash command instead of a raw `git pull`:
+
+```
+/km-update
+```
+
+Under the hood this runs `scripts/km-update.sh`, which:
+
+1. Unlocks the skip-worktree flag on every placeholder-substituted file.
+2. Restores the original placeholder content with `git checkout HEAD -- <files>`.
+3. Runs `git pull origin <current-branch>` to fetch upstream changes.
+4. Re-runs `scripts/configure-vault-paths.sh` to re-substitute placeholders with your current `km-config.json` values.
+5. Re-applies the skip-worktree lock.
+
+A plain `git pull` will still work — but if your previous substitution has diverged from upstream (e.g. upstream changed a line around a placeholder), you may hit a merge conflict. `/km-update` is the safe path.
+
+### Re-configuring your vault path
+
+If you move your vault, rename it, or want to point knowledge-manager at a different vault, just re-run the setup wizard:
+
+```
+/knowledge-manager-setup
+```
+
+The wizard backs up your existing `km-config.json` (timestamped), generates a new one, and re-runs the substitution engine. Your previous values are preserved in the backup file in case you need to roll back.
+
+### Under the hood — placeholder system
+
+Source files in this repo use these 5 placeholder tokens. The setup wizard replaces them with values from your `km-config.json`:
+
+| Placeholder | Config field | Default | Meaning |
+|---|---|---|---|
+| `{{VAULT_PATH}}` | `storage.obsidian.vaultPath` | *(required)* | Absolute path to your Obsidian vault |
+| `{{VAULT_NAME}}` | derived from basename of `vaultPath` | *(derived)* | Vault folder name (e.g. `MyVault`) |
+| `{{OBSIDIAN_CLI}}` | `obsidianCli.path` | `""` (empty) | Path to Obsidian CLI executable; empty string if Obsidian desktop is not installed |
+| `{{ZETTELKASTEN_ROOT}}` | `storage.obsidian.zettelkastenRoot` | `"Zettelkasten"` | Vault-relative path to your Zettelkasten root folder |
+| `{{RESEARCH_ROOT}}` | `storage.obsidian.researchRoot` | `"Research"` | Vault-relative path to your research/MOC root folder |
+
+If you edit a skill file yourself and need it to stay portable, write the placeholder form (e.g. `{{VAULT_PATH}}/Zettelkasten/note.md`) and re-run `/knowledge-manager-setup` (or `bash scripts/configure-vault-paths.sh` directly). See [`docs/vault-path-configuration.md`](docs/vault-path-configuration.md) for the full technical reference, troubleshooting, and the skip-worktree rationale.
+
+---
+
 ## Usage
 
 ### In Claude Code
