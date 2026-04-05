@@ -39,7 +39,7 @@ CLI 실패 시 Tier 2: Obsidian MCP
   도구: mcp__obsidian__list_notes
 
 Tier 3: Glob 폴백
-  Glob: "AI_Second_Brain/**/*.md"
+  Glob: "{{VAULT_NAME}}/**/*.md"
 
 수집 정보:
 - 모든 노트 경로
