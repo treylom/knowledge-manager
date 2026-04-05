@@ -483,13 +483,13 @@ ODL 실패 시 Marker 사용 (속도 7배, Markdown 구조화 네이티브):
 py -3.12 -m pip install marker-pdf
 
 # 변환 명령어 (Python 3.12 Scripts 경로)
-"C:\Users\treyl\AppData\Local\Programs\Python\Python312\Scripts\marker_single.exe" "document.pdf" --output_format markdown --output_dir ./output
+"marker_single.exe" "document.pdf" --output_format markdown --output_dir ./output
 
 # 스캔 PDF (OCR 강제)
-"C:\Users\treyl\AppData\Local\Programs\Python\Python312\Scripts\marker_single.exe" "scanned.pdf" --output_format markdown --output_dir ./output --force_ocr
+"marker_single.exe" "scanned.pdf" --output_format markdown --output_dir ./output --force_ocr
 
 # 최고 품질 (LLM 향상)
-"C:\Users\treyl\AppData\Local\Programs\Python\Python312\Scripts\marker_single.exe" "complex.pdf" --output_format markdown --output_dir ./output --use_llm --force_ocr
+"marker_single.exe" "complex.pdf" --output_format markdown --output_dir ./output --use_llm --force_ocr
 
 Marker Output: ./output/{filename}/{filename}.md + images folder
 ```
@@ -841,11 +841,11 @@ OBSIDIAN_CLI="$OBSIDIAN_CLI"
 mcp__obsidian__search_vault({ query: "[주제 키워드]" })
 
 # MCP 실패 시: Grep fallback
-Grep(pattern="[키워드]", path="/home/tofu/AI/AI_Second_Brain/")
+Grep(pattern="[키워드]", path="{{VAULT_PATH}}/")
 
 # 폴더별 목록 (옵션)
 # 1순위: Bash ls 또는 Glob
-Glob(pattern="**/*.md", path="/home/tofu/AI/AI_Second_Brain/[특정 폴더]/")
+Glob(pattern="**/*.md", path="{{VAULT_PATH}}/[특정 폴더]/")
 # 2순위: mcp__obsidian__list_notes({ folder: "[특정 폴더]" })
 
 필터링 기준:
@@ -869,7 +869,7 @@ for path in [관련 노트 경로 배열]:
 mcp__obsidian__read_multiple_notes({ paths: [관련 노트 경로 배열] })
 
 # MCP 실패 시: Read 도구 fallback
-Read(file_path="/home/tofu/AI/AI_Second_Brain/{path}")
+Read(file_path="{{VAULT_PATH}}/{path}")
 
 각 노트에서 추출:
 - 핵심 개념 (핵심 개념 섹션)
