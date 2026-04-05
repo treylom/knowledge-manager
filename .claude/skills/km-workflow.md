@@ -676,7 +676,7 @@ mcp__obsidian__create_note
 **Tier 3: Write 도구 (MCP 실패 시) - YOU MUST CALL:**
 ```tool-call
 Write 도구
-- file_path: "C:\Users\treyl\OneDrive\Desktop\AI\AI_Second_Brain\Zettelkasten\카테고리\파일명.md"
+- file_path: "{{VAULT_PATH}}/Zettelkasten/카테고리/파일명.md"
 - content: "노트 전체 내용"
 ```
 
