@@ -1,3 +1,8 @@
+---
+name: km-link-audit
+description: Use when needing Knowledge Manager 링크 감사 스킬. Obsidian vault의 broken links, orphan notes, 미해결 참조 감지 및 수정.
+---
+
 # Knowledge Manager 연결 감사 스킬
 
 > Vault 전체의 노트 연결 상태 진단 및 개선 제안
@@ -33,13 +38,13 @@
 
 ```
 Tier 1: Obsidian CLI files (최우선)
-  Bash: "$OBSIDIAN_CLI" files folder="{폴더}" ext=md
+  Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" files folder="{폴더}" ext=md
 
 CLI 실패 시 Tier 2: Obsidian MCP
   도구: mcp__obsidian__list_notes
 
 Tier 3: Glob 폴백
-  Glob: "{{VAULT_NAME}}/**/*.md"
+  Glob: "Second_Brain/**/*.md"
 
 수집 정보:
 - 모든 노트 경로
@@ -51,14 +56,14 @@ Tier 3: Glob 폴백
 
 ```
 폴더 구조 분석:
-- Zettelkasten/ (하위 폴더별 분류)
+- Library/Zettelkasten/ (하위 폴더별 분류)
   - AI-성능최적화/
   - AI-연구/
   - AI-도구/
   - AI-활용/
   - AI-Safety/
   - Insights/
-- Research/
+- Library/Research/
 - Threads/
 - Skills/
 - Bug_Reports/
@@ -121,7 +126,7 @@ pattern = r'\[\[([^\]|]+)(?:\|[^\]]+)?\]\]'
 
 ```
 Tier 1: Obsidian CLI orphans (네이티브 — 최우선!)
-  Bash: "$OBSIDIAN_CLI" orphans
+  Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" orphans
   → 고아 노트 목록을 직접 반환 (파싱 불필요)
 
 CLI 실패 시 Tier 2: 수동 분석
@@ -141,7 +146,7 @@ CLI 실패 시 Tier 2: 수동 분석
 
 ```
 Tier 1: Obsidian CLI unresolved (네이티브 — 최우선!)
-  Bash: "$OBSIDIAN_CLI" unresolved
+  Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" unresolved
   → 깨진 링크 목록을 직접 반환 (파싱 불필요)
 
 CLI 실패 시 Tier 2: 수동 분석
@@ -253,14 +258,14 @@ CLI 실패 시 Tier 2: 수동 분석
 Tier 1: Obsidian CLI 기반 커스텀 로직 (최우선)
 
   Step 1: 고아 노트 식별
-    Bash: "$OBSIDIAN_CLI" orphans
+    Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" orphans
 
   Step 2: 각 고아 노트에 대해 backlinks 확인 + 연결 후보 탐색
-    Bash: "$OBSIDIAN_CLI" backlinks path="{orphan}" format=json
-    Bash: "$OBSIDIAN_CLI" search query="{키워드}" format=json
+    Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" backlinks path="{orphan}" format=json
+    Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" search query="{키워드}" format=json
 
   Step 3: 연결 추가
-    Bash: "$OBSIDIAN_CLI" append path="{노트}" content="{링크}"
+    Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" append path="{노트}" content="{링크}"
 
 CLI 실패 시 Tier 2: Obsidian MCP
   도구: mcp__obsidian__auto_backlink_vault
@@ -393,9 +398,9 @@ type: audit-report
 
 ```
 Tier 1: CLI 기반 (최우선)
-  "$OBSIDIAN_CLI" orphans → 대상 파악
-  "$OBSIDIAN_CLI" backlinks path="{노트}" format=json → 후보 탐색
-  "$OBSIDIAN_CLI" append path="{노트}" content="{링크}" → 연결 추가
+  "/mnt/c/Program Files/Obsidian/Obsidian.com" orphans → 대상 파악
+  "/mnt/c/Program Files/Obsidian/Obsidian.com" backlinks path="{노트}" format=json → 후보 탐색
+  "/mnt/c/Program Files/Obsidian/Obsidian.com" append path="{노트}" content="{링크}" → 연결 추가
 
 CLI 실패 시 Tier 2: MCP
   mcp__obsidian__auto_backlink_vault 사용:

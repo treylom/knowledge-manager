@@ -275,7 +275,7 @@ Main이 입력 소스를 직접 추출합니다. 스킬 참조: `km-content-extr
 ```
 1. Hub 노트 식별:
    - Grep으로 [[키워드]] 패턴 검색
-     Grep({ pattern: "\\[\\[.*{키워드}.*\\]\\]", path: "{{VAULT_PATH}}" })
+     Grep({ pattern: "\\[\\[.*{키워드}.*\\]\\]", path: "/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain" })
    - 가장 많이 참조되는 노트 = Hub 노트 (최소 2개 식별)
 
 2. 1-hop 추적:
@@ -287,6 +287,36 @@ Main이 입력 소스를 직접 추출합니다. 스킬 참조: `km-content-extr
    - 1-hop 노트들의 wikilink를 한 번 더 추적
    - 간접 연결 노트 목록 생성
 ```
+
+### Phase A-G: GraphRAG 하이브리드 검색 (Dense + Sparse + Reranker)
+
+```
+DB_PATH=".team-os/graphrag/index/vault_graph.db"
+INDEX_DIR=".team-os/graphrag/index"
+
+IF DB 존재:
+  1. 하이브리드 검색 (Dense Embedding + FTS5 Sparse + Reranker):
+     Bash("python3 .team-os/graphrag/scripts/graph_search.py hybrid '{키워드}' --top-k 20 2>/dev/null || echo '[]'")
+     → JSON 결과 파싱: results[].entity, results[].source_note, results[].score, results[].source
+     → 실패 시 기존 LIKE 폴백:
+       Bash("python3 -c \"import sqlite3; c=sqlite3.connect('{DB_PATH}').cursor(); [print(r) for r in c.execute(\\\"SELECT name, type, description, source_note FROM entities WHERE name LIKE '%{키워드}%' OR name_ko LIKE '%{키워드}%' LIMIT 20\\\")]\"")
+
+  2. 관계 탐색 (1-2홉):
+     발견된 엔티티의 source/target 관계 조회:
+     Bash("python3 -c \"import sqlite3; c=sqlite3.connect('{DB_PATH}').cursor(); [print(r) for r in c.execute(\\\"SELECT r.type, e2.name, e2.source_note FROM relationships r JOIN entities e2 ON r.target_id=e2.id WHERE r.source_id IN (SELECT id FROM entities WHERE name LIKE '%{키워드}%') LIMIT 30\\\")]\"")
+
+  3. 커뮤니티 연관 노트:
+     엔티티가 속한 커뮤니티의 다른 멤버 조회:
+     Bash("python3 -c \"import sqlite3; c=sqlite3.connect('{DB_PATH}').cursor(); [print(r) for r in c.execute(\\\"SELECT DISTINCT e2.name, e2.source_note FROM entities e1 JOIN entities e2 ON e1.community_id=e2.community_id WHERE e1.name LIKE '%{키워드}%' AND e2.name!=e1.name LIMIT 15\\\")]\"")
+
+  4. 결과를 graphrag_results에 저장 → Phase C 교차 검증에 포함
+
+ELSE:
+  → GraphRAG DB 미존재. Phase A-G 스킵.
+```
+
+> **하이브리드 검색**: Dense Embedding(시멘틱) + FTS5(키워드) + Reranker 자동 결합.
+> embedding index 미존재 시 기존 LIKE 검색으로 graceful fallback.
 
 ### Phase B: 키워드 검색 (retrieval-specialist 로직)
 
@@ -305,8 +335,8 @@ Main이 입력 소스를 직접 추출합니다. 스킬 참조: `km-content-extr
    - 관련 태그 식별 및 해당 노트 수집
 
 3. 폴더 기반 검색:
-   - Library/{{ZETTELKASTEN_ROOT}}/ 하위 관련 폴더 식별
-   - Library/{{RESEARCH_ROOT}}/ MOC 파일 검색
+   - Library/Zettelkasten/ 하위 관련 폴더 식별
+   - Library/Research/ MOC 파일 검색
    - Mine/ 하위 사용자 직접 작성 콘텐츠 검색
 ```
 
@@ -357,7 +387,7 @@ Graph 결과 ∩ Retrieval 결과:
 
 3-tier 계층:
   → 메인MOC + 카테고리MOC + 원자노트
-  → {{RESEARCH_ROOT}}/[프로젝트명]/ 디렉토리 구조
+  → Research/[프로젝트명]/ 디렉토리 구조
 ```
 
 ### 4-3. 태그 추천
@@ -400,9 +430,9 @@ Write({ file_path: "{vault_absolute_path}/적절한/경로/파일명.md", conten
 ```
 
 **경로 규칙** (CLAUDE.md 참조):
-- Vault root = `{{VAULT_NAME}}`
+- Vault root = `AI_Second_Brain`
 - 경로는 vault root 기준 상대 경로
-- `{{VAULT_NAME}}/`를 prefix로 붙이지 말 것!
+- `AI_Second_Brain/`를 prefix로 붙이지 말 것!
 
 ### 5-0. 저장 경로 결정 (CRITICAL — 모든 노트 생성 전 필수!)
 
@@ -419,8 +449,8 @@ YES → Mine/ 하위:
   - 업무 산출물 (CV 등)   → Mine/Projects/
 
 NO → Library/ 하위 (기본):
-  - YouTube/웹 정리       → Library/{{ZETTELKASTEN_ROOT}}/{적절한 주제폴더}/
-  - 대규모 리서치 (3-tier) → Library/{{RESEARCH_ROOT}}/{프로젝트명}/
+  - YouTube/웹 정리       → Library/Zettelkasten/{적절한 주제폴더}/
+  - 대규모 리서치 (3-tier) → Library/Research/{프로젝트명}/
   - 외부 Threads          → Library/Threads/
   - 학술 논문             → Library/Papers/
   - 웹 클리핑/가이드      → Library/Clippings/
@@ -457,7 +487,7 @@ NO → Library/ 하위 (기본):
 
 ```
 1. Resources/images/{topic-folder}/ 디렉토리 생성:
-   Bash("mkdir -p {{VAULT_PATH}}/Resources/images/{topic-folder}/")
+   Bash("mkdir -p /home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/")
 
 2. 수집된 이미지 다운로드:
    웹 이미지: Bash("curl -sLo '{경로}' '{url}'")
@@ -469,7 +499,7 @@ NO → Library/ 하위 (기본):
    - 이미지 연속 배치 금지 (반드시 텍스트로 분리)
 
 4. 검증:
-   Glob("{{VAULT_NAME}}/Resources/images/{topic-folder}/*") → 파일 존재 확인
+   Glob("AI_Second_Brain/Resources/images/{topic-folder}/*") → 파일 존재 확인
 ```
 
 **모바일 제한**: auto 최대 5개, true 최대 10개, > 2MB 이미지 스킵
@@ -537,7 +567,7 @@ kakao_recipient가 설정된 경우:
 ### 출력 위치
 | 노트 | 경로 | 상태 |
 |------|------|------|
-| [MOC명] | {{RESEARCH_ROOT}}/... | 성공 |
+| [MOC명] | Research/... | 성공 |
 | ... | ... | ... |
 
 ### 카카오 전송
@@ -652,7 +682,7 @@ curl -s \
 /knowledge-manager-m https://docs.example.com 실무용
 
 # 아카이브 재편 (Mode R)
-/knowledge-manager-m {{RESEARCH_ROOT}}/얼룩소-아카이브 아카이브 재편
+/knowledge-manager-m Research/얼룩소-아카이브 아카이브 재편
 
 # vault 종합
 /knowledge-manager-m AI-Safety 주제 종합해줘 간단히 카카오 나에게

@@ -1,3 +1,8 @@
+---
+name: km-link-strengthening
+description: Use when needing Knowledge Manager 링크 강화 스킬. Obsidian vault 노트 간 의미적 wikilink 연결 생성 및 백링크 보강.
+---
+
 # Knowledge Manager 연결 강화 스킬
 
 > 새로 생성된 노트와 기존 vault 노트 간 자동 양방향 링크 생성
@@ -90,9 +95,9 @@ Tier 1: Obsidian CLI backlinks (최우선)
 
 검색 전략 (wikilink 역추적):
 1. CLI backlinks로 이 노트를 참조하는 모든 노트 발견:
-   Bash: "$OBSIDIAN_CLI" backlinks path="{새노트경로}" format=json
+   Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" backlinks path="{새노트경로}" format=json
 2. CLI links로 이 노트가 참조하는 노트 확인:
-   Bash: "$OBSIDIAN_CLI" links path="{새노트경로}"
+   Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" links path="{새노트경로}"
 3. 발견된 노트들을 관련성 점수 +4점으로 후보에 추가
 
 CLI 실패 시 Tier 2: Grep 폴백
@@ -109,7 +114,7 @@ CLI 실패 시 Tier 2: Grep 폴백
 새 노트: "GraphRAG 아키텍처 분석"
 
 Tier 1 (CLI):
-  "$OBSIDIAN_CLI" backlinks path="Zettelkasten/AI-연구/GraphRAG 아키텍처 분석.md" format=json
+  "/mnt/c/Program Files/Obsidian/Obsidian.com" backlinks path="Library/Zettelkasten/AI-연구/GraphRAG 아키텍처 분석.md" format=json
   → 결과: Efficient-Memory-MOC.md, RAG-Pipeline-Overview.md 등
 
 CLI 실패 시 Tier 2 (Grep):
@@ -124,7 +129,7 @@ CLI 실패 시 Tier 2 (Grep):
 
 ```
 Tier 1: Obsidian CLI search (최우선)
-  Bash: "$OBSIDIAN_CLI" search query="{키워드}" format=json
+  Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" search query="{키워드}" format=json
 
 CLI 실패 시 Tier 2: Obsidian MCP
   도구: mcp__obsidian__search_vault
@@ -179,7 +184,7 @@ Advanced 모드 (Neo4j 사용 가능 시):
 ```
 새 노트: "LLM 세션 종속성과 초기 프롬프트의 중요성"
 태그: [AI-성능최적화]
-폴더: Zettelkasten/AI-성능최적화/
+폴더: Library/Zettelkasten/AI-성능최적화/
 
 후보 노트 1: "AI 퍼포먼스 결정 요인의 4가지 차원"
 - 제목 키워드 "AI", "퍼포먼스" → 부분 일치 +1
@@ -232,7 +237,7 @@ Advanced 모드 (Neo4j 사용 가능 시):
 
 ```
 Tier 1: Obsidian CLI append (섹션 추가용)
-  Bash: "$OBSIDIAN_CLI" append path="{기존노트경로}" content="\n- [[새노트]] - 자동 연결 (YYYY-MM-DD)"
+  Bash: "/mnt/c/Program Files/Obsidian/Obsidian.com" append path="{기존노트경로}" content="\n- [[새노트]] - 자동 연결 (YYYY-MM-DD)"
 
 CLI 실패 시 Tier 2: Obsidian MCP update_note (surgical edit용)
   도구: mcp__obsidian__update_note
@@ -252,7 +257,7 @@ CLI 실패 시 Tier 2: Obsidian MCP update_note (surgical edit용)
 ```
 mcp__obsidian__update_note
 
-path: "Zettelkasten/AI-성능최적화/AI 퍼포먼스 결정 요인의 4가지 차원 - 2025-10-05-0000.md"
+path: "Library/Zettelkasten/AI-성능최적화/AI 퍼포먼스 결정 요인의 4가지 차원 - 2025-10-05-0000.md"
 
 edits:
   - mode: "insert"
@@ -288,7 +293,7 @@ OR (섹션이 없을 경우):
 
 ### 새 노트
 - 노트: [[LLM 세션 종속성과 초기 프롬프트의 중요성 - 2026-01-03]]
-- 생성 위치: Zettelkasten/AI-성능최적화/
+- 생성 위치: Library/Zettelkasten/AI-성능최적화/
 
 ### 추가된 연결 (양방향)
 
@@ -381,10 +386,10 @@ Phase 6: 검증 및 보고
 
 | 작업 | Tier 1: CLI | Tier 2: MCP | Tier 3: 폴백 |
 |------|------------|-------------|-------------|
-| 관련 노트 검색 | `"$OBSIDIAN_CLI" search query="{q}" format=json` | `mcp__obsidian__search_vault` | Grep |
-| 역추적 (backlinks) | `"$OBSIDIAN_CLI" backlinks path="{p}" format=json` | Grep `\[\[노트명\]\]` | - |
-| 노트 링크 확인 | `"$OBSIDIAN_CLI" links path="{p}"` | Read + wikilink 파싱 | - |
-| 노트 읽기 | `"$OBSIDIAN_CLI" read path="{p}"` | `mcp__obsidian__read_note` | Read |
-| 역방향 링크 추가 (append) | `"$OBSIDIAN_CLI" append path="{p}" content="{c}"` | `mcp__obsidian__update_note` | Edit |
+| 관련 노트 검색 | `"/mnt/c/Program Files/Obsidian/Obsidian.com" search query="{q}" format=json` | `mcp__obsidian__search_vault` | Grep |
+| 역추적 (backlinks) | `"/mnt/c/Program Files/Obsidian/Obsidian.com" backlinks path="{p}" format=json` | Grep `\[\[노트명\]\]` | - |
+| 노트 링크 확인 | `"/mnt/c/Program Files/Obsidian/Obsidian.com" links path="{p}"` | Read + wikilink 파싱 | - |
+| 노트 읽기 | `"/mnt/c/Program Files/Obsidian/Obsidian.com" read path="{p}"` | `mcp__obsidian__read_note` | Read |
+| 역방향 링크 추가 (append) | `"/mnt/c/Program Files/Obsidian/Obsidian.com" append path="{p}" content="{c}"` | `mcp__obsidian__update_note` | Edit |
 | surgical text 편집 | - (CLI 미지원) | `mcp__obsidian__update_note` | Edit |
 | 일괄 백링크 (배치) | CLI orphans + backlinks + 커스텀 로직 | `mcp__obsidian__auto_backlink_vault` | - |

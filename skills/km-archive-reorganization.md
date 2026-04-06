@@ -314,7 +314,7 @@ OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
 mcp__obsidian__move_note({ sourcePath: "Library/Zettelkasten/AI-연구/old-note.md", destinationPath: "Library/Zettelkasten/AI-도구/old-note.md" })
 
 # MCP 실패 시: Bash mv fallback (wikilink 수동 업데이트 필요!)
-mv "{{VAULT_PATH}}/Library/Zettelkasten/AI-연구/old-note.md" "{{VAULT_PATH}}/Library/Zettelkasten/AI-도구/old-note.md"
+mv "/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain/Library/Zettelkasten/AI-연구/old-note.md" "/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain/Library/Zettelkasten/AI-도구/old-note.md"
 ```
 
 ---

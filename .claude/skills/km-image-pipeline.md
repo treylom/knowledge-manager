@@ -1,3 +1,8 @@
+---
+name: km-image-pipeline
+description: Use when needing Knowledge Manager 이미지 파이프라인. 이미지 다운로드, OCR 처리, vault 저장까지의 자동화 워크플로우.
+---
+
 # Knowledge Manager 이미지 파이프라인 스킬
 
 > 웹/PDF/로컬 소스에서 이미지/차트/그래프를 추출하여 Obsidian/Notion에 임베딩하는 절차
@@ -13,8 +18,8 @@ Resources/images/{topic-folder}/
 ```
 
 - **topic-folder**: 주제를 kebab-case로 변환 (예: `ai-agent-basics-specal1849`, `mcp-protocol-guide`)
-- vault 경로: `{{VAULT_NAME}}/Resources/images/{topic-folder}/`
-- 절대 경로 (Write/Bash 사용 시): `{{VAULT_PATH}}/Resources/images/{topic-folder}/`
+- vault 경로: `Second_Brain/Resources/images/{topic-folder}/`
+- 절대 경로 (Write/Bash 사용 시): `/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain/Resources/images/{topic-folder}/`
 
 ### 파일명 규칙
 
@@ -244,17 +249,16 @@ convert "{input}" -resize 1920x1920\> -quality 85 "{output}"
 이미지 임베드가 포함된 노트를 Obsidian에 생성할 때의 도구 우선순위:
 
 ```bash
-# Obsidian CLI 경로 (km-config.json obsidianCli.path 또는 /knowledge-manager-setup 참조)
-OBSIDIAN_CLI="$OBSIDIAN_CLI"
+OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
 
 # 1순위: Obsidian CLI create
-"$OBSIDIAN_CLI" create path="{{ZETTELKASTEN_ROOT}}/[카테고리]/[노트명].md" content="[이미지 임베드 포함 마크다운]"
+"$OBSIDIAN_CLI" create path="Library/Zettelkasten/[카테고리]/[노트명].md" content="[이미지 임베드 포함 마크다운]"
 
 # CLI 실패 시: Obsidian MCP fallback
-mcp__obsidian__create_note({ path: "{{ZETTELKASTEN_ROOT}}/[카테고리]/[노트명].md", content: "[마크다운]" })
+mcp__obsidian__create_note({ path: "Library/Zettelkasten/[카테고리]/[노트명].md", content: "[마크다운]" })
 
 # MCP 실패 시: Write 도구 fallback
-Write(file_path="{{VAULT_PATH}}/{{ZETTELKASTEN_ROOT}}/[카테고리]/[노트명].md", content="[마크다운]")
+Write(file_path="/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain/Library/Zettelkasten/[카테고리]/[노트명].md", content="[마크다운]")
 ```
 
 > **경로 규칙**: CLI/MCP는 vault root 기준 상대 경로. Write 도구는 절대 경로.
@@ -275,26 +279,26 @@ Write(file_path="{{VAULT_PATH}}/{{ZETTELKASTEN_ROOT}}/[카테고리]/[노트명]
 
 ```bash
 # 1. 디렉토리 생성
-mkdir -p {{VAULT_PATH}}/Resources/images/{topic-folder}/
+mkdir -p /mnt/c/Users/treyl/Documents/Obsidian/Second_Brain/Resources/images/{topic-folder}/
 
 # 2. 웹 이미지 다운로드
-curl -sLo "{{VAULT_PATH}}/Resources/images/{topic-folder}/{NN}-{desc}.{ext}" "{url}"
+curl -sLo "/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain/Resources/images/{topic-folder}/{NN}-{desc}.{ext}" "{url}"
 
 # 3. PDF 이미지 복사
-cp km-temp/{name}/images/{file} "{{VAULT_PATH}}/Resources/images/{topic-folder}/{NN}-{desc}.{ext}"
+cp km-temp/{name}/images/{file} "/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain/Resources/images/{topic-folder}/{NN}-{desc}.{ext}"
 
 # 4. 다운로드 실패 시 Playwright 스크린샷 폴백
 mcp__playwright__browser_take_screenshot({
   ref: "{element-ref}",
   element: "{element-description}",
-  filename: "{{VAULT_PATH}}/Resources/images/{topic-folder}/{NN}-screenshot.{ext}"
+  filename: "/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain/Resources/images/{topic-folder}/{NN}-screenshot.{ext}"
 })
 ```
 
 ### 저장 후 검증
 
 ```
-□ Glob("{{VAULT_NAME}}/Resources/images/{topic-folder}/*") → 파일 존재 확인
+□ Glob("Second_Brain/Resources/images/{topic-folder}/*") → 파일 존재 확인
 □ 각 파일 크기 > 0 확인
 □ 노트 내 ![[Resources/images/...]] 구문과 실제 파일 1:1 매핑 확인
 ```

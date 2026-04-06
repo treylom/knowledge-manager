@@ -631,6 +631,36 @@ RALPH Loop: ON (최대 5회) | DA: ON
 팀원들이 병렬 처리 중입니다. Category Lead가 결과를 통합하여 보고합니다.
 ```
 
+### Phase A-G: GraphRAG 하이브리드 검색 (Dense + Sparse + Reranker)
+
+```
+DB_PATH=".team-os/graphrag/index/vault_graph.db"
+INDEX_DIR=".team-os/graphrag/index"
+
+IF DB 존재:
+  1. 하이브리드 검색 (Dense Embedding + FTS5 Sparse + Reranker):
+     Bash("python3 .team-os/graphrag/scripts/graph_search.py hybrid '{키워드}' --top-k 20 2>/dev/null || echo '[]'")
+     → JSON 결과 파싱: results[].entity, results[].source_note, results[].score, results[].source
+     → 실패 시 기존 LIKE 폴백:
+       Bash("python3 -c \"import sqlite3; c=sqlite3.connect('{DB_PATH}').cursor(); [print(r) for r in c.execute(\\\"SELECT name, type, description, source_note FROM entities WHERE name LIKE '%{키워드}%' OR name_ko LIKE '%{키워드}%' LIMIT 20\\\")]\"")
+
+  2. 관계 탐색 (1-2홉):
+     발견된 엔티티의 source/target 관계 조회:
+     Bash("python3 -c \"import sqlite3; c=sqlite3.connect('{DB_PATH}').cursor(); [print(r) for r in c.execute(\\\"SELECT r.type, e2.name, e2.source_note FROM relationships r JOIN entities e2 ON r.target_id=e2.id WHERE r.source_id IN (SELECT id FROM entities WHERE name LIKE '%{키워드}%') LIMIT 30\\\")]\"")
+
+  3. 커뮤니티 연관 노트:
+     엔티티가 속한 커뮤니티의 다른 멤버 조회:
+     Bash("python3 -c \"import sqlite3; c=sqlite3.connect('{DB_PATH}').cursor(); [print(r) for r in c.execute(\\\"SELECT DISTINCT e2.name, e2.source_note FROM entities e1 JOIN entities e2 ON e1.community_id=e2.community_id WHERE e1.name LIKE '%{키워드}%' AND e2.name!=e1.name LIMIT 15\\\")]\"")
+
+  4. 결과를 graphrag_results에 저장 → Phase C 교차 검증에 포함
+
+ELSE:
+  → GraphRAG DB 미존재. Phase A-G 스킵.
+```
+
+> **하이브리드 검색**: Dense Embedding(시멘틱) + FTS5(키워드) + Reranker 자동 결합.
+> embedding index 미존재 시 기존 LIKE 검색으로 graceful fallback.
+
 ---
 
 ## STEP 4: 결과 수집 + RALPH + DA (대시보드 실시간 갱신 포함)
@@ -866,9 +896,9 @@ Write({ file_path: "{vault_absolute_path}/적절한/경로/파일명.md", conten
 ```
 
 **경로 규칙** (CLAUDE.md 참조):
-- Vault root = `{{VAULT_NAME}}`
+- Vault root = `AI_Second_Brain`
 - 경로는 vault root 기준 상대 경로
-- `{{VAULT_NAME}}/`를 prefix로 붙이지 말 것!
+- `AI_Second_Brain/`를 prefix로 붙이지 말 것!
 
 ### 5-0. 저장 경로 결정 (CRITICAL — 모든 노트 생성 전 필수!)
 
@@ -885,8 +915,8 @@ YES → Mine/ 하위:
   - 업무 산출물 (CV 등)   → Mine/Projects/
 
 NO → Library/ 하위 (기본):
-  - YouTube/웹 정리       → Library/{{ZETTELKASTEN_ROOT}}/{적절한 주제폴더}/
-  - 대규모 리서치 (3-tier) → Library/{{RESEARCH_ROOT}}/{프로젝트명}/
+  - YouTube/웹 정리       → Library/Zettelkasten/{적절한 주제폴더}/
+  - 대규모 리서치 (3-tier) → Library/Research/{프로젝트명}/
   - 외부 Threads          → Library/Threads/
   - 학술 논문             → Library/Papers/
   - 웹 클리핑/가이드      → Library/Clippings/
@@ -934,15 +964,15 @@ NO → Library/ 하위 (기본):
    - 각 이미지의 Type, Source, URL/Path, Context, Placement 확인
 
 2. Resources/images/{topic-folder}/ 디렉토리 생성:
-   Bash("mkdir -p {{VAULT_PATH}}/Resources/images/{topic-folder}/")
+   Bash("mkdir -p /home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/")
 
 3. 각 이미지 다운로드/복사:
 
    웹 이미지:
-   Bash("curl -sLo '{{VAULT_PATH}}/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}' '{url}'")
+   Bash("curl -sLo '/home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}' '{url}'")
 
    PDF 이미지 (marker 출력):
-   Bash("cp km-temp/{name}/images/{file} '{{VAULT_PATH}}/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}'")
+   Bash("cp km-temp/{name}/images/{file} '/home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}'")
 
 4. 다운로드 실패 시 Playwright 스크린샷 폴백:
    - 원본 URL로 navigate
@@ -959,7 +989,7 @@ NO → Library/ 하위 (기본):
    - 로컬 전용 이미지: callout 블록으로 대체 — "[이미지: Resources/images/{topic-folder}/{filename}]"
 
 7. 저장 검증:
-   Glob("{{VAULT_NAME}}/Resources/images/{topic-folder}/*") → 파일 존재 확인
+   Glob("AI_Second_Brain/Resources/images/{topic-folder}/*") → 파일 존재 확인
    각 이미지 파일 크기 > 0 확인
 ```
 
@@ -1103,7 +1133,7 @@ PRECONDITION (셧다운 전제 조건 — DA 활성화):
 ### 출력 위치
 | 노트 | 경로 | 상태 |
 |------|------|------|
-| [MOC명] | {{RESEARCH_ROOT}}/... | 성공 |
+| [MOC명] | Research/... | 성공 |
 
 ### Checkpoints 요약
 | # | Checkpoint | 상태 |
