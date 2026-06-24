@@ -63,9 +63,20 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 | Word (DOCX) | `Read` 도구 | 임베디드 이미지 설명 추출 | → docx 스킬 |
 | Excel/CSV | `Read` 도구 | 차트 없음 (데이터만) | → xlsx 스킬 |
 | PowerPoint | `Read` 도구 | 슬라이드 이미지 설명 추출 | → pptx 스킬 |
+| 한글 (HWP/HWPX) | **kordoc**: `npx kordoc <files> -d <outdir>` → md 변환 후 `Read` | 변환 md 표·수치 원문 대조 | → 아래 "한국어 로컬 문서 fallback" |
 | 이미지 | `Read` 도구 (Vision) | 원본 그대로 활용 | 이 문서 |
 | Notion | `mcp__notion__API-get-block-children` | image 블록 URL 수집 | 이 문서 |
 | Vault 종합 | Obsidian CLI search (fallback: MCP search) | 기존 attachments/ 참조 | 이 문서 |
+
+> **한국어 로컬 문서 변환 fallback = kordoc**: 입력이 로컬 문서인데 기본 경로(`Read`·기존 어댑터)로 충실히 못 읽는 형식 — **HWP·HWPX, 표가 복잡한 XLSX/DOCX, 한국어 PDF** — 은 [kordoc](https://github.com/chrisryugj/kordoc)으로 마크다운 변환 후 진행한다.
+>
+> ```bash
+> npx kordoc <files> -d <outdir>   # HWP3/HWP/HWPX/HWPML/PDF/XLS/XLSX/DOCX → Markdown
+> ```
+>
+> - 변환된 md 는 **원문 보존 검증**(표 행수·수치 표본 대조) 후 사용한다.
+> - PDF 입력은 `pdfjs-dist@4` peer 의존이 필요하다(v6 비호환).
+> - MCP 로도 쓸 수 있다(`kordoc-mcp` 바이너리). 다만 KM ingest 는 CLI 일괄 변환이 기본 핏이라 CLI 를 우선한다.
 
 ---
 
