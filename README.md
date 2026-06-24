@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/treylom-knowledge-manager-badge.png)](https://mseep.ai/app/treylom-knowledge-manager)
+
 # Knowledge Manager Agent
 
 > 📖 **[English documentation is available at the bottom of this page.](#-english-documentation)**
