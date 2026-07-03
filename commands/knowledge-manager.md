@@ -166,7 +166,22 @@ Mode G는 다음을 수행합니다:
 
 ---
 
-## STEP 1: 사용자 선호도 확인 (필수!)
+## STEP 1: 사용자 선호도 확인 — USER-PROFILE 기반 축약
+
+> **먼저 USER-PROFILE.md를 확인한다** (KM 단독 = vault `_meta/USER-PROFILE.md` / 통합 = `~/.claude/USER-PROFILE.md`). 프로필이 있으면 매번 4질문을 던지지 않고 **프로필에서 기본값을 유도해 확인 1질문**으로 축약한다 — 반복 질문 자체가 UX 페인포인트였다(setup-wizard Phase 4에서 근본 해소).
+
+### STEP 1-PRE: 프로필 확인 (분기)
+
+```
+Read(USER-PROFILE.md)  # vault _meta/ 우선, 없으면 ~/.claude/
+```
+
+- **프로필 있음** → `roles`/`info_flow`/`workflows`에서 4개 기본값 유도 후 **확인 1질문만**:
+  - 유도 규칙(예): info_flow="링크·PDF 다수·자주 못 찾음" → 연결수준=최대·분할=3-tier / roles="코드/기술 중심" → 중점=기술·코드 / roles="글쓰기·리서치" → 중점=개념·이론, 상세=상세 / 기본 분할=3-tier·연결=최대
+  - 질문: `AskUserQuestion` 1개 — "당신 프로필 기준 이렇게 정리할게요: [상세수준 X·중점 Y·분할 Z·연결 W]. 이대로 진행할까요?" 옵션 = {이대로 진행 / 이번만 바꾸기(→ 아래 4질문)}
+- **프로필 없음** → 아래 기존 4질문 그대로 (fallback). 끝에 "다음부터 반복 질문을 없애려면 `/knowledge-manager setup`으로 1회 프로파일 인터뷰를 하세요" 안내 1줄.
+
+### (프로필 없을 때 fallback) 4개 질문
 
 **콘텐츠 처리/읽기 전에 반드시 AskUserQuestion을 호출하세요!**
 **4개 질문을 한 번의 호출로 모두 물어봅니다!**
