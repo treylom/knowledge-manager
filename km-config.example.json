@@ -105,5 +105,19 @@
 
     "connectionLevel": "normal",
     "_connectionLevel_help": "min=최소연결, normal=적절한연결(기본), max=최대연결"
+  },
+
+  "linking": {
+    "_help": "링크 점수제 (link_scorer). 코어는 stdlib 휴리스틱만으로 동작 — 아래 값은 선택 튜닝.",
+    "inlineThreshold": 0.6,
+    "_inlineThreshold_help": "이 점수 이상이면 본문 인라인 [[링크]]. 기본 0.6 (낮추면 링크↑·과잉 위험, 높이면 링크↓). 최근 노트로 실측 후 조정 권장.",
+    "relatedThreshold": 0.4,
+    "_relatedThreshold_help": "이 점수 이상~inlineThreshold 미만이면 하단 '관련 문서' 섹션. 미만은 미등재(로그만).",
+    "maxInline": 5,
+    "maxRelated": 7,
+    "_caps_help": "노트당 링크 상한 — 과잉 링크는 그래프 노이즈.",
+
+    "semantic_adapter": null,
+    "_semantic_adapter_help": "선택: 의미 유사도 신호(+0.30 상한)를 추가하는 어댑터. null=비활성(코어 휴리스틱만, 기본값). 예: {\"type\": \"vault-search\", \"endpoint\": \"http://127.0.0.1:8400\"}. 구현체는 lib/adapters/impl_<type>.py 규약(공개 레포엔 인터페이스만 포함)."
   }
 }

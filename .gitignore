@@ -36,3 +36,6 @@ yarn.lock
 # 로그
 *.log
 npm-debug.log*
+
+__pycache__/
+*.pyc

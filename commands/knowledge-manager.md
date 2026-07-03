@@ -352,12 +352,14 @@ Main이 입력 소스를 직접 추출합니다. 스킬 참조: `km-content-extr
 
 ## STEP 3: Vault 탐색 (Main 직접 - 순차)
 
+> **🚨 HARD 게이트 — 저장 전 기존 네트워크 확인 1회 의무.** 새 노트를 저장하기 전에 반드시 vault 검색(환경별 도구: 검색 인덱스 / Obsidian CLI search / MCP)으로 관련 기존 노트·MOC·시리즈를 찾는다. **standalone 노트를 그냥 던지지 말 것** — (1) 중복 회피 (2) 올바른 폴더/시리즈 편입 (3) 양방향 wikilink 연결(고아 방지). 이 확인을 건너뛴 저장은 미완으로 간주한다. (STEP 6-1.5 시리즈/MOC 편입과 짝.)
+
 ### Phase A: 그래프 탐색 (graph-navigator 로직)
 
 ```
 1. Hub 노트 식별:
    - Grep으로 [[키워드]] 패턴 검색
-     Grep({ pattern: "\\[\\[.*{키워드}.*\\]\\]", path: "/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain" })
+     Grep({ pattern: "\\[\\[.*{키워드}.*\\]\\]", path: "/path/to/your/vault" })
    - 가장 많이 참조되는 노트 = Hub 노트 (최소 2개 식별)
 
 2. 1-hop 추적:
@@ -852,17 +854,35 @@ FOR EACH target_note IN update_targets (최대 15개):
 
 ## STEP 6: 연결 강화 + 결과 보고
 
-### 6-1. 연결 강화 (연결 수준 "보통" 또는 "최대"일 때)
+### 6-1. 연결 강화 — 점수제 차등 배치 (연결 수준 "보통" 또는 "최대"일 때)
 
-상세 워크플로우: `km-link-strengthening.md` 참조
+상세 워크플로우: `km-link-strengthening.md` 참조. 링크는 **"찾으면 넣는" 이진 방식이 아니라 후보마다 점수를 내고 점수 구간별로 배치를 차등**한다 (약한 링크가 본문을 오염시키거나 강한 링크가 묻히는 문제 해소).
 
 ```
-1. 새 노트 핵심 키워드 추출
-2. CLI `"$OBSIDIAN_CLI" search` / MCP search_vault로 관련 노트 탐색
-   - CLI `"$OBSIDIAN_CLI" deadends` → 나가는 링크 없는 파일 = 연결 강화 우선 후보 (format 옵션 미지원, 플레인 텍스트 목록 반환)
-3. 관련성 점수 3점 이상인 노트와 양방향 링크 생성
-4. CLI `"$OBSIDIAN_CLI" append` / MCP update_note로 기존 노트에 역방향 링크 추가
-   - CLI `"$OBSIDIAN_CLI" prepend` → 네비게이션 헤더 추가 시 사용
+1. 새 노트 핵심 키워드/개념 추출
+2. Vault 검색으로 관련 노트 후보 수집 (도구는 환경별 — CLI search / MCP search_vault / vault 인덱스)
+   - deadends(나가는 링크 없는 파일) = 연결 강화 우선 후보
+3. 후보마다 link_scorer로 점수 산출 → 티어 분배:
+   payload = {"target": {새 노트}, "candidates": [{후보들}], "linking": {km-config의 linking 블록}}
+   python3 agent-office/km-tools/km-tools.py score-links payload.json
+   → 반환: inline[] (본문 [[링크]]) / related[] (하단 "관련 문서" 섹션) / log[] (미등재, 후보 기록만)
+   - 신호(코어 = 무의존 stdlib): 제목·별칭 매칭 / 태그 교집합 / 폴더·MOC 근접 / 본문 공출현 / 최근성
+   - semantic_adapter 설정 시에만 의미 유사도 신호 가산 (미설정 시 코어 휴리스틱만으로 완전히 동작)
+   - 임계: inline 기본 0.6 (km-config linking.inlineThreshold로 조정), related 0.4. 상한 인라인 5·관련 7.
+4. inline 후보 = 개념 첫 등장 위치에 [[링크]] / related 후보 = 하단 "## 관련 문서" 섹션
+5. 각 링크의 대상 노트에 역방향 링크 추가 (양방향) — append / update_note
+   - 네비게이션 헤더는 prepend
+```
+
+### 6-1.5. 시리즈/MOC 편입 의무 (standalone 고아 = 미완)
+
+> 새 노트가 시리즈·여정(Journey)·주제 MOC와 관련되면, 그 **MOC 타임라인 등록 + 양방향 wikilink까지가 저장의 완료 조건**이다. 단독(standalone) 노트로 던져 고아를 만들지 말 것.
+
+```
+1. 새 노트가 기존 시리즈/MOC에 속하는지 판정 (6-1의 관련 노트 중 MOC/인덱스 노트 확인)
+2. 속하면: 해당 MOC의 타임라인/목록에 새 노트 항목 append + 새 노트 frontmatter에 parent/series 링크
+3. 반복될 방법론·절차 산출물은 `*-playbook.md`로 별도 저장하고 원 노트와 양방향 링크 (재사용 자산화)
+4. 편입 대상이 없으면 그 사유를 로그 (진짜 신규 주제 = OK, 판정 누락 = 고아 위험)
 ```
 
 ### 6-2. Filed Back — 환류 (Explorations add up)
@@ -1027,12 +1047,12 @@ vault에 전용 페이지가 없는 주요 엔티티를 식별:
 
 ```bash
 # Obsidian vault 파일 시스템 동기화 (touch로 mtime 갱신)
-find "/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain" -name "*.md" -newer /tmp/.km-sync-marker -exec touch {} + 2>/dev/null
+find "/path/to/your/vault" -name "*.md" -newer /tmp/.km-sync-marker -exec touch {} + 2>/dev/null
 
 # 또는 rsync로 WSL→Windows 강제 동기화 (생성/수정된 파일만)
 rsync -av --update --include="*.md" --exclude="*" \
-  "/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain/Library/" \
-  "/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain/Library/" \
+  "/path/to/your/vault/Library/" \
+  "/path/to/your/vault/Library/" \
   2>/dev/null || true
 ```
 
