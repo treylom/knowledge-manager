@@ -357,7 +357,7 @@ Main이 입력 소스를 직접 추출합니다. 스킬 참조: `km-content-extr
 ```
 1. Hub 노트 식별:
    - Grep으로 [[키워드]] 패턴 검색
-     Grep({ pattern: "\\[\\[.*{키워드}.*\\]\\]", path: "/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain" })
+     Grep({ pattern: "\\[\\[.*{키워드}.*\\]\\]", path: "/path/to/your/vault" })
    - 가장 많이 참조되는 노트 = Hub 노트 (최소 2개 식별)
 
 2. 1-hop 추적:
@@ -1027,12 +1027,12 @@ vault에 전용 페이지가 없는 주요 엔티티를 식별:
 
 ```bash
 # Obsidian vault 파일 시스템 동기화 (touch로 mtime 갱신)
-find "/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain" -name "*.md" -newer /tmp/.km-sync-marker -exec touch {} + 2>/dev/null
+find "/path/to/your/vault" -name "*.md" -newer /tmp/.km-sync-marker -exec touch {} + 2>/dev/null
 
 # 또는 rsync로 WSL→Windows 강제 동기화 (생성/수정된 파일만)
 rsync -av --update --include="*.md" --exclude="*" \
-  "/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain/Library/" \
-  "/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain/Library/" \
+  "/path/to/your/vault/Library/" \
+  "/path/to/your/vault/Library/" \
   2>/dev/null || true
 ```
 

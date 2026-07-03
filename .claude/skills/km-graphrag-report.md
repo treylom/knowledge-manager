@@ -416,7 +416,7 @@ Tier 2: Obsidian MCP
 
 Tier 3: Write 도구
   Write({
-    file_path: "/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain/Library/Research/GraphRAG-Analysis/...",
+    file_path: "/path/to/your/vault/Library/Research/GraphRAG-Analysis/...",
     content: "보고서 내용"
   })
 ```

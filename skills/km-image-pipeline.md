@@ -19,7 +19,7 @@ Resources/images/{topic-folder}/
 
 - **topic-folder**: 주제를 kebab-case로 변환 (예: `ai-agent-basics-specal1849`, `mcp-protocol-guide`)
 - vault 경로: `Second_Brain/Resources/images/{topic-folder}/`
-- 절대 경로 (Write/Bash 사용 시): `/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain/Resources/images/{topic-folder}/`
+- 절대 경로 (Write/Bash 사용 시): `/path/to/your/vault/Resources/images/{topic-folder}/`
 
 ### 파일명 규칙
 
@@ -258,7 +258,7 @@ OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
 mcp__obsidian__create_note({ path: "Library/Zettelkasten/[카테고리]/[노트명].md", content: "[마크다운]" })
 
 # MCP 실패 시: Write 도구 fallback
-Write(file_path="/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain/Library/Zettelkasten/[카테고리]/[노트명].md", content="[마크다운]")
+Write(file_path="/path/to/your/vault/Library/Zettelkasten/[카테고리]/[노트명].md", content="[마크다운]")
 ```
 
 > **경로 규칙**: CLI/MCP는 vault root 기준 상대 경로. Write 도구는 절대 경로.
@@ -279,19 +279,19 @@ Write(file_path="/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain/Library/Zett
 
 ```bash
 # 1. 디렉토리 생성
-mkdir -p /mnt/c/Users/treyl/Documents/Obsidian/Second_Brain/Resources/images/{topic-folder}/
+mkdir -p /path/to/your/vault/Resources/images/{topic-folder}/
 
 # 2. 웹 이미지 다운로드
-curl -sLo "/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain/Resources/images/{topic-folder}/{NN}-{desc}.{ext}" "{url}"
+curl -sLo "/path/to/your/vault/Resources/images/{topic-folder}/{NN}-{desc}.{ext}" "{url}"
 
 # 3. PDF 이미지 복사
-cp km-temp/{name}/images/{file} "/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain/Resources/images/{topic-folder}/{NN}-{desc}.{ext}"
+cp km-temp/{name}/images/{file} "/path/to/your/vault/Resources/images/{topic-folder}/{NN}-{desc}.{ext}"
 
 # 4. 다운로드 실패 시 Playwright 스크린샷 폴백
 mcp__playwright__browser_take_screenshot({
   ref: "{element-ref}",
   element: "{element-description}",
-  filename: "/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain/Resources/images/{topic-folder}/{NN}-screenshot.{ext}"
+  filename: "/path/to/your/vault/Resources/images/{topic-folder}/{NN}-screenshot.{ext}"
 })
 ```
 

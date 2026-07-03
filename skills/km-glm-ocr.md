@@ -84,7 +84,7 @@ Marker(Tier 2)가 실패하거나 부족한 경우 GLM-OCR로 폴백:
 ```bash
 # 1. venv 생성 (기존 paddleocr-vl venv 재사용 가능)
 # Python 3.12 권장
-"C:\Users\treyl\AppData\Local\Programs\Python\Python312\python.exe" -m venv .venvs\glm-ocr
+"C:\Users\YourName\AppData\Local\Programs\Python\Python312\python.exe" -m venv .venvs\glm-ocr
 
 # 2. 의존성 설치
 ".venvs\glm-ocr\Scripts\pip.exe" install torch torchvision --index-url https://download.pytorch.org/whl/cu128
@@ -98,7 +98,7 @@ Marker(Tier 2)가 실패하거나 부족한 경우 GLM-OCR로 폴백:
 
 ```bash
 # transformers를 git 버전으로 업그레이드
-"C:\Users\treyl\OneDrive\Desktop\AI\.venvs\paddleocr-vl\Scripts\pip.exe" install --upgrade git+https://github.com/huggingface/transformers.git
+"C:\Users\YourName\OneDrive\Desktop\AI\.venvs\paddleocr-vl\Scripts\pip.exe" install --upgrade git+https://github.com/huggingface/transformers.git
 ```
 
 ---
@@ -111,7 +111,7 @@ GLM-OCR 호출 전 **반드시** 가용성 확인:
 
 ```bash
 # Windows - paddleocr-vl venv 재사용
-if exist "C:\Users\treyl\OneDrive\Desktop\AI\.venvs\paddleocr-vl\Scripts\python.exe" (echo AVAILABLE) else (echo NOT_AVAILABLE)
+if exist "C:\Users\YourName\OneDrive\Desktop\AI\.venvs\paddleocr-vl\Scripts\python.exe" (echo AVAILABLE) else (echo NOT_AVAILABLE)
 
 # 또는 전용 venv
 if exist ".venvs\glm-ocr\Scripts\python.exe" (echo AVAILABLE) else (echo NOT_AVAILABLE)
@@ -201,7 +201,7 @@ print(output_text)
 
 **Windows 경로 예시:**
 ```bash
-"C:\Users\treyl\OneDrive\Desktop\AI\.venvs\paddleocr-vl\Scripts\python.exe" "test_glm_ocr.py"
+"C:\Users\YourName\OneDrive\Desktop\AI\.venvs\paddleocr-vl\Scripts\python.exe" "test_glm_ocr.py"
 ```
 
 ### 방법 B: Ollama (설치 필요)

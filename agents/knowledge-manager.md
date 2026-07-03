@@ -177,10 +177,10 @@ Read("{PDF경로}")
 ```bash
 # Python 3.12 필수 (Python 3.14는 미지원)
 mkdir -p ./km-temp
-"C:\Users\treyl\AppData\Local\Programs\Python\Python312\Scripts\marker_single.exe" "{PDF경로}" --output_format markdown --output_dir ./km-temp
+"C:\Users\YourName\AppData\Local\Programs\Python\Python312\Scripts\marker_single.exe" "{PDF경로}" --output_format markdown --output_dir ./km-temp
 
 # 스캔 PDF의 경우 OCR 강제
-"C:\Users\treyl\AppData\Local\Programs\Python\Python312\Scripts\marker_single.exe" "{PDF경로}" --output_format markdown --output_dir ./km-temp --force_ocr
+"C:\Users\YourName\AppData\Local\Programs\Python\Python312\Scripts\marker_single.exe" "{PDF경로}" --output_format markdown --output_dir ./km-temp --force_ocr
 
 # 출력: ./km-temp/{파일명}/{파일명}.md
 Read("./km-temp/{파일명}/{파일명}.md")

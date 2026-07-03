@@ -33,8 +33,8 @@
 
 **Substitution guidance per pattern:**
 - `/home/tofu/AI/AI_Second_Brain` → `{{VAULT_PATH}}`
-- `/mnt/c/Users/treyl/Documents/Obsidian/Second_Brain` → `{{VAULT_PATH}}`
-- `C:\Users\treyl\OneDrive\Desktop\AI\AI_Second_Brain` → `{{VAULT_PATH}}`
+- `/path/to/your/vault` → `{{VAULT_PATH}}`
+- `C:\Users\YourName\OneDrive\Desktop\AI\AI_Second_Brain` → `{{VAULT_PATH}}`
 - `AI_Second_Brain` (standalone, as vault name) → `{{VAULT_NAME}}`
 - `Zettelkasten/` (as root folder, 1-depth) → `{{ZETTELKASTEN_ROOT}}/`
 - `Research/` (as root folder, 1-depth) → `{{RESEARCH_ROOT}}/`
@@ -694,14 +694,14 @@ git merge --no-ff feature/vp-worker-beta -m "merge: worker β (documentation)"
 **Step 1: List all personal-path patterns**
 
 ```bash
-grep -nE "/home/tofu/AI/AI_Second_Brain|C:\\\\Users\\\\treyl|AI_Second_Brain" skills/km-export-formats.md
+grep -nE "/home/tofu/AI/AI_Second_Brain|C:\\\\Users\\\\YourName|AI_Second_Brain" skills/km-export-formats.md
 ```
 
 **Step 2: Apply substitutions via Edit tool (one Edit per pattern)**
 
 For each occurrence:
 - `/home/tofu/AI/AI_Second_Brain` → `{{VAULT_PATH}}`
-- `C:\Users\treyl\OneDrive\Desktop\AI\AI_Second_Brain` → `{{VAULT_PATH}}`
+- `C:\Users\YourName\OneDrive\Desktop\AI\AI_Second_Brain` → `{{VAULT_PATH}}`
 - Standalone `AI_Second_Brain/` (as vault name prefix) → `{{VAULT_NAME}}/`
 - `Zettelkasten/` root → `{{ZETTELKASTEN_ROOT}}/`
 - `Research/` root → `{{RESEARCH_ROOT}}/`
@@ -710,7 +710,7 @@ For each occurrence:
 
 ```bash
 grep -cE "{{VAULT_PATH}}|{{VAULT_NAME}}|{{ZETTELKASTEN_ROOT}}|{{RESEARCH_ROOT}}" skills/km-export-formats.md
-grep -cE "/home/tofu|C:\\\\Users\\\\treyl" skills/km-export-formats.md
+grep -cE "/home/tofu|C:\\\\Users\\\\YourName" skills/km-export-formats.md
 ```
 Expected: first > 0, second = 0
 
@@ -741,7 +741,7 @@ Same pattern as γ-1. Key substitutions:
 **Verify + mirror sync + commit:**
 
 ```bash
-grep -cE "/home/tofu|C:\\\\Users\\\\treyl" skills/km-image-pipeline.md  # expect 0
+grep -cE "/home/tofu|C:\\\\Users\\\\YourName" skills/km-image-pipeline.md  # expect 0
 cp skills/km-image-pipeline.md .claude/skills/km-image-pipeline.md
 diff -q skills/km-image-pipeline.md .claude/skills/km-image-pipeline.md
 git add skills/km-image-pipeline.md .claude/skills/km-image-pipeline.md
@@ -759,7 +759,7 @@ Same pattern. Key substitutions:
 **Verify + mirror sync + commit:**
 
 ```bash
-grep -cE "/home/tofu|C:\\\\Users\\\\treyl" skills/km-content-extraction.md  # expect 0
+grep -cE "/home/tofu|C:\\\\Users\\\\YourName" skills/km-content-extraction.md  # expect 0
 cp skills/km-content-extraction.md .claude/skills/km-content-extraction.md
 diff -q skills/km-content-extraction.md .claude/skills/km-content-extraction.md
 git add skills/km-content-extraction.md .claude/skills/km-content-extraction.md
@@ -796,7 +796,7 @@ git commit -m "refactor(skills): placeholder-ize km-glm-ocr.md"
 
 ### Task δ-2: Refactor skills/km-workflow.md (1 occurrence, Windows path)
 
-Line ~679: `file_path: "C:\Users\treyl\OneDrive\Desktop\AI\AI_Second_Brain\..."` → `file_path: "{{VAULT_PATH}}/..."` (use forward slashes in replacement).
+Line ~679: `file_path: "C:\Users\YourName\OneDrive\Desktop\AI\AI_Second_Brain\..."` → `file_path: "{{VAULT_PATH}}/..."` (use forward slashes in replacement).
 
 Verify, mirror, commit.
 
@@ -808,7 +808,7 @@ Verify, mirror, commit.
 
 ### Task δ-4: Refactor skills/km-archive-reorganization.md (1 occurrence)
 
-Line ~317: `mv "/mnt/c/Users/treyl/.../Second_Brain/Library/Zettelkasten/AI-연구/old-note.md" "/mnt/c/Users/treyl/.../Second_Brain/Library/Zettelkasten/AI-도구/old-note.md"` → both paths use `{{VAULT_PATH}}/Library/...`
+Line ~317: `mv "/mnt/c/Users/YourName/.../Second_Brain/Library/Zettelkasten/AI-연구/old-note.md" "/mnt/c/Users/YourName/.../Second_Brain/Library/Zettelkasten/AI-도구/old-note.md"` → both paths use `{{VAULT_PATH}}/Library/...`
 
 Verify, mirror, commit.
 
