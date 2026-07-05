@@ -1,11 +1,17 @@
 {
-  "name": "Knowledge Manager Marketplace",
-  "description": "Knowledge Manager 플러그인 마켓플레이스",
+  "name": "knowledge-manager",
+  "description": "Knowledge Manager 플러그인 마켓플레이스 - 웹/PDF/소셜 콘텐츠를 Obsidian/Notion 지식베이스로",
+  "owner": {
+    "name": "tofukyung",
+    "url": "https://github.com/treylom"
+  },
   "plugins": [
     {
       "name": "km",
       "description": "웹, PDF, 소셜 미디어에서 콘텐츠를 추출하여 Obsidian/Notion에 저장",
-      "path": "."
+      "source": ".",
+      "category": "productivity",
+      "tags": ["knowledge-management", "obsidian", "notion", "zettelkasten"]
     }
   ]
 }
