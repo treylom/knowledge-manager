@@ -1,6 +1,6 @@
 #!/bin/bash
 # tofugraph — GraphRAG ops adapter for Knowledge Manager (optional adapter).
-# Verbs: build | search | status | doctor | heal | monitor | install-daemon | uninstall-daemon
+# Verbs: build | search | status | doctor | heal | monitor | install-daemon | uninstall-daemon | guard-set
 #
 # Best-effort by design: it FIXES what it safely can (stuck server restart, stale
 # index re-build trigger) and only REPORTS what it can't (sudo/OS updates,
@@ -152,6 +152,35 @@ except Exception: print('unknown')" 2>/dev/null || echo unknown)
     echo "[OK]   7. service registered: $label (auto-restart possible)"
   else
     echo "[INFO] 7. no service registered — manual mode. For auto-heal: tofugraph.sh install-daemon"
+  fi
+
+  # 8. semantic-label guard (a rebuild/merge bug can silently wipe enriched
+  #    relationship labels; counting is cheap, losing them is not — the baseline
+  #    ratchets up on growth and any drop below it is a hard FAIL)
+  local dbf="${ROOT:+$ROOT/index/vault_graph.db}" basef="${ROOT:+$ROOT/index/label-guard.baseline}"
+  if [ -n "$ROOT" ] && [ -f "$dbf" ] && command -v sqlite3 >/dev/null 2>&1; then
+    local labels
+    labels=$(sqlite3 "$dbf" \
+      "SELECT COUNT(*) FROM relationships WHERE type NOT IN ('related_to','mentions');" 2>/dev/null)
+    if [ -z "$labels" ]; then
+      echo "[INFO] 8. semantic-label guard: n/a (no relationships table — older index schema)"
+    elif [ ! -f "$basef" ]; then
+      echo "$labels" > "$basef"
+      echo "[OK]   8. semantic-label guard: $labels labels — baseline recorded"
+    else
+      local base; base=$(tr -dc '0-9' < "$basef")
+      if [ "$labels" -ge "${base:-0}" ] 2>/dev/null; then
+        [ "$labels" -gt "${base:-0}" ] && echo "$labels" > "$basef"
+        echo "[OK]   8. semantic-label guard: $labels labels (baseline $base) — no loss"
+      else
+        echo "[FAIL] 8. semantic-label guard: $labels < baseline $base — enriched labels LOST."
+        echo "       fix: restore the index from a backup taken before the losing build;"
+        echo "            if the drop is intentional (notes deleted), re-baseline: tofugraph.sh guard-set"
+        fails=$((fails+1))
+      fi
+    fi
+  else
+    echo "[SKIP] 8. semantic-label guard (index db or sqlite3 not available)"
   fi
 
   echo
@@ -314,6 +343,19 @@ uninstall_daemon() {
   fi
 }
 
+# -------------------------------------------------------------- guard-set ---
+guard_set() {
+  # Re-baseline the semantic-label guard after an *intentional* label decrease.
+  local dbf="${ROOT:+$ROOT/index/vault_graph.db}" basef="${ROOT:+$ROOT/index/label-guard.baseline}"
+  [ -n "$ROOT" ] && [ -f "$dbf" ] || { echo "no index db under \$GRAPHRAG_ROOT — nothing to baseline"; return 1; }
+  command -v sqlite3 >/dev/null 2>&1 || { echo "sqlite3 not available"; return 1; }
+  local labels
+  labels=$(sqlite3 "$dbf" \
+    "SELECT COUNT(*) FROM relationships WHERE type NOT IN ('related_to','mentions');" 2>/dev/null)
+  [ -n "$labels" ] || { echo "no relationships table — older index schema, guard not applicable"; return 1; }
+  echo "$labels" > "$basef" && echo "baseline set: $labels semantic labels ($basef)"
+}
+
 # ---------------------------------------------------------- build / search --
 delegate_engine() {
   # The GraphRAG engine (indexer/server) ships with ThisCode's vendor tree —
@@ -342,11 +384,12 @@ case "${1:-help}" in
   monitor) monitor ;;
   install-daemon)   install_daemon ;;
   uninstall-daemon) uninstall_daemon ;;
+  guard-set) guard_set ;;
   build)   shift; delegate_engine build "$@" ;;
   search)  shift; q="${1:-}"; [ -z "$q" ] && { echo "usage: tofugraph.sh search <query>"; exit 1; }
            curl -s -m 30 "$API/api/search?q=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))" "$q")&mode=hybrid&top_k=5" \
              | python3 -m json.tool ;;
   *) echo "tofugraph — GraphRAG ops adapter"
-     echo "usage: tofugraph.sh {doctor|status|heal|monitor|install-daemon|uninstall-daemon|build|search <q>}"
+     echo "usage: tofugraph.sh {doctor|status|heal|monitor|install-daemon|uninstall-daemon|guard-set|build|search <q>}"
      echo "env: GRAPHRAG_ROOT, GRAPHRAG_API_URL, GRAPHRAG_SERVICE_LABEL, NTFY_TOPIC" ;;
 esac
