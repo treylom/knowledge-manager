@@ -3,6 +3,8 @@
 # Knowledge Manager Agent
 
 > 📖 **[English documentation is available at the bottom of this page.](#-english-documentation)**
+>
+> **역할 경계**: Knowledge Manager는 특정 내부 인프라(GraphRAG 검색 서버 등)에 의존하지 않고 단독 동작하는 범용 지식관리 제품입니다 — 그런 연동은 선택적 어댑터로만 제공됩니다.
 
 Claude Code용 종합 지식 관리 에이전트. 다양한 소스에서 콘텐츠를 수집하고, Zettelkasten 원칙에 따라 분석하여, Obsidian 또는 Notion에 저장합니다.
 
@@ -594,6 +596,8 @@ MIT License - 자유롭게 사용, 수정, 배포하세요.
 ---
 
 # 🇺🇸 English Documentation
+
+> **Role boundary**: Knowledge Manager is a standalone, general-purpose knowledge tool — it does not depend on any private infrastructure (e.g., a GraphRAG search server); such integrations ship only as optional adapters.
 
 ## What is Knowledge Manager?
 
