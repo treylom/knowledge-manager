@@ -15,7 +15,8 @@ knowledge-manager로 그린 그래프(frontmatter + 위키링크) 위에 GraphRA
 /tofugraph search <질문> → 검색 1회 (동작 확인)
 /tofugraph status       → 상태 + 최근 24h 성능 요약
 /tofugraph heal         → 1회성 수리 (이중 확인 후에만 재시작)
-/tofugraph auto         → 자동 관리 켜기 (시간마다 감시·자가치유 데몬)
+/tofugraph auto         → 자동 관리 켜기 (1시간마다 감시·자가치유 데몬, 해제: uninstall-daemon)
+/tofugraph guard-set    → 의미 라벨 가드 기준선 재설정 (노트 삭제 등 의도적 감소 후에만)
 ```
 
 ## 실행 절차 (에이전트용)

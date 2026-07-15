@@ -2,9 +2,11 @@
 # tofugraph — GraphRAG ops adapter for Knowledge Manager (optional adapter).
 # Verbs: build | search | status | doctor | heal | monitor | install-daemon | uninstall-daemon | guard-set
 #
-# Best-effort by design: it FIXES what it safely can (stuck server restart, stale
-# index re-build trigger) and only REPORTS what it can't (sudo/OS updates,
-# hardware pressure, corrupted vault content). See km-graphrag-ops.md for the table.
+# Best-effort by design: it FIXES what it safely can (stuck/wedged server restart),
+# DETECTS-and-REPORTS what needs a human (low disk, semantic-label loss), and stays
+# OUT of what it cannot see (OS updates, hardware pressure, corrupted vault content —
+# human territory). A stale index gets a build *recommendation*, never an auto-trigger.
+# See km-graphrag-ops.md for the full table.
 #
 # Config resolution: env > auto-detect > default. No paths are hardcoded.
 #   GRAPHRAG_ROOT           graphrag home (default: nearest .team-os/graphrag walking up from cwd)
@@ -89,7 +91,7 @@ doctor() {
     | python3 -c "import sys,json; d=json.load(sys.stdin); sys.exit(0 if d.get('ready') else 1)" 2>/dev/null; then
     echo "[OK]   2. /ready true (index loaded)"
   else
-    echo "[WARN] 2. /ready not true — warming up (normal ~30-60s after restart) or index missing."
+    echo "[WARN] 2. /ready not true — warming up (normal ~1-2min after restart) or index missing."
     echo "       fix: wait 60s and re-run; if persistent, run: tofugraph.sh build"
     warns=$((warns+1))
   fi
@@ -208,7 +210,7 @@ heal() {
   echo "confirmed stuck → restarting service..."
   if restart_server; then
     if wait_ready; then echo "recovered: restart + /ready GREEN"; return 0
-    else echo "partial: restarted but /ready timed out — wait 2-3min (model warm-up) and run doctor"; return 1; fi
+    else echo "partial: restarted but /ready timed out — wait another 1-2min (model warm-up) and run doctor"; return 1; fi
   else
     echo "restart unavailable — start the server manually, then run doctor"; return 1
   fi
