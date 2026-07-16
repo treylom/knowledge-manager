@@ -1,5 +1,5 @@
 ---
-name: Social Media Content Extraction
+name: km-social-media
 description: Extract content from Threads, Instagram with reply collection and depth control
 ---
 

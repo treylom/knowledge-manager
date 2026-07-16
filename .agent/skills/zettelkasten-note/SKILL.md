@@ -1,5 +1,5 @@
 ---
-name: Zettelkasten Note Creation
+name: zettelkasten-note
 description: Create atomic, interconnected notes following Zettelkasten methodology
 ---
 

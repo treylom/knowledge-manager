@@ -1,5 +1,5 @@
 ---
-name: Knowledge Manager Setup
+name: km-setup
 description: Automated setup wizard for Knowledge Manager - configures MCP servers and creates config files
 ---
 

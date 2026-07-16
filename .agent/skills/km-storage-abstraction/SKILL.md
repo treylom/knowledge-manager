@@ -1,5 +1,5 @@
 ---
-name: Storage Abstraction Layer
+name: km-storage-abstraction
 description: Unified storage interface for Obsidian, Notion, and local file systems
 ---
 

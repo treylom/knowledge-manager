@@ -1,5 +1,5 @@
 ---
-name: Browser Abstraction Layer
+name: km-browser-abstraction
 description: Unified browser interface for Antigravity native, Playwright, and Hyperbrowser providers
 ---
 

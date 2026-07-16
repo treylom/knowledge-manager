@@ -1,5 +1,5 @@
 ---
-name: Knowledge Manager Workflow
+name: km-workflow
 description: 6-phase workflow for content extraction, analysis, and export to Obsidian/Notion
 ---
 

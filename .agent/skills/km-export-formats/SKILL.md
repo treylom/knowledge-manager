@@ -1,5 +1,5 @@
 ---
-name: Export Formats
+name: km-export-formats
 description: Output format specifications for Obsidian, Notion, and Markdown exports
 ---
 

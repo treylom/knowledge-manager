@@ -1,0 +1,9 @@
+{
+  "name": "knowledge-manager",
+  "version": "1.0.0",
+  "description": "Knowledge Manager Agent for Claude Code - Extract and organize content from web, PDF, social media to Obsidian/Notion",
+  "author": {
+    "name": "tofukyung"
+  },
+  "skills": "./.agent/skills/"
+}
