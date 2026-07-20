@@ -71,6 +71,7 @@ curl -s "${SEARCH_ENDPOINT}/api/search?q=${QUERY_ENCODED}&top_k=${TOP_K}&mode=hy
 "$OBSIDIAN_CLI" search query="${QUERY}" format=json limit=1000
 ```
 - 전제: Obsidian 데스크톱 앱 설치 + 실행 중 (setup 위저드가 감지·안내).
+- **질의는 핵심 키워드 1~2개로 축약해 넣는다** — CLI 는 전문 일치(full-text) 검색이라 문장형 통짜 질의는 0히트가 정상이다(실측: 문장형 "No matches" vs 키워드 2개 다수 히트). **0건이면 키워드 변형(동의어·영/한 표기) 1회 재질의**, 그래도 0건일 때만 다음 티어로.
 - CLI는 관련도 순위가 약하므로 흔한 단어는 limit을 크게 잡고 결과에서 추린다.
 - CLI 부재·실행 오류 → Tier 3로.
 
