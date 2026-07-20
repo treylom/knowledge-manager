@@ -154,6 +154,7 @@ Claude Code [Remote Control](https://code.claude.com/docs/en/remote-control)로 
 
 - 질문 형태에 따라 quick/deep 자동 선택, MOC(지도 노트) 우선 표시
 - 답변은 항상 실제 노트 내용 기반 + 출처 경로 표기
+- **Codex CLI 설치(방법 4)에서도 같은 검색이 `km-search` 스킬로 동작합니다.**
 
 ## 🚀 설치 방법
 
@@ -312,6 +313,21 @@ Knowledge Manager 설정을 도와줘.
 1. **Manage MCP Servers** 창에서 **Refresh** 클릭
 2. obsidian 서버가 목록에 표시되는지 확인
 3. 테스트: "https://example.com 이 페이지를 정리해줘"
+
+### 방법 4: Codex CLI 플러그인 (ChatGPT Codex)
+
+```bash
+# 저장소 클론 (또는 이미 받아둔 로컬 경로 사용)
+git clone https://github.com/treylom/knowledge-manager.git
+
+# 로컬 마켓플레이스 등록 + 플러그인 설치
+codex plugin marketplace add ./knowledge-manager
+codex plugin add km@knowledge-manager
+```
+
+- 설치되면 `.agent/skills/`의 스킬 세트(km-workflow · km-setup · **km-search** 등)가 Codex 스킬 카탈로그에 노출됩니다.
+- **vault 검색도 동일하게 동작합니다** (Codex 스킬명은 `km-search`): 위 `/km:search`와 같은 4단계 자동 폴백을 수행합니다 — GraphRAG 서버가 없어도 Obsidian CLI·텍스트 검색이 받아줍니다. (③ Obsidian MCP 티어는 MCP를 연결한 경우에만 사용됩니다.)
+- GraphRAG 스택 구축 명령(`/tofugraph`)은 현재 Claude Code 경로로 제공됩니다. Codex 환경은 이미 떠 있는 GraphRAG 서버(`GRAPHRAG_API_URL` 환경변수 또는 기본 `http://127.0.0.1:8400`)에 자동으로 연결합니다.
 
 ---
 
