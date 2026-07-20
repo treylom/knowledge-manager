@@ -327,9 +327,9 @@ codex plugin add km@knowledge-manager
 
 - 설치되면 `.agent/skills/`의 스킬 세트(km-workflow · km-setup · **km-search** 등)가 Codex 스킬 카탈로그에 노출됩니다.
 - **vault 검색도 동일하게 동작합니다** (Codex 스킬명은 `km-search`): 위 `/km:search`와 같은 4단계 자동 폴백을 수행합니다 — GraphRAG 서버가 없어도 Obsidian CLI·텍스트 검색이 받아줍니다. (③ Obsidian MCP 티어는 MCP를 연결한 경우에만 사용됩니다.)
-- GraphRAG 스택 구축 명령(`/tofugraph`)은 현재 Claude Code 경로로 제공됩니다. Codex 환경은 이미 떠 있는 GraphRAG 서버(`GRAPHRAG_API_URL` 환경변수 또는 기본 `http://127.0.0.1:8400`)에 자동으로 연결합니다.
+- Codex 환경은 이미 떠 있는 GraphRAG 서버(`GRAPHRAG_API_URL` 환경변수 또는 기본 `http://127.0.0.1:8400`)에 자동으로 연결합니다.
 - ⚠️ **Codex sandbox 주의**: Codex 기본 sandbox 는 외부 바이너리 실행·네트워크를 제한합니다 — Obsidian CLI 검색 티어를 쓰려면 승인 응답 또는 `~/.codex/config.toml` 의 `sandbox_mode` 상향이 필요합니다(막히면 텍스트 검색으로 자동 폴백은 됩니다). Obsidian 데스크톱 앱이 실행 중이어야 CLI 티어가 동작합니다.
-- **지원 범위**: Codex 플러그인은 현재 핵심 스킬 세트(km-workflow·km-setup·km-search·export·storage·social·zettelkasten 등 9종)를 제공합니다. PDF/YouTube/이미지 파이프라인·GraphRAG 구축(`/tofugraph`) 등 세부 스킬은 아직 Claude Code 전용입니다. `km-setup` 의 자동 환경분기도 Codex 미지원 — vault 경로는 첫 실행 때 직접 입력하면 됩니다.
+- **지원 범위**: Codex 플러그인은 현재 핵심 스킬 세트(km-workflow · km-setup · km-search · export · storage · social · zettelkasten 등 9종)를 제공합니다. PDF/YouTube/이미지 파이프라인·GraphRAG 구축(`/tofugraph`) 등 세부 스킬은 아직 Claude Code 전용입니다. `km-setup` 의 자동 환경분기도 Codex 미지원 — vault 경로는 첫 실행 때 직접 입력하면 됩니다.
 
 ---
 
@@ -1100,7 +1100,7 @@ Only consider Hyperbrowser if Playwright MCP is consistently blocked on specific
 ### Environment Variable Support
 
 ```bash
-# (참고) 설정은 km-config.json 이 정본입니다 — 환경변수 오버라이드는 현재 미지원.
+# (Note) km-config.json is the source of truth — env-var overrides are not currently supported.
 ```
 
 ---
