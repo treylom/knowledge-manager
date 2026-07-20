@@ -83,7 +83,12 @@ Bash("ls .team-os/spawn-prompts/*.md 2>/dev/null | wc -l")
 ### 0-2. Obsidian 환경 확인 (3-Tier)
 
 ```bash
-OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+# 집행 계약: km-config.json 의 obsidianCli.path 우선, 비어 있으면 OS별 자동 감지
+CONFIG_CLI="$(python3 -c "import json;print(json.load(open('km-config.json')).get('obsidianCli',{}).get('path',''))" 2>/dev/null)"
+if [ -n "$CONFIG_CLI" ]; then OBSIDIAN_CLI="$CONFIG_CLI"
+elif [ -x "/Applications/Obsidian.app/Contents/MacOS/obsidian-cli" ]; then OBSIDIAN_CLI="/Applications/Obsidian.app/Contents/MacOS/obsidian-cli"   # mac
+elif [ -f "/mnt/c/Program Files/Obsidian/Obsidian.com" ]; then OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"                          # wsl
+else OBSIDIAN_CLI="C:\Program Files\Obsidian\Obsidian.com"; fi                                                                                   # windows
 
 # Tier 1: CLI 확인 (우선)
 "$OBSIDIAN_CLI" version 2>/dev/null
@@ -905,11 +910,11 @@ Write({ file_path: "{vault_absolute_path}/적절한/경로/파일명.md", conten
 **Mine/ vs Library/ 라우팅**: 노트 생성 전 반드시 아래 규칙으로 경로를 결정합니다.
 
 ```
-Q: "이 콘텐츠의 원저자가 tofukyung(김재경)인가?"
+Q: "이 콘텐츠의 원저자가 vault 소유자 본인인가?"
 
 YES → Mine/ 하위:
   - 얼룩소 원문           → Mine/얼룩소/
-  - @tofukyung Threads    → Mine/Threads/
+  - 본인 Threads/SNS 발행글 → Mine/Threads/
   - 강의 자료             → Mine/Lectures/
   - 에세이/분석/에버그린  → Mine/Essays/
   - 업무 산출물 (CV 등)   → Mine/Projects/
@@ -924,9 +929,9 @@ NO → Library/ 하위 (기본):
 ```
 
 **판별 시그널 (우선순위)**:
-1. author 필드 = "tofukyung" 또는 "김재경" → Mine/
-2. source URL에 "@tofukyung" 포함 → Mine/Threads/
-3. tags에 "tofukyung" 포함 → Mine/
+1. author 필드 = vault 소유자 본인 → Mine/
+2. source URL에 본인 SNS 핸들 포함 → Mine/Threads/
+3. tags에 본인 필명 포함 → Mine/
 4. 위 해당 없음 → Library/
 
 ### 5-2. 3-tier 구조 (해당 시)
@@ -964,15 +969,15 @@ NO → Library/ 하위 (기본):
    - 각 이미지의 Type, Source, URL/Path, Context, Placement 확인
 
 2. Resources/images/{topic-folder}/ 디렉토리 생성:
-   Bash("mkdir -p /home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/")
+   Bash("mkdir -p {vault_absolute_path}/Resources/images/{topic-folder}/")
 
 3. 각 이미지 다운로드/복사:
 
    웹 이미지:
-   Bash("curl -sLo '/home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}' '{url}'")
+   Bash("curl -sLo '{vault_absolute_path}/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}' '{url}'")
 
    PDF 이미지 (marker 출력):
-   Bash("cp km-temp/{name}/images/{file} '/home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}'")
+   Bash("cp km-temp/{name}/images/{file} '{vault_absolute_path}/Resources/images/{topic-folder}/{NN}-{descriptive-name}.{ext}'")
 
 4. 다운로드 실패 시 Playwright 스크린샷 폴백:
    - 원본 URL로 navigate

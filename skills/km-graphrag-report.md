@@ -5,6 +5,11 @@ description: Use when needing GraphRAG ReAct 보고서 생성 스킬. Thought→
 
 # GraphRAG ReAct 보고서 생성 스킬
 
+> ⚠️ **엔진 실행 정본 (2026-07-21 정정)**: 아래 예시의 `python .team-os/graphrag/scripts/graph_search.py --tool ...` 표기는 **개념 설명용 의사(pseudo) 인터페이스**로, 해당 스크립트는 배포물에 존재하지 않는다. 실제 실행 정본 = **`scripts/graphrag-ops/tofugraph.sh`**:
+> - 검색: `bash scripts/graphrag-ops/tofugraph.sh search "<질의>"` (내부적으로 `${GRAPHRAG_API_URL:-http://127.0.0.1:8400}/api/search?mode=hybrid` 호출)
+> - 인덱스 구축: `bash scripts/graphrag-ops/tofugraph.sh build` · 상태: `... status` (엔진·env 계약 상세 = `skills/km-graphrag-ops.md`)
+
+
 > GraphRAG 검색 결과를 기반으로 구조화된 분석 보고서를 생성하고 Obsidian vault에 저장
 > 이론 기반: [[ReAct-패턴-추론과-행동의-교차]], [[GraphRAG-Map-Reduce-쿼리-전략]], [[6개-분석공간-개요]]
 

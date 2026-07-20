@@ -39,7 +39,12 @@ Main (Opus 1M, 단일 세션, AskUserQuestion 없음)
 ### Obsidian 접근 방식 확인 (3-Tier)
 
 ```bash
-OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"
+# 집행 계약: km-config.json 의 obsidianCli.path 우선, 비어 있으면 OS별 자동 감지
+CONFIG_CLI="$(python3 -c "import json;print(json.load(open('km-config.json')).get('obsidianCli',{}).get('path',''))" 2>/dev/null)"
+if [ -n "$CONFIG_CLI" ]; then OBSIDIAN_CLI="$CONFIG_CLI"
+elif [ -x "/Applications/Obsidian.app/Contents/MacOS/obsidian-cli" ]; then OBSIDIAN_CLI="/Applications/Obsidian.app/Contents/MacOS/obsidian-cli"   # mac
+elif [ -f "/mnt/c/Program Files/Obsidian/Obsidian.com" ]; then OBSIDIAN_CLI="/mnt/c/Program Files/Obsidian/Obsidian.com"                          # wsl
+else OBSIDIAN_CLI="C:\Program Files\Obsidian\Obsidian.com"; fi                                                                                   # windows
 
 # Tier 1: CLI 확인 (우선)
 "$OBSIDIAN_CLI" version 2>/dev/null
@@ -167,12 +172,12 @@ PDF 파일 감지 시:
 
 | $ARGUMENTS 키워드 | kakao_recipient | 질문 여부 |
 |---|---|---|
-| "카카오 나에게", "나한테 보내", "카톡 나에게" | **"김재경"** | 질문 안 함 |
+| "카카오 나에게", "나한테 보내", "카톡 나에게" | **km-config `kakao.selfName` 값** | 질문 안 함 |
 | "카카오 {이름}", "카톡 {이름}" | "{이름}" | 질문 안 함 |
 | "카카오", "카톡" (이름 없음) | 미정 | **1회 질문** |
 | (카카오/카톡 키워드 없음) | 미정 | **1회 질문 (첫 사용 시)** |
 
-> **CRITICAL**: 카카오톡 셀프 채팅방 이름은 "나"가 아니라 **"김재경"** (본인 실명)입니다.
+> **CRITICAL**: 카카오톡 셀프 채팅방 이름은 "나"가 아니라 **본인 실명**입니다 — km-config.json `kakao.selfName` 에 setup 이 기록한 값을 쓴다.
 > "나"로 검색하면 "나"가 포함된 다른 채팅방("~누나" 등)이 열려 혼란 발생.
 
 **카카오 키워드 없는 경우 — 세션 첫 사용 시 AskUserQuestion 1회 (배포 환경 대응):**
@@ -187,13 +192,13 @@ AskUserQuestion:
   question: "카카오톡 어느 채팅방으로 보낼까요?"
   header: "카카오 수신자"
   options:
-    - label: "나에게 (김재경)"
+    - label: "나에게 (본인 실명 = kakao.selfName)"
       description: "본인 채팅방으로 전송"
     - label: "전송 안함"
       description: "카카오 전송 건너뛰기"
   multiSelect: false
 
-→ "나에게 (김재경)" 선택 시: kakao_recipient = "김재경"
+→ "나에게" 선택 시: kakao_recipient = km-config `kakao.selfName` 값
 → "전송 안함" 선택 시: kakao_recipient = null
 → Other 입력 시: kakao_recipient = 입력한 채팅방 이름
 ```
@@ -439,11 +444,11 @@ Write({ file_path: "{vault_absolute_path}/적절한/경로/파일명.md", conten
 **Mine/ vs Library/ 라우팅**: 노트 생성 전 반드시 아래 규칙으로 경로를 결정합니다.
 
 ```
-Q: "이 콘텐츠의 원저자가 tofukyung(김재경)인가?"
+Q: "이 콘텐츠의 원저자가 vault 소유자 본인인가?"
 
 YES → Mine/ 하위:
   - 얼룩소 원문           → Mine/얼룩소/
-  - @tofukyung Threads    → Mine/Threads/
+  - 본인 Threads/SNS 발행글 → Mine/Threads/
   - 강의 자료             → Mine/Lectures/
   - 에세이/분석/에버그린  → Mine/Essays/
   - 업무 산출물 (CV 등)   → Mine/Projects/
@@ -458,9 +463,9 @@ NO → Library/ 하위 (기본):
 ```
 
 **판별 시그널 (우선순위)**:
-1. author 필드 = "tofukyung" 또는 "김재경" → Mine/
-2. source URL에 "@tofukyung" 포함 → Mine/Threads/
-3. tags에 "tofukyung" 포함 → Mine/
+1. author 필드 = vault 소유자 본인 → Mine/
+2. source URL에 본인 SNS 핸들 포함 → Mine/Threads/
+3. tags에 본인 필명 포함 → Mine/
 4. 위 해당 없음 → Library/
 
 ### 5-2. 3-tier 구조 (해당 시)
@@ -487,7 +492,7 @@ NO → Library/ 하위 (기본):
 
 ```
 1. Resources/images/{topic-folder}/ 디렉토리 생성:
-   Bash("mkdir -p /home/tofu/AI/AI_Second_Brain/Resources/images/{topic-folder}/")
+   Bash("mkdir -p {vault_absolute_path}/Resources/images/{topic-folder}/")
 
 2. 수집된 이미지 다운로드:
    웹 이미지: Bash("curl -sLo '{경로}' '{url}'")
@@ -601,7 +606,8 @@ Write("/tmp/km-kakao-msg.md", kakao_content)
 
 ```
 Bash:
-powershell.exe -Command "python '\\\\wsl.localhost\\Ubuntu\\home\\tofu\\AI\\.claude\\scripts\\send_kakao.py' -r '{kakao_recipient}' -f '\\\\wsl.localhost\\Ubuntu\\tmp\\km-kakao-msg.md' --convert-md"
+# {KM_INSTALL} = 본인 설치 경로(예: \\\\wsl.localhost\\Ubuntu\\home\\<user>\\<repo>)로 치환
+powershell.exe -Command "python '{KM_INSTALL}\\.claude\\scripts\\send_kakao.py' -r '{kakao_recipient}' -f '\\\\wsl.localhost\\Ubuntu\\tmp\\km-kakao-msg.md' --convert-md"
 ```
 
 **send_kakao.py가 처리하는 것:**
@@ -634,7 +640,7 @@ curl -s \
   -H "Priority: high" \
   -H "Tags: white_check_mark,brain" \
   -d "{생성된 노트 제목} - {노트 수}개 노트, {링크 수}개 링크 추가" \
-  ntfy.sh/tofu-km
+  ntfy.sh/{km-config notification.ntfyTopic 값}
 ```
 
 - kakao_recipient가 null(카카오 전송 안 함)이어도 ntfy는 발송
@@ -676,7 +682,7 @@ curl -s \
 /knowledge-manager-m https://threads.net/@user/post/123 요약해줘 카카오 나에게
 
 # 상세 분석 + 특정인에게 전송
-/knowledge-manager-m https://arxiv.org/paper 꼼꼼히 카카오 김재경
+/knowledge-manager-m https://arxiv.org/paper 꼼꼼히 카카오 홍길동
 
 # 실용 중심 정리
 /knowledge-manager-m https://docs.example.com 실무용
