@@ -88,7 +88,7 @@ The relevant subset of `km-config.example.json`:
     "_path_examples": {
       "windows": "C:\\Program Files\\Obsidian\\Obsidian.com",
       "wsl": "/mnt/c/Program Files/Obsidian/Obsidian.com",
-      "mac": "/Applications/Obsidian.app/Contents/MacOS/Obsidian"
+      "mac": "/Applications/Obsidian.app/Contents/MacOS/obsidian-cli"
     }
   }
 }
@@ -281,7 +281,7 @@ If `vault` prints an empty string or `/path/to/your/obsidian/vault`, re-run `/kn
    # WSL
    ls "/mnt/c/Program Files/Obsidian/Obsidian.com"
    # macOS
-   ls "/Applications/Obsidian.app/Contents/MacOS/Obsidian"
+   ls "/Applications/Obsidian.app/Contents/MacOS/obsidian-cli"
    ```
 3. Edit `km-config.json` directly, set `obsidianCli.path` to the correct absolute path, then:
    ```bash

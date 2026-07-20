@@ -389,13 +389,13 @@ Obsidian 앱에서 실시간으로 확인할 수 있어요! 🎉
 // Obsidian CLI (v1.12.4) 감지 — CLI가 있으면 MCP보다 빠른 접근 가능
 // 플랫폼별 표준 경로에서 자동 감지
 const cliWin = Bash(`"/mnt/c/Program Files/Obsidian/Obsidian.com" version 2>/dev/null || echo "NOT_FOUND"`)
-const cliMac = Bash(`/Applications/Obsidian.app/Contents/MacOS/Obsidian --version 2>/dev/null || echo "NOT_FOUND"`)
+const cliMac = Bash(`/Applications/Obsidian.app/Contents/MacOS/obsidian-cli version 2>/dev/null || echo "NOT_FOUND"`)
 
 let detectedCliPath = null
 if (!cliWin.includes("NOT_FOUND")) {
   detectedCliPath = "/mnt/c/Program Files/Obsidian/Obsidian.com"  // WSL/Windows
 } else if (!cliMac.includes("NOT_FOUND")) {
-  detectedCliPath = "/Applications/Obsidian.app/Contents/MacOS/Obsidian"  // macOS
+  detectedCliPath = "/Applications/Obsidian.app/Contents/MacOS/obsidian-cli"  // macOS
 }
 
 if (detectedCliPath) {
@@ -423,7 +423,7 @@ if (detectedCliPath) {
    CLI 경로 (플랫폼별):
      Windows: "C:\\Program Files\\Obsidian\\Obsidian.com"
      WSL:     "/mnt/c/Program Files/Obsidian/Obsidian.com"
-     macOS:   /Applications/Obsidian.app/Contents/MacOS/Obsidian
+     macOS:   /Applications/Obsidian.app/Contents/MacOS/obsidian-cli
 
    필수 조건:
      - Obsidian 데스크톱 앱 설치 (https://obsidian.md/download)

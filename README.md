@@ -137,6 +137,24 @@ Claude Code [Remote Control](https://code.claude.com/docs/en/remote-control)로 
 
 ---
 
+## 🔍 vault 검색 — `/km:search`
+
+수집·정리한 vault를 **명령 하나로 검색**합니다. 뒤에서 어떤 검색 엔진이 도는지는 자동으로 결정됩니다:
+
+```
+① GraphRAG 서버(설치돼 있으면) → ② Obsidian CLI → ③ Obsidian MCP → ④ 텍스트 검색
+```
+
+앞 단계가 없거나 실패하면 자동으로 다음 단계로 넘어가기 때문에, **GraphRAG 없이도 바로 쓸 수 있고**, 나중에 GraphRAG 스택을 얹으면 같은 명령이 자동으로 의미 기반 검색으로 올라섭니다 (스택 구축은 같은 플러그인의 `/tofugraph` 명령 — 상세: `skills/km-graphrag-ops.md`).
+
+```bash
+/km:search MCP란?                      # 즉답 (quick)
+/km:search --deep A와 B의 관계는?       # 상세 분석 (deep)
+```
+
+- 질문 형태에 따라 quick/deep 자동 선택, MOC(지도 노트) 우선 표시
+- 답변은 항상 실제 노트 내용 기반 + 출처 경로 표기
+
 ## 🚀 설치 방법
 
 ### 방법 1: Claude Code 플러그인 (권장)
