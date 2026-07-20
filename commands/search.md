@@ -102,13 +102,15 @@ grep -rn "${QUERY}" "${VAULT_PATH}" --include="*.md" -l | head -20
 - `related:` · `parent:` · 본문 `[[링크]]` → 추가 Read 후보(질문과 키워드가 겹치는 것 1~2개).
 
 ### B. backlinks 1-hop (DEEP 필수 · QUICK 은 top hit 이 얇을 때)
-top 1~2 노트에 대해 **역링크(그 노트를 가리키는 노트)** 와 **outlink(그 노트가 가리키는 노트)** 를 실측한다:
+top 1~2 노트에 대해 **backlink(그 노트를 가리키는 노트)** 와 **outlink(그 노트가 가리키는 노트)** 를 실측한다:
 ```bash
 # 집행 계약: DEEP 모드에서 top 1~2 노트에 반드시 실행. backlinks = 전 플랫폼 grep 근사 —
 # Obsidian CLI 의 backlinks 서브커맨드가 있으면(맥 데스크톱) 그걸 우선, 부재·오류 시 아래가 항상 동작한다.
+# 변수 규약: NOTE_PATH = VAULT_PATH 기준 상대경로. (절대경로가 들어와도 아래 NOTE_FILE 라인이 흡수한다.)
+NOTE_FILE="${VAULT_PATH}/${NOTE_PATH}"; [ -f "$NOTE_FILE" ] || NOTE_FILE="${NOTE_PATH}"
 STEM="$(basename "${NOTE_PATH}" .md)"
 grep -rl --include="*.md" -F "[[${STEM}" "${VAULT_PATH}" | head -10
-grep -o '\[\[[^]|#]*' "${VAULT_PATH}/${NOTE_PATH}" | sed 's/^\[\[//' | sort -u | head -15
+grep -o '\[\[[^]|#]*' "${NOTE_FILE}" | sed 's/^\[\[//' | sort -u | head -15
 ```
 - backlinks 가 많은 노트 = 허브 → 답변 진입점으로 우선한다.
 - backlinks/outlinks 중 질문과 겹치는 노트 1~2개를 추가 Read → 답변의 "🔗 연결 맥락"에 반영.
