@@ -91,6 +91,35 @@ grep -rn "${QUERY}" "${VAULT_PATH}" --include="*.md" -l | head -20
 - **QUICK**: top_k=5, 노트 읽기 1-2개
 - **DEEP**: top_k=10, 노트 읽기 3-5개
 
+## Phase 2.5: 그래프 확장 — frontmatter·backlinks (DEEP 필수 · 0건/빈약 시 의무)
+
+검색 엔진은 "어느 노트인가"까지만 안다. vault 의 진짜 구조 신호는 노트 안에 있다 — **frontmatter(태그·별칭·관련)와 wikilink 그래프(backlinks)를 활용**해야 검색이 똑똑해진다.
+
+### A. frontmatter 구조 신호 (읽는 모든 노트 공통)
+노트를 Read 하면 본문 전에 frontmatter 를 먼저 해석한다:
+- `aliases:` → **재질의 사전**: 1차 검색이 0건·빈약하면 별칭(영/한 표기 변형)으로 1회 재검색.
+- `tags:` · `type:` → MOC/허브 판정(Phase 0.5 입력) + 답변의 분류 근거.
+- `related:` · `parent:` · 본문 `[[링크]]` → 추가 Read 후보(질문과 키워드가 겹치는 것 1~2개).
+
+### B. backlinks 1-hop (DEEP 필수 · QUICK 은 top hit 이 얇을 때)
+top 1~2 노트에 대해 **역링크(그 노트를 가리키는 노트)** 와 **outlink(그 노트가 가리키는 노트)** 를 실측한다:
+```bash
+# 집행 계약: DEEP 모드에서 top 1~2 노트에 반드시 실행. backlinks = 전 플랫폼 grep 근사 —
+# Obsidian CLI 의 backlinks 서브커맨드가 있으면(맥 데스크톱) 그걸 우선, 부재·오류 시 아래가 항상 동작한다.
+STEM="$(basename "${NOTE_PATH}" .md)"
+grep -rl --include="*.md" -F "[[${STEM}" "${VAULT_PATH}" | head -10
+grep -o '\[\[[^]|#]*' "${VAULT_PATH}/${NOTE_PATH}" | sed 's/^\[\[//' | sort -u | head -15
+```
+- backlinks 가 많은 노트 = 허브 → 답변 진입점으로 우선한다.
+- backlinks/outlinks 중 질문과 겹치는 노트 1~2개를 추가 Read → 답변의 "🔗 연결 맥락"에 반영.
+
+### C. 0건 3단 재질의 (특히 Codex 등 도구가 얇은 환경 — "없습니다" 발화 전 의무)
+① 키워드 1~2개로 축약 재질의 → ② frontmatter `aliases`·영/한 표기 변형 재질의 → ③ **wikilink 언급 탐색**:
+```bash
+grep -rl --include="*.md" -F "[[${KEYWORD}" "${VAULT_PATH}" | head -10
+```
+(노트 *제목*에는 없어도 다른 노트들이 `[[링크]]`로 언급하는 경우를 잡는다.) **③까지 0건일 때만** "관련 자료 없음"을 답한다.
+
 ## QUICK 모드 — 즉답 (3-5줄)
 
 상위 1-2개 노트만 Read (`${VAULT_PATH}/{note_path}`) → frontmatter + 핵심 섹션 추출.
@@ -108,7 +137,7 @@ grep -rn "${QUERY}" "${VAULT_PATH}" --include="*.md" -l | head -20
 
 ## DEEP 모드 — 상세 분석
 
-상위 3-5개 노트를 실제 Read → 제목·요약·핵심 섹션 추출 → 종합하여 질문에 직접 답변(목록·표·단계 활용).
+상위 3-5개 노트를 실제 Read → Phase 2.5 그래프 확장(frontmatter·backlinks 1-hop) 실행 → 제목·요약·핵심 섹션 + 연결 맥락을 종합하여 질문에 직접 답변(목록·표·단계 활용).
 
 ```
 ## {질문 요약}
@@ -120,6 +149,9 @@ grep -rn "${QUERY}" "${VAULT_PATH}" --include="*.md" -l | head -20
 
 ### 📄 원자 노트 (출처)
 1. [[노트1]] — {핵심 정보 1줄} (`경로`)
+
+### 🔗 연결 맥락 (Phase 2.5)
+- [[허브노트]] ← backlinks {N}개 · 따라간 링크: [[관련1]], [[관련2]] (그래프 신호 없으면 섹션 생략)
 ```
 
 ## 제약
@@ -127,7 +159,7 @@ grep -rn "${QUERY}" "${VAULT_PATH}" --include="*.md" -l | head -20
 - **읽기 전용**: 노트 생성/수정 금지
 - **hallucination 금지**: 반드시 실제 노트 내용 기반. 노트에 없는 내용은 "vault에 관련 자료가 없습니다" 명시
 - **출처 필수**: 실제 읽은 노트 경로 표기
-- **사용 티어 명시**: 답변 끝에 어느 티어로 검색했는지 1줄 (예: "검색: Obsidian CLI")
+- **사용 티어 명시**: 답변 끝에 어느 티어로 검색했는지 + 그래프 확장 여부 1줄 (예: "검색: Obsidian CLI + 그래프 확장(backlinks 4)")
 - **질문/스킬/에이전트 스폰 금지**: 직접 검색만 수행
 - 상태 메시지 없이 바로 결과 출력 · Read 실패 시 다음 노트로
 - QUICK: 5줄 이내 + 출처 1-2개 / DEEP: 제한 없음 + 출처 3-5개
@@ -135,5 +167,6 @@ grep -rn "${QUERY}" "${VAULT_PATH}" --include="*.md" -l | head -20
 ### 결과 없음
 ```
 vault에서 "{query}" 관련 자료를 찾지 못했습니다.
+(재질의 3단 수행: ①키워드 축약 ②별칭/영·한 변형 ③[[위키링크]] 언급 탐색 — 전부 0건)
 /knowledge-manager로 자료를 수집해보세요.
 ```
