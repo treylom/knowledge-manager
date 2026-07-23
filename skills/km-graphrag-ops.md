@@ -15,7 +15,7 @@ description: Use when needing GraphRAG 구축·운영·수리 실행. build/sear
 scripts/graphrag-ops/tofugraph.sh {doctor|status|heal|monitor|install-daemon|uninstall-daemon|guard-set|build|search <q>}
 ```
 
-환경변수(전부 선택 — 미지정 시 자동 감지/기본값): `GRAPHRAG_ROOT`(엔진 홈, 기본 = cwd에서 위로 걸으며 `.team-os/graphrag` 탐지) · `GRAPHRAG_API_URL`(기본 `http://127.0.0.1:8400`) · `GRAPHRAG_SERVICE_LABEL`(서비스명, 기본 = launchd/systemd에서 'graphrag' 자동 탐지) · `NTFY_TOPIC`(데몬 경보 푸시, 기본 꺼짐).
+환경변수(전부 선택 — 미지정 시 자동 감지/기본값): `GRAPHRAG_ROOT`(엔진 홈, 기본 = cwd에서 위로 걸으며 `.team-os/graphrag` 탐지) · `GRAPHRAG_API_URL`(기본 `http://127.0.0.1:8400`) · `GRAPHRAG_SERVICE_LABEL`(서비스명, 기본 = launchd/systemd에서 'graphrag' 자동 탐지).
 
 ## 동사 (핵심 4 + 운영 5)
 

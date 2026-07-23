@@ -12,7 +12,6 @@
 #   GRAPHRAG_ROOT           graphrag home (default: nearest .team-os/graphrag walking up from cwd)
 #   GRAPHRAG_API_URL        server base URL (default: http://127.0.0.1:8400)
 #   GRAPHRAG_SERVICE_LABEL  launchd label / systemd user unit (default: auto-detect)
-#   NTFY_TOPIC              optional push topic for daemon alerts (default: off)
 set -uo pipefail
 
 API="${GRAPHRAG_API_URL:-http://127.0.0.1:8400}"
@@ -264,7 +263,6 @@ monitor() {
         echo "[$ts] recovered: dead-server restart + /ready GREEN" >> "$heal_log"
       else
         echo "[$ts] UNHEALED: restart failed or /ready timeout — needs a human" >> "$heal_log"
-        [ -n "${NTFY_TOPIC:-}" ] && curl -s -H "Title: graphrag auto-heal" -d "$ts unhealed dead server" "ntfy.sh/$NTFY_TOPIC" >/dev/null 2>&1
       fi
       echo 0 > "$wedge_state"; return 0
     fi
@@ -301,7 +299,6 @@ except Exception: print('idle')" 2>/dev/null || echo idle)
       echo "[$ts] recovered: wedge restart + /ready GREEN" >> "$heal_log"
     else
       echo "[$ts] UNHEALED wedge — needs a human" >> "$heal_log"
-      [ -n "${NTFY_TOPIC:-}" ] && curl -s -H "Title: graphrag auto-heal" -d "$ts unhealed wedge" "ntfy.sh/$NTFY_TOPIC" >/dev/null 2>&1
     fi
   fi
 }
@@ -393,5 +390,5 @@ case "${1:-help}" in
              | python3 -m json.tool ;;
   *) echo "tofugraph — GraphRAG ops adapter"
      echo "usage: tofugraph.sh {doctor|status|heal|monitor|install-daemon|uninstall-daemon|guard-set|build|search <q>}"
-     echo "env: GRAPHRAG_ROOT, GRAPHRAG_API_URL, GRAPHRAG_SERVICE_LABEL, NTFY_TOPIC" ;;
+     echo "env: GRAPHRAG_ROOT, GRAPHRAG_API_URL, GRAPHRAG_SERVICE_LABEL" ;;
 esac

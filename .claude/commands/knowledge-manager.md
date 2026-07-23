@@ -240,8 +240,6 @@ AskUserQuestion({
 > `/knowledge-manager-at`은 항상 자동 추출합니다.
 > 참조 스킬: `km-image-pipeline.md`
 
-> **퀵 프리셋은 `/knowledge-manager-m` 전용입니다.** 이 커맨드에서는 항상 STEP 1 질문을 수행합니다.
-
 ---
 
 ## STEP 1.5: PDF 처리 방식 확인 (PDF인 경우만!)

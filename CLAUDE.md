@@ -127,7 +127,6 @@ knowledge-manager/
 | `/km-update` | Unlocks placeholder files, restores pristine placeholder form, `git pull`, re-substitutes, re-locks. Safe replacement for raw `git pull`. |
 | `/knowledge-manager` | Main knowledge-management agent (content ingestion, summarization, note creation). |
 | `/knowledge-manager-at` | Agent-team variant (parallel Category Lead + RALPH + DA). |
-| `/knowledge-manager-m` | Mobile/headless variant (no AskUserQuestion, keyword-based presets). |
 
 ---
 

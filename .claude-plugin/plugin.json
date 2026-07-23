@@ -1,7 +1,7 @@
 {
   "name": "km",
   "description": "Knowledge Manager - 웹, PDF, 소셜 미디어에서 콘텐츠를 추출하여 Obsidian/Notion에 저장하는 지식 관리 에이전트",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "author": {
     "name": "tofukyung",
     "url": "https://github.com/treylom"

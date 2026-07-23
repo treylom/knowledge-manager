@@ -244,8 +244,6 @@ AskUserQuestion({
 > AT 버전에서는 RALPH가 항상 ON (max 5회), DA가 항상 ON입니다.
 > 별도 질문 없이 자동 적용됩니다.
 
-> **퀵 프리셋은 `/knowledge-manager-m` 전용입니다.** 이 커맨드에서는 항상 STEP 1 질문을 수행합니다.
-
 ---
 
 ## STEP 1.5A: 이미지 자동 추출 (질문 없이 항상 실행)
