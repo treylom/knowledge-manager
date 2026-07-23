@@ -17,6 +17,21 @@ def main():
     lint_parser.add_argument("--consistency", type=float, default=None)
     lint_parser.add_argument("--suggestions", type=float, default=None)
     lint_parser.add_argument("--coverage", type=float, default=None)
+    lint_parser.add_argument(
+        "--eval-source", default="llm",
+        help="Provenance stamp for LLM-judged metrics: llm (default, back-compat) | self | subagent:<model>",
+    )
+
+    # parse-eval
+    pe_parser = subparsers.add_parser(
+        "parse-eval",
+        help="Robustly extract an evaluator JSON object from a raw (possibly fenced/prose-wrapped) output file",
+    )
+    pe_parser.add_argument("raw_file", help="Path to file holding the raw evaluator output")
+    pe_parser.add_argument(
+        "--score-key", default=None,
+        help="If set, extract this numeric key and clamp it to [0,1] instead of returning the whole object",
+    )
 
     # diff
     diff_parser = subparsers.add_parser("diff", help="Section-level diff between two notes")
@@ -51,7 +66,18 @@ def main():
 
     if args.command == "lint":
         from lib.lint import run_lint
-        result = run_lint(args.draft, args.consistency, args.suggestions, args.coverage)
+        result = run_lint(args.draft, args.consistency, args.suggestions, args.coverage,
+                          eval_source=args.eval_source)
+    elif args.command == "parse-eval":
+        from lib.eval_parse import extract_eval_json, extract_eval_score
+        try:
+            with open(args.raw_file, "r", encoding="utf-8") as f:
+                raw = f.read()
+        except OSError as e:
+            result = {"error": "FILE_NOT_FOUND", "message": str(e)}
+        else:
+            result = (extract_eval_score(raw, args.score_key)
+                      if args.score_key else extract_eval_json(raw))
     elif args.command == "diff":
         from lib.diff import run_diff
         result = run_diff(args.existing, args.new)

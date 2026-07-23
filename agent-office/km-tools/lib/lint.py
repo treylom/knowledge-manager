@@ -50,7 +50,12 @@ def _score_connections(count):
     return value, {"count": count, "range": "3-8"}
 
 
-def run_lint(draft_path, consistency, suggestions, coverage):
+def _proof_class(eval_source):
+    """Independent only when a blind subagent produced the judged scores; else self-lint."""
+    return "independent" if str(eval_source).startswith("subagent:") else "self-lint"
+
+
+def run_lint(draft_path, consistency, suggestions, coverage, eval_source="llm"):
     if not os.path.exists(draft_path):
         return {"error": "FILE_NOT_FOUND", "message": f"File not found: {draft_path}"}
 
@@ -69,21 +74,29 @@ def run_lint(draft_path, consistency, suggestions, coverage):
         if val is None:
             llm_metrics[name] = 0.0
             warnings.append(f"Missing --{name}, defaulting to 0.0")
+        elif val < 0.0 or val > 1.0:
+            # A judged metric (LLM/subagent) out of [0,1] would inflate/deflate the
+            # weighted score. Clamp defensively so a hallucinated score can't skew pass/fail.
+            clamped = max(0.0, min(1.0, val))
+            warnings.append(f"--{name} {val} out of [0,1], clamped to {clamped}")
+            llm_metrics[name] = clamped
 
     breakdown = {
         "completeness": {"value": comp_val, "weight": WEIGHTS["completeness"], "detail": comp_detail},
         "connections": {"value": conn_val, "weight": WEIGHTS["connections"], "detail": conn_detail},
-        "consistency": {"value": llm_metrics["consistency"], "weight": WEIGHTS["consistency"], "source": "llm"},
-        "suggestions": {"value": llm_metrics["suggestions"], "weight": WEIGHTS["suggestions"], "source": "llm"},
-        "coverage": {"value": llm_metrics["coverage"], "weight": WEIGHTS["coverage"], "source": "llm"},
+        "consistency": {"value": llm_metrics["consistency"], "weight": WEIGHTS["consistency"], "source": eval_source},
+        "suggestions": {"value": llm_metrics["suggestions"], "weight": WEIGHTS["suggestions"], "source": eval_source},
+        "coverage": {"value": llm_metrics["coverage"], "weight": WEIGHTS["coverage"], "source": eval_source},
     }
 
     lint_score = round(sum(b["value"] * b["weight"] for b in breakdown.values()), 2)
 
     return {
+        "schema_version": "km-lint-1.1",
         "lint_score": lint_score,
         "passed": lint_score >= 0.7,
         "threshold": 0.7,
+        "proof_class": _proof_class(eval_source),
         "breakdown": breakdown,
         "warnings": warnings,
     }
