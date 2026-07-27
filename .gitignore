@@ -39,3 +39,6 @@ npm-debug.log*
 
 __pycache__/
 *.pyc
+
+# km-tools 로컬 실행 상태 (세션별 산출 — 공개 대상 아님)
+agent-office/km-tools/state/

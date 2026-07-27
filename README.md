@@ -58,7 +58,7 @@ Claude Code용 종합 지식 관리 에이전트. 다양한 소스에서 콘텐�
 ① GraphRAG 서버(설치돼 있으면) → ② Obsidian CLI → ③ Obsidian MCP → ④ 텍스트 검색
 ```
 
-앞 단계가 없거나 실패하면 자동으로 다음 단계로 넘어가기 때문에, **GraphRAG 없이도 바로 쓸 수 있고**, 나중에 GraphRAG 스택을 얹으면 같은 명령이 자동으로 의미 기반 검색으로 올라섭니다 (스택 구축은 같은 플러그인의 `/tofugraph` 명령 — 상세: `skills/km-graphrag-ops.md`).
+앞 단계가 없거나 실패하면 자동으로 다음 단계로 넘어가기 때문에, **GraphRAG 없이도 바로 쓸 수 있고**, 나중에 GraphRAG 스택을 얹으면 같은 명령이 자동으로 의미 기반 검색으로 올라섭니다 (스택 구축은 같은 플러그인의 `/tofugraph` 명령 — 상세: `skills/km-graphrag-ops.md`). 스택을 올린 뒤 **검색이 실제로 잘 찾는지 스스로 재보고 싶다면** `/tofugraph bench init` 으로 시험지(질문 + 정답 노트)를 만들고 `/tofugraph bench run` 으로 채점합니다 — AI 채점이 아니라 정해진 규칙으로 매기므로 **외부 API 키가 필요 없고**, 같은 시험지로 다시 돌리면 같은 결과가 나옵니다.
 
 ```bash
 /km:search MCP란?                      # 즉답 (quick)
@@ -242,7 +242,7 @@ codex plugin add km@knowledge-manager
 - **vault 검색도 동일하게 동작합니다** (Codex 스킬명은 `km-search`): 위 `/km:search`와 같은 4단계 자동 폴백을 수행합니다 — GraphRAG 서버가 없어도 Obsidian CLI·텍스트 검색이 받아줍니다. (③ Obsidian MCP 티어는 MCP를 연결한 경우에만 사용됩니다.)
 - Codex 환경은 이미 떠 있는 GraphRAG 서버(`GRAPHRAG_API_URL` 환경변수 또는 기본 `http://127.0.0.1:8400`)에 자동으로 연결합니다.
 - ⚠️ **Codex sandbox 주의**: Codex 기본 sandbox 는 외부 바이너리 실행·네트워크를 제한합니다 — Obsidian CLI 검색 티어를 쓰려면 승인 응답 또는 `~/.codex/config.toml` 의 `sandbox_mode` 상향이 필요합니다(막히면 텍스트 검색으로 자동 폴백은 됩니다). Obsidian 데스크톱 앱이 실행 중이어야 CLI 티어가 동작합니다.
-- **지원 범위**: Codex 플러그인은 현재 핵심 스킬 세트(km-workflow · km-setup · km-search · export · storage · social · zettelkasten 등 9종)를 제공합니다. PDF/YouTube/이미지 파이프라인·GraphRAG 구축(`/tofugraph`) 등 세부 스킬은 아직 Claude Code 전용입니다. `km-setup` 의 자동 환경분기도 Codex 미지원 — vault 경로는 첫 실행 때 직접 입력하면 됩니다.
+- **지원 범위**: Codex 플러그인은 현재 핵심 스킬 세트(km-workflow · km-setup · km-search · export · storage · social · zettelkasten 등 9종)를 제공합니다. PDF/YouTube/이미지 파이프라인·GraphRAG 구축·품질 재기(`/tofugraph`, bench 포함) 등 세부 스킬은 아직 Claude Code 전용입니다. `km-setup` 의 자동 환경분기도 Codex 미지원 — vault 경로는 첫 실행 때 직접 입력하면 됩니다.
 
 ---
 
@@ -545,6 +545,8 @@ MIT License - 자유롭게 사용, 수정, 배포하세요.
 # 🇺🇸 English Documentation
 
 > **Role boundary**: Knowledge Manager is a standalone, general-purpose knowledge tool — it does not depend on any private infrastructure (e.g., a GraphRAG search server); such integrations ship only as optional adapters.
+>
+> Optional: if you run the GraphRAG stack (`/tofugraph`), you can self-score search quality with `/tofugraph bench init` → `bench run` — deterministic scoring, no external API key.
 
 ## What is Knowledge Manager?
 
