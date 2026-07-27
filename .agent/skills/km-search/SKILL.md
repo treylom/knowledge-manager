@@ -16,6 +16,19 @@ description: vault 통합 검색 — GraphRAG(있으면) → Obsidian CLI → (O
 
 1. `km-config.json`을 찾는다 (현재 폴더 → 플러그인 설치 시 setup이 만든 위치 순).
 2. `storage.obsidian.vaultPath` → `VAULT_PATH`. 없으면 사용자에게 vault 경로를 1회 묻고 진행.
+   - **추측 금지**: 설정이 없을 때 그럴듯한 경로를 스스로 골라 검색하면 **낡은 사본에서 답하고도 출처가 붙어 있어** 사용자가 오류를 알아챌 수 없다(실측 사례: 백업 사본 17,923개 md 를 라이브 vault 로 착각). 반드시 묻는다.
+   - **"진짜 쓰는 vault" 판정은 추측·후보 순회가 아니라 Obsidian 자기 설정으로 한다** — `obsidian.json` 에서 `"open": true` 인 항목이 사용자가 실제로 열어 두는 vault 다. 백업 사본·형제 폴더도 `.obsidian` 을 갖고 있어서 그것만으론 안 갈린다.
+     ```bash
+     # 경로를 직접 짚는다 — 넓은 find 로 훑지 말 것(/mnt/c/Users 전수 탐색은 느리고 빈손으로 끝난다).
+     OBSIDIAN_JSON=$(ls -1 \
+       "$HOME/Library/Application Support/obsidian/obsidian.json" \
+       /mnt/c/Users/*/AppData/Roaming/obsidian/obsidian.json \
+       "$APPDATA/obsidian/obsidian.json" 2>/dev/null | head -1)
+     python3 -c 'import json,sys;d=json.load(open(sys.argv[1]))["vaults"];print("\n".join(v["path"] for v in d.values() if v.get("open")))' "$OBSIDIAN_JSON"
+     ```
+     WSL 에서는 이 값이 윈도우 경로(`C:\Users\...`)로 나온다 — `wslpath -u` 로 바꿔 쓴다.
+     이 파일이나 `"open": true` 항목을 못 찾았을 때만 사용자에게 묻는다.
+   - 사용자가 준 경로도 한 번 검증한다 — `.obsidian` 폴더 존재, 최근 수정된 md 유무. 둘 다 아니면 그 경로를 쓰기 전에 다시 확인한다.
 3. `obsidianCli.path` → `OBSIDIAN_CLI` (비어 있으면 아래 Tier 2의 자동 감지 사용).
 4. `SEARCH_ENDPOINT` = `linking.semantic_adapter.endpoint` → 환경변수 `GRAPHRAG_API_URL` → 기본값 `http://127.0.0.1:8400` 순. **미설정이어도 기본값을 탐침한다** — 로컬에 서버가 없으면 즉시 연결 거부로 끝나 지연이 거의 없고(`--connect-timeout 3`은 상한일 뿐), 덕분에 나중에 `/tofugraph build`로 스택을 얹으면 설정 변경 없이 같은 절차가 자동으로 Tier 1을 쓰기 시작한다.
 
@@ -58,8 +71,49 @@ IF query가 비어있으면:
 ### Tier 1 — GraphRAG 서버 (설치된 경우, 의미 기반 하이브리드 검색)
 ```bash
 QUERY_ENCODED=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))" "${QUERY}")
-curl -s "${SEARCH_ENDPOINT}/api/search?q=${QUERY_ENCODED}&top_k=${TOP_K}&mode=hybrid" --connect-timeout 3
+
+# --max-time 필수: 서버가 "죽은 게 아니라 막힌" 상태면 연결은 성공하므로
+# --connect-timeout 은 걸리지 않는다(무한 대기). 실측 근거는 아래 주석 참조.
+gr_fetch() { curl -s --connect-timeout 3 --max-time 20 \
+  "$1/api/search?q=${QUERY_ENCODED}&top_k=${TOP_K}&mode=hybrid"; }
+
+TIER1_JSON="$(gr_fetch "${SEARCH_ENDPOINT}")"; TIER1_RC=$?
+
+# 설정된 곳이 원격(다른 기계)일 수 있다. 거기가 안 되면 로컬 서버를 한 번 더 두드린다.
+if { [ $TIER1_RC -ne 0 ] || [ -z "$TIER1_JSON" ]; } \
+   && [ "${SEARCH_ENDPOINT}" != "http://127.0.0.1:8400" ]; then
+  TIER1_JSON="$(gr_fetch http://127.0.0.1:8400)"; TIER1_RC=$?
+  if [ $TIER1_RC -eq 0 ] && [ -n "$TIER1_JSON" ]; then
+    ENDPOINT_SWITCHED="${SEARCH_ENDPOINT} → http://127.0.0.1:8400"
+    SEARCH_ENDPOINT="http://127.0.0.1:8400"
+  fi
+fi
+
+# 폴백 문구를 가르기 위한 상태 판정 — curl exit code 가 병명을 가른다.
+#   7  = 연결 거부  → 서버가 없다      (absent)
+#   28 = 시한 초과  → 서버는 있는데 막혔다 (unreachable)
+if   [ $TIER1_RC -eq 0 ] && [ -n "$TIER1_JSON" ]; then GRAPHRAG_STATE=ok
+elif [ $TIER1_RC -eq 7 ];                          then GRAPHRAG_STATE=absent
+else                                                    GRAPHRAG_STATE=unreachable
+fi
+
+# 네 번째 상태: 이 세션 자체의 네트워크가 막힌 경우(에이전트 샌드박스 등).
+# 겉모습이 rc=7(연결 거부)이라 "서버 없음"과 구별되지 않는다 — 여기서 갈라 주지 않으면
+# 서버가 멀쩡히 돌고 있는데 사용자에게 "미설치"라고 답하게 된다(2026-07-27 실측).
+# 판별: 격리된 네트워크 네임스페이스는 /proc/net/tcp 가 헤더뿐이다(호스트=94줄 · 샌드박스=1줄 실측).
+if [ "$GRAPHRAG_STATE" = "absent" ] && [ -r /proc/net/tcp ] \
+   && [ "$(wc -l < /proc/net/tcp)" -le 1 ]; then
+  GRAPHRAG_STATE=blocked
+fi
+echo "GRAPHRAG_STATE=${GRAPHRAG_STATE} endpoint=${SEARCH_ENDPOINT} rc=${TIER1_RC}"
+echo "ENDPOINT_SWITCHED=${ENDPOINT_SWITCHED:-none}"
 ```
+- `GRAPHRAG_STATE=ok` → 이 티어 결과를 쓴다. 그 외 → Tier 2로 내려가되 **상태값을 들고 간다**(Tier 4 표시 문구가 이 값으로 갈린다).
+- 🚨 **서버를 바꿔 탔으면 반드시 밝힌다.** 두 서버는 **서로 다른 vault 를 색인**하고 있을 수 있다(기계마다 자기 vault 를 색인한다). 조용히 전환하면 *다른 코퍼스에서 그럴듯한 답*이 나오고 사용자는 알아챌 수 없다 — Phase -1 의 "vault 경로 추측 금지"와 **같은 병**이다. `ENDPOINT_SWITCHED` 가 `none` 이 아니면 답변에 한 줄:
+  `⚠️ 원래 서버(<원주소>)가 응답하지 않아 <새주소> 로 검색했습니다 — 색인된 vault 가 다를 수 있습니다`
+- 전환했을 때는 결과의 `source_note` 경로를 **한 건 그대로** 함께 보여 준다 — 사용자가 "내 vault 가 맞나"를 눈으로 가릴 수 있게. ⚠️ 경로 앞부분이 vault 이름이라고 가정하지 말 것: 서버 설정에 따라 vault 이름으로 시작하기도 하고(`Tofu_LLM_Wiki/...`) vault 안 상대경로로 시작하기도 한다(`020-Library/...`) — 2026-07-27 두 서버 실측. 접두어는 힌트지 식별자가 아니다.
+- **`--max-time 20` 의 근거(2026-07-27 실측)**: 정상 응답이 7.5초 걸린 경우가 있었고, 같은 서버가 30초를 넘겨 시한 초과한 경우도 있었다. 5초·3초로 잡으면 **멀쩡한 서버를 "없음"으로 만든다**. 환경별로 다르면 이 값을 조정하되, 관측된 정상 응답 시간보다 넉넉히 크게 잡는다.
+- **`/health` 200 을 서버 정상의 근거로 쓰지 말 것** — `/health` 는 200 인데 `/api/search` 만 막히는 형태가 실제로 관측된다. 판정은 위처럼 **검색 경로 자체**로 한다.
 - 서버 미기동/미설치 → 조용히 Tier 2로. (같은 플러그인의 `/tofugraph` 명령으로 GraphRAG 스택을 구축하면 이 티어가 자동으로 살아난다.)
 
 ### Tier 2 — Obsidian CLI (전문 full-text 검색)
@@ -84,7 +138,11 @@ curl -s "${SEARCH_ENDPOINT}/api/search?q=${QUERY_ENCODED}&top_k=${TOP_K}&mode=hy
 grep -rn "${QUERY}" "${VAULT_PATH}" --include="*.md" -l | head -20
 ```
 - 문장형 질의는 통짜로 넣지 말고 **핵심 키워드 1~2개를 추출해** 검색한다(통짜 문장은 0히트).
-- 이 티어를 쓴 경우 답변에 **"의미 검색 엔진 미설치로 텍스트 검색 결과입니다"** 를 명시한다.
+- 이 티어를 쓴 경우 답변에 **왜 여기까지 내려왔는지**를 명시한다. 문구는 `GRAPHRAG_STATE` 로 가른다:
+  - `absent` → **"의미 검색 엔진 미설치로 텍스트 검색 결과입니다"**
+  - `unreachable` → **"GraphRAG 서버(`${SEARCH_ENDPOINT}`)가 응답하지 않아 텍스트 검색으로 대체했습니다 — 결과가 평소보다 부정확할 수 있습니다"**
+  - `blocked` → **"이 세션은 네트워크가 막혀 있어 GraphRAG 서버에 접속할 수 없습니다 — 서버 문제가 아닙니다. 에이전트 실행 시 네트워크를 허용하면(codex: `-c sandbox_workspace_write.network_access=true`) 의미 검색이 살아납니다"**
+  - ⚠️ 엔진이 **설치돼 있는데 응답만 없는** 경우에 "미설치"라고 쓰면 사용자는 원인을 영영 못 찾는다. 두 경우는 처방이 다르다(설치 vs 서버 점검).
 
 ### 모드별 파라미터
 - **QUICK**: top_k=5, 노트 읽기 1-2개
