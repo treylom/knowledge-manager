@@ -17,7 +17,7 @@ $ARGUMENTS
 1. `km-config.json`을 찾는다 (현재 폴더 → 플러그인 설치 시 setup이 만든 위치 순).
 2. `storage.obsidian.vaultPath` → `VAULT_PATH`. 없으면 사용자에게 vault 경로를 1회 묻고 진행.
    - **추측 금지**: 설정이 없을 때 그럴듯한 경로를 스스로 골라 검색하면 **낡은 사본에서 답하고도 출처가 붙어 있어** 사용자가 오류를 알아챌 수 없다(실측 사례: 백업 사본 17,923개 md 를 라이브 vault 로 착각). 반드시 묻는다.
-   - **"진짜 쓰는 vault" 판정은 추측·후보 순회가 아니라 Obsidian 자기 설정으로 한다** — `obsidian.json` 에서 `"open": true` 인 항목이 사용자가 실제로 열어 두는 vault 다. 백업 사본·형제 폴더도 `.obsidian` 을 갖고 있어서 그것만으론 안 갈린다.
+   - **"진짜 쓰는 vault" 판정은 추측·후보 순회가 아니라 Obsidian 자기 설정으로 한다** (⚠️ km-config 에 `vaultPath` 가 이미 있으면 아래 판정을 실행하지 않는다 — 그 값이 정답) — `obsidian.json` 에서 `"open": true` 인 항목이 사용자가 실제로 열어 두는 vault 다. 백업 사본·형제 폴더도 `.obsidian` 을 갖고 있어서 그것만으론 안 갈린다.
      ```bash
      # 경로를 직접 짚는다 — 넓은 find 로 훑지 말 것(/mnt/c/Users 전수 탐색은 느리고 빈손으로 끝난다).
      OBSIDIAN_JSON=$(ls -1 \
@@ -111,11 +111,12 @@ echo "GRAPHRAG_STATE=${GRAPHRAG_STATE} endpoint=${SEARCH_ENDPOINT} rc=${TIER1_RC
 echo "ENDPOINT_SWITCHED=${ENDPOINT_SWITCHED:-none}"
 ```
 - `GRAPHRAG_STATE=ok` → 이 티어 결과를 쓴다. 그 외 → Tier 2로 내려가되 **상태값을 들고 간다**(Tier 4 표시 문구가 이 값으로 갈린다).
-- **원문 확보 계약 (Tier 1 전용 — 멈춤 금지)**: 검색 응답에 노트 경로 필드는 따로 없다 — 표시명은 `entity`, `source_note` 는 채워져 있을 때만 vault 상대 경로다(`description` 은 비어 있을 수 있으니 근거로 지목하지 말 것). 원문은 아래 순서로 찾고, **어느 단계에서도 다른 vault 를 뒤지거나 Obsidian 설정(obsidian.json)과의 대조를 시도하지 말 것** — 무한 "대조 중" 멈춤의 원인이다. (Phase -1 의 obsidian.json vault 판정은 별개 — 그건 설정 단계 1회이고, 여기는 검색 결과 소비 단계다.)
-  1. `source_note` 가 있으면 `${VAULT_PATH}/{source_note}` 를 Read 한다 (기존 경로).
-  2. `source_note` 가 없거나 그 파일이 로컬에 없으면 `curl -s "${SEARCH_ENDPOINT}/api/note?name=<entity>&max_chars=2500" --connect-timeout 3 --max-time 15` 로 조회한다(`max_chars` 는 100~20000) → 응답 = `note_path`(vault 상대 경로) + `body`(원문).
-     - `${VAULT_PATH}/{note_path}` 가 로컬에 실재하면 → 그 파일을 Read 한다.
-     - `note_path` 는 왔는데 로컬에 없으면 = **서버가 다른 vault 를 인덱싱 중인 것**(예: 강의용 샘플 인덱스, 다른 폴더에서 build 한 인덱스) → `body` 를 원문 근거로 그대로 사용해 답변한다. `body` 는 그 vault 노트의 실제 본문이므로 hallucination 금지 제약을 충족한다. 답변 말미 티어 표기 = `검색: GraphRAG 서버 (다른 vault 인덱스 — 서버 본문 기반)`. 사용자 vault 기준 인덱스를 원하면 "`/tofugraph build`를 이 vault에서 실행하면 서버가 이 vault를 검색 대상으로 제공합니다" 1줄을 덧붙인다.
+- **원문 확보 계약 (Tier 1 전용 — 멈춤 금지)**: 검색 응답에 노트 경로 필드는 따로 없다 — 표시명은 `entity`, `source_note` 는 채워져 있을 때만 vault 상대 경로다(`description` 은 비어 있을 수 있으니 근거로 지목하지 말 것). **원문을 읽기 전에 아래 0단 판정을 검색당 1회만 하고, 그 결과(`VAULT_MODE`)를 이후 모든 절이 따른다.** 어느 단계에서도 그 밖의 다른 vault 를 뒤지거나 Obsidian 설정(obsidian.json)과의 대조를 시도하지 말 것 — 무한 "대조 중" 멈춤의 원인이다. (Phase -1 의 obsidian.json vault 판정은 별개 — 그건 VAULT_PATH 가 설정에 없을 때의 설정 단계 1회다.)
+  0. **vault 정합 판정 (검색당 1회 — 이 판정 전에는 로컬 노트를 열지 않는다)**: 첫 응답에서 `source_note` 가 있는 결과 하나를 골라 `${VAULT_PATH}/{source_note}` 의 **파일 존재만** 확인한다(`[ -f ... ]` 1회 — Read ❌).
+     - 존재 → **`VAULT_MODE=same`** (서버 = 이 vault. 로컬 Read 허용)
+     - 부재, 또는 `source_note` 가진 결과가 0건 → **`VAULT_MODE=other`** (서버는 다른 vault 를 인덱싱 중 — 예: 강의용 샘플 인덱스, 다른 폴더에서 build 한 인덱스). **이후 이 검색의 모든 단계에서 로컬 파일 접근·경로 변환(wslpath 등)·vault 탐색 = 0회.** 원문은 오직 `/api/note` 로 받는다 — QUICK/DEEP 의 "노트 원문 확보"와 Phase 2.5 도 전부 이 스위치를 따른다.
+  1. (`same` 전용) `source_note` 가 있으면 `${VAULT_PATH}/{source_note}` 를 Read 한다 (기존 경로).
+  2. (양 모드 공통) 원문이 필요하면 `curl -s "${SEARCH_ENDPOINT}/api/note?name=<entity>&max_chars=2500" --connect-timeout 3 --max-time 15` 로 조회한다(`max_chars` 는 100~20000) → 응답 = `note_path`(vault 상대 경로) + `body`(원문). **`other` 모드에서는 `body` 가 원문 근거의 전부다** — 그대로 인용해 답변한다(`body` 는 그 vault 노트의 실제 본문이므로 hallucination 금지 제약을 충족한다). 답변 말미 티어 표기 = `검색: GraphRAG 서버 (다른 vault 인덱스 — 서버 본문 기반)`. 사용자 vault 기준 인덱스를 원하면 "`/tofugraph build`를 이 vault에서 실행하면 서버가 이 vault를 검색 대상으로 제공합니다" 1줄을 덧붙인다.
   3. `/api/note` 가 실패하면(404 `note not indexed` — 엔티티는 그래프에 있으나 인덱싱된 원문이 없는 경우. 이름을 바꿔 재시도하지 말 것) → `entity`·`source_note`·점수만으로 답하되, 답변에 "원문 미확보 — 서버 메타데이터 기반" 한계를 명시한다.
 - 🚨 **서버를 바꿔 탔으면 반드시 밝힌다.** 두 서버는 **서로 다른 vault 를 색인**하고 있을 수 있다(기계마다 자기 vault 를 색인한다). 조용히 전환하면 *다른 코퍼스에서 그럴듯한 답*이 나오고 사용자는 알아챌 수 없다 — Phase -1 의 "vault 경로 추측 금지"와 **같은 병**이다. `ENDPOINT_SWITCHED` 가 `none` 이 아니면 답변에 한 줄:
   `⚠️ 원래 서버(<원주소>)가 응답하지 않아 <새주소> 로 검색했습니다 — 색인된 vault 가 다를 수 있습니다`
@@ -159,6 +160,8 @@ grep -rn "${QUERY}" "${VAULT_PATH}" --include="*.md" -l | head -20
 
 검색 엔진은 "어느 노트인가"까지만 안다. vault 의 진짜 구조 신호는 노트 안에 있다 — **frontmatter(태그·별칭·관련)와 wikilink 그래프(backlinks)를 활용**해야 검색이 똑똑해진다.
 
+> ⚠️ **Tier 1 `VAULT_MODE=other`(서버가 다른 vault 인덱싱 중)면 본 Phase 전체를 생략한다** — 로컬 vault 의 frontmatter·backlinks 는 서버 인덱스와 다른 지식그래프라 근거가 되지 않고, 로컬 grep 은 "로컬 접근 0회" 원칙을 깬다. 서버 본문(`body`) 기반으로만 답한다.
+
 ### A. frontmatter 구조 신호 (읽는 모든 노트 공통)
 노트를 Read 하면 본문 전에 frontmatter 를 먼저 해석한다:
 - `aliases:` → **재질의 사전**: 1차 검색이 0건·빈약하면 별칭(영/한 표기 변형)으로 1회 재검색.
@@ -201,7 +204,7 @@ grep -rln --include="*.md" -F "[[${KEYWORD}" "${VAULT_PATH}" | head -10
 
 ## QUICK 모드 — 즉답 (3-5줄)
 
-상위 1-2개 노트만 Read (`${VAULT_PATH}/{note_path}`) → frontmatter + 핵심 섹션 추출.
+상위 1-2개 노트의 원문 확보 → frontmatter + 핵심 섹션 추출. 원문 = Tier 1 이면 원문 확보 계약을 따른다(`VAULT_MODE=same`=로컬 Read · `other`=`/api/note` 의 `body`, 로컬 경로 접근 ❌). Tier 2~4 로 검색한 경우 = 로컬 Read.
 
 ```
 **답변:**
@@ -216,7 +219,7 @@ grep -rln --include="*.md" -F "[[${KEYWORD}" "${VAULT_PATH}" | head -10
 
 ## DEEP 모드 — 상세 분석
 
-상위 3-5개 노트를 실제 Read → Phase 2.5 그래프 확장(frontmatter·backlinks 1-hop) 실행 → 제목·요약·핵심 섹션 + 연결 맥락을 종합하여 질문에 직접 답변(목록·표·단계 활용).
+상위 3-5개 노트의 원문 확보(Tier 1 `VAULT_MODE=other` 면 `/api/note` 의 `body` — 로컬 Read ❌) → Phase 2.5 그래프 확장(frontmatter·backlinks 1-hop — `other` 면 생략) 실행 → 제목·요약·핵심 섹션 + 연결 맥락을 종합하여 질문에 직접 답변(목록·표·단계 활용).
 
 ```
 ## {질문 요약}
@@ -238,7 +241,7 @@ grep -rln --include="*.md" -F "[[${KEYWORD}" "${VAULT_PATH}" | head -10
 - **읽기 전용**: 노트 생성/수정 금지
 - **hallucination 금지**: 반드시 실제 노트 내용 기반. 노트에 없는 내용은 "vault에 관련 자료가 없습니다" 명시 (Tier 1 에서는 `/api/note` 의 `body` 와 `source_note` 경로의 원문이 '실제 노트 내용'이다 — 둘 다 그 vault 노트에서 나온다. 로컬 원문 Read 는 경로가 실재할 때의 보강이지, Read 실패가 답변을 막는 게이트가 아니다)
 - **출처 필수**: 실제 읽은 노트 경로 표기
-- **사용 티어 명시 (형식 고정)**: 답변 마지막 줄은 정확히 이 형식으로 쓴다 — `검색: <티어명> + 그래프 확장(backlinks N)`. **N = Phase 2.5-B backlink grep 결과 줄 수(실측 정수, 생략·"1-hop" 같은 서술 대체 ❌)**. 그래프 확장을 안 한 답변(QUICK 얕은 질의)만 `검색: <티어명>` 단독 허용.
+- **사용 티어 명시 (형식 고정)**: 답변 마지막 줄은 정확히 이 형식으로 쓴다 — `검색: <티어명> + 그래프 확장(backlinks N)`. **N = Phase 2.5-B backlink grep 결과 줄 수(실측 정수, 생략·"1-hop" 같은 서술 대체 ❌)**. 그래프 확장을 안 한 답변(QUICK 얕은 질의, 또는 Tier 1 `VAULT_MODE=other` 로 Phase 2.5 를 생략한 경우)은 `검색: <티어명>` 단독 허용.
 - **질문/스킬/에이전트 스폰 금지**: 직접 검색만 수행
 - 상태 메시지 없이 바로 결과 출력 · Read 실패 시 다음 노트로
 - QUICK: 5줄 이내 + 출처 1-2개 / DEEP: 제한 없음 + 출처 3-5개
