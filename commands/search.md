@@ -111,6 +111,12 @@ echo "GRAPHRAG_STATE=${GRAPHRAG_STATE} endpoint=${SEARCH_ENDPOINT} rc=${TIER1_RC
 echo "ENDPOINT_SWITCHED=${ENDPOINT_SWITCHED:-none}"
 ```
 - `GRAPHRAG_STATE=ok` → 이 티어 결과를 쓴다. 그 외 → Tier 2로 내려가되 **상태값을 들고 간다**(Tier 4 표시 문구가 이 값으로 갈린다).
+- **원문 확보 계약 (Tier 1 전용 — 멈춤 금지)**: 검색 응답에 노트 경로 필드는 따로 없다 — 표시명은 `entity`, `source_note` 는 채워져 있을 때만 vault 상대 경로다(`description` 은 비어 있을 수 있으니 근거로 지목하지 말 것). 원문은 아래 순서로 찾고, **어느 단계에서도 다른 vault 를 뒤지거나 Obsidian 설정(obsidian.json)과의 대조를 시도하지 말 것** — 무한 "대조 중" 멈춤의 원인이다. (Phase -1 의 obsidian.json vault 판정은 별개 — 그건 설정 단계 1회이고, 여기는 검색 결과 소비 단계다.)
+  1. `source_note` 가 있으면 `${VAULT_PATH}/{source_note}` 를 Read 한다 (기존 경로).
+  2. `source_note` 가 없거나 그 파일이 로컬에 없으면 `curl -s "${SEARCH_ENDPOINT}/api/note?name=<entity>&max_chars=2500" --connect-timeout 3 --max-time 15` 로 조회한다(`max_chars` 는 100~20000) → 응답 = `note_path`(vault 상대 경로) + `body`(원문).
+     - `${VAULT_PATH}/{note_path}` 가 로컬에 실재하면 → 그 파일을 Read 한다.
+     - `note_path` 는 왔는데 로컬에 없으면 = **서버가 다른 vault 를 인덱싱 중인 것**(예: 강의용 샘플 인덱스, 다른 폴더에서 build 한 인덱스) → `body` 를 원문 근거로 그대로 사용해 답변한다. `body` 는 그 vault 노트의 실제 본문이므로 hallucination 금지 제약을 충족한다. 답변 말미 티어 표기 = `검색: GraphRAG 서버 (다른 vault 인덱스 — 서버 본문 기반)`. 사용자 vault 기준 인덱스를 원하면 "`/tofugraph build`를 이 vault에서 실행하면 서버가 이 vault를 검색 대상으로 제공합니다" 1줄을 덧붙인다.
+  3. `/api/note` 가 실패하면(404 `note not indexed` — 엔티티는 그래프에 있으나 인덱싱된 원문이 없는 경우. 이름을 바꿔 재시도하지 말 것) → `entity`·`source_note`·점수만으로 답하되, 답변에 "원문 미확보 — 서버 메타데이터 기반" 한계를 명시한다.
 - 🚨 **서버를 바꿔 탔으면 반드시 밝힌다.** 두 서버는 **서로 다른 vault 를 색인**하고 있을 수 있다(기계마다 자기 vault 를 색인한다). 조용히 전환하면 *다른 코퍼스에서 그럴듯한 답*이 나오고 사용자는 알아챌 수 없다 — Phase -1 의 "vault 경로 추측 금지"와 **같은 병**이다. `ENDPOINT_SWITCHED` 가 `none` 이 아니면 답변에 한 줄:
   `⚠️ 원래 서버(<원주소>)가 응답하지 않아 <새주소> 로 검색했습니다 — 색인된 vault 가 다를 수 있습니다`
 - 전환했을 때는 결과의 `source_note` 경로를 **한 건 그대로** 함께 보여 준다 — 사용자가 "내 vault 가 맞나"를 눈으로 가릴 수 있게. ⚠️ 경로 앞부분이 vault 이름이라고 가정하지 말 것: 서버 설정에 따라 vault 이름으로 시작하기도 하고(`Tofu_LLM_Wiki/...`) vault 안 상대경로로 시작하기도 한다(`020-Library/...`) — 2026-07-27 두 서버 실측. 접두어는 힌트지 식별자가 아니다.
@@ -230,7 +236,7 @@ grep -rln --include="*.md" -F "[[${KEYWORD}" "${VAULT_PATH}" | head -10
 ## 제약
 
 - **읽기 전용**: 노트 생성/수정 금지
-- **hallucination 금지**: 반드시 실제 노트 내용 기반. 노트에 없는 내용은 "vault에 관련 자료가 없습니다" 명시
+- **hallucination 금지**: 반드시 실제 노트 내용 기반. 노트에 없는 내용은 "vault에 관련 자료가 없습니다" 명시 (Tier 1 에서는 `/api/note` 의 `body` 와 `source_note` 경로의 원문이 '실제 노트 내용'이다 — 둘 다 그 vault 노트에서 나온다. 로컬 원문 Read 는 경로가 실재할 때의 보강이지, Read 실패가 답변을 막는 게이트가 아니다)
 - **출처 필수**: 실제 읽은 노트 경로 표기
 - **사용 티어 명시 (형식 고정)**: 답변 마지막 줄은 정확히 이 형식으로 쓴다 — `검색: <티어명> + 그래프 확장(backlinks N)`. **N = Phase 2.5-B backlink grep 결과 줄 수(실측 정수, 생략·"1-hop" 같은 서술 대체 ❌)**. 그래프 확장을 안 한 답변(QUICK 얕은 질의)만 `검색: <티어명>` 단독 허용.
 - **질문/스킬/에이전트 스폰 금지**: 직접 검색만 수행
