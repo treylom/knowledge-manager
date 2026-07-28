@@ -12,6 +12,9 @@ description: vault 통합 검색 — GraphRAG(있으면) → Obsidian CLI → (O
 > 앞 단계가 없거나 실패하면 자동으로 다음 단계로 넘어갑니다. GraphRAG를 아직 설치하지 않았어도
 > 이 스킬은 그대로 동작합니다(②~④가 받아줍니다). 나중에 GraphRAG 스택을 얹으면 **같은 절차가 자동으로 ①을 쓰기 시작합니다.**
 
+> 🚨 **실행 순서 계약 (고정 — 첫 행동을 여기서 정한다)**: ① Phase -1 로 설정 2개(`VAULT_PATH`·`SEARCH_ENDPOINT`)를 읽는다 → ② **곧바로 Tier 1 서버 검색 curl 을 실행한다.** 이 ①② 보다 먼저 vault 파일을 검색·나열·읽기(rg / grep / find / ls / Read) ❌ — 검색의 1차 수단은 서버이고, 로컬 파일은 Tier 1 의 원문 확보 계약(`VAULT_MODE=same`)이 허용할 때 또는 Tier 1 이 실패로 판정된 뒤(Tier 2~4)에만 연다. "vault 를 확인해보겠다"며 로컬부터 뒤지는 첫 행동 = 이 계약 위반이다.
+
+
 ## Phase -1: 설정 읽기
 
 1. `km-config.json`을 찾는다 (현재 폴더 → 플러그인 설치 시 setup이 만든 위치 순).
