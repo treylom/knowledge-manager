@@ -5,6 +5,11 @@ description: Use when needing GraphRAG 검색 전략. Global(맵-리듀스)/Loca
 
 # GraphRAG 검색 전략 스킬
 
+> ⚠️ **엔진 실행 정본 (2026-07-21 정정)**: 아래 예시의 `python .team-os/graphrag/scripts/graph_search.py --tool ...` 표기는 **개념 설명용 의사(pseudo) 인터페이스**로, 해당 스크립트는 배포물에 존재하지 않는다. 실제 실행 정본 = **`scripts/graphrag-ops/tofugraph.sh`**:
+> - 검색: `bash scripts/graphrag-ops/tofugraph.sh search "<질의>"` (내부적으로 `${GRAPHRAG_API_URL:-http://127.0.0.1:8400}/api/search?mode=hybrid` 호출)
+> - 인덱스 구축: `bash scripts/graphrag-ops/tofugraph.sh build` · 상태: `... status` (엔진·env 계약 상세 = `skills/km-graphrag-ops.md`)
+
+
 > Knowledge Manager GraphRAG Mode G의 Global/Local 이분법 기반 검색 전략 명세
 > 이론 기반: [[GraphRAG-Global-vs-Local-Search]], [[Depth-Hop-필터링과-하드가딩]], [[6개-분석공간-개요]], [[메타엣지-정의와-4가지-의미]]
 
@@ -452,7 +457,7 @@ L1 빠른 탐색 (로컬→확장):
 
 | 에러 | 대응 |
 |------|------|
-| 그래프 DB 미초기화 | `python .team-os/graphrag/scripts/build_graph.py` 실행 후 재시도 |
+| 그래프 DB 미초기화 | `bash scripts/graphrag-ops/tofugraph.sh build` 실행 후 재시도 |
 | 엔티티 미발견 | `quick_search`로 유사 엔티티 탐색, 키워드 변경 |
 | 커뮤니티 0개 반환 | 쿼리 범위 확대, L3 `panorama_search`로 전환 |
 | LLM 합성 실패 | raw 결과(entities + edges)만 반환하여 수동 분석 |
@@ -470,6 +475,8 @@ L1 빠른 탐색 (로컬→확장):
 | **@panorama-scanner** | `panorama_search` | L3 | 맵-리듀스 글로벌 조망 |
 | **@narrative-analyst** | `interview` | L1 | 엔티티 동기 분석 |
 | **@meta-analyst** | `meta_edge_search` | — | 관계-간-관계 탐색 |
+
+> 💡 **워커 사이로 결과를 넘길 때** — 문서 세 건 이상을 다른 워커에게 넘긴다면 목록만 던지지 말고 문서 사이 관계를 한 줄 붙여 주세요(`A=원인 · B=재현 · C=해결` 식). 받는 워커는 그 한 줄로 어디부터 열지를 정합니다. 그래프를 통째로 직렬화해 넘기면 오히려 무엇이 중요한지가 묻힙니다.
 
 ---
 
