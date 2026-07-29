@@ -879,7 +879,7 @@ FOR EACH target_note IN update_targets (최대 15개):
 ```
 1. 새 노트 핵심 키워드/개념 추출
 2. Vault 검색으로 관련 노트 후보 수집 (도구는 환경별 — CLI search / MCP search_vault / vault 인덱스)
-   - deadends(나가는 링크 없는 파일) = 연결 강화 우선 후보
+   - deadends(나가는 링크 없는 파일) = 연결 강화 우선 후보 (CLI `deadends` 는 format 옵션 미지원 — 플레인 텍스트 목록 반환)
 3. 후보마다 link_scorer로 점수 산출 → 티어 분배:
    payload = {"target": {새 노트}, "candidates": [{후보들}], "linking": {km-config의 linking 블록}}
    python3 agent-office/km-tools/km-tools.py score-links payload.json

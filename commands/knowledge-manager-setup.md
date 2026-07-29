@@ -319,14 +319,33 @@ console.log(`
 // claude mcp add 명령어로 MCP 서버 등록
 Bash(`claude mcp add playwright -s user -- npx -y @modelcontextprotocol/server-playwright`)
 
+// 브라우저 바이너리 설치 (Playwright가 실제로 브라우저를 제어하려면 필요)
+console.log(`
+⏳ 브라우저 엔진을 설치하고 있어요...
+(Chromium 다운로드, 1-3분 정도 걸릴 수 있어요)
+`)
+
+const browserInstall = Bash(`npx playwright install chromium 2>&1`)
+const browserOk = !browserInstall.includes("ERROR")
+
 // 설치 확인
 const mcpList = Bash(`claude mcp list`)
 if (mcpList.includes("playwright")) {
-  console.log(`
-✅ Playwright MCP 서버 설치 완료!
+  if (browserOk) {
+    console.log(`
+✅ Playwright MCP 서버 + 브라우저 엔진 설치 완료!
 
 이제 웹페이지에서 콘텐츠를 가져올 수 있어요.
-  `)
+    `)
+  } else {
+    console.log(`
+✅ Playwright MCP 서버 설치 완료!
+⚠️ 브라우저 엔진 설치에 문제가 있었어요.
+
+수동으로 설치해주세요:
+  npx playwright install chromium
+    `)
+  }
   playwrightInstalled = true
 } else {
   console.log(`
@@ -334,6 +353,7 @@ if (mcpList.includes("playwright")) {
 
 터미널에서 실행:
   claude mcp add playwright -s user -- npx -y @modelcontextprotocol/server-playwright
+  npx playwright install chromium
   `)
 }
 ```

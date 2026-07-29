@@ -171,7 +171,22 @@ Mode G는 다음을 수행합니다:
 
 ---
 
-## STEP 1: 사용자 선호도 확인 (필수!)
+## STEP 1: 사용자 선호도 확인 — USER-PROFILE 기반 축약
+
+> **먼저 USER-PROFILE.md를 확인한다** (KM 단독 = vault `_meta/USER-PROFILE.md` / 통합 = `~/.claude/USER-PROFILE.md`). 프로필이 있으면 매번 4질문을 던지지 않고 **프로필에서 기본값을 유도해 확인 1질문**으로 축약한다 — 반복 질문 자체가 UX 페인포인트였다(setup-wizard Phase 4에서 근본 해소).
+
+### STEP 1-PRE: 프로필 확인 (분기)
+
+```
+Read(USER-PROFILE.md)  # vault _meta/ 우선, 없으면 ~/.claude/
+```
+
+- **프로필 있음** → `roles`/`info_flow`/`workflows`에서 4개 기본값 유도 후 **확인 1질문만**:
+  - 유도 규칙(예): info_flow="링크·PDF 다수·자주 못 찾음" → 연결수준=최대·분할=3-tier / roles="코드/기술 중심" → 중점=기술·코드 / roles="글쓰기·리서치" → 중점=개념·이론, 상세=상세 / 기본 분할=3-tier·연결=최대
+  - 질문: `AskUserQuestion` 1개 — "당신 프로필 기준 이렇게 정리할게요: [상세수준 X·중점 Y·분할 Z·연결 W]. 이대로 진행할까요?" 옵션 = {이대로 진행 / 이번만 바꾸기(→ 아래 4질문)}
+- **프로필 없음** → 아래 기존 4질문 그대로 (fallback). 끝에 "다음부터 반복 질문을 없애려면 `/knowledge-manager setup`으로 1회 프로파일 인터뷰를 하세요" 안내 1줄.
+
+### (프로필 없을 때 fallback) 4개 질문
 
 **콘텐츠 처리/읽기 전에 반드시 AskUserQuestion을 호출하세요!**
 **4개 질문을 한 번의 호출로 모두 물어봅니다!**
@@ -354,6 +369,8 @@ Main이 입력 소스를 직접 추출합니다. 스킬 참조: `km-content-extr
 ---
 
 ## STEP 3: Vault 탐색 (Main 직접 - 순차)
+
+> **🚨 HARD 게이트 — 저장 전 기존 네트워크 확인 1회 의무.** 새 노트를 저장하기 전에 반드시 vault 검색(환경별 도구: 검색 인덱스 / Obsidian CLI search / MCP)으로 관련 기존 노트·MOC·시리즈를 찾는다. **standalone 노트를 그냥 던지지 말 것** — (1) 중복 회피 (2) 올바른 폴더/시리즈 편입 (3) 양방향 wikilink 연결(고아 방지). 이 확인을 건너뛴 저장은 미완으로 간주한다. (STEP 6-1.5 시리즈/MOC 편입과 짝.)
 
 ### Phase A: 그래프 탐색 (graph-navigator 로직)
 
@@ -855,17 +872,35 @@ FOR EACH target_note IN update_targets (최대 15개):
 
 ## STEP 6: 연결 강화 + 결과 보고
 
-### 6-1. 연결 강화 (연결 수준 "보통" 또는 "최대"일 때)
+### 6-1. 연결 강화 — 점수제 차등 배치 (연결 수준 "보통" 또는 "최대"일 때)
 
-상세 워크플로우: `km-link-strengthening.md` 참조
+상세 워크플로우: `km-link-strengthening.md` 참조. 링크는 **"찾으면 넣는" 이진 방식이 아니라 후보마다 점수를 내고 점수 구간별로 배치를 차등**한다 (약한 링크가 본문을 오염시키거나 강한 링크가 묻히는 문제 해소).
 
 ```
-1. 새 노트 핵심 키워드 추출
-2. CLI `"$OBSIDIAN_CLI" search` / MCP search_vault로 관련 노트 탐색
-   - CLI `"$OBSIDIAN_CLI" deadends` → 나가는 링크 없는 파일 = 연결 강화 우선 후보 (format 옵션 미지원, 플레인 텍스트 목록 반환)
-3. 관련성 점수 3점 이상인 노트와 양방향 링크 생성
-4. CLI `"$OBSIDIAN_CLI" append` / MCP update_note로 기존 노트에 역방향 링크 추가
-   - CLI `"$OBSIDIAN_CLI" prepend` → 네비게이션 헤더 추가 시 사용
+1. 새 노트 핵심 키워드/개념 추출
+2. Vault 검색으로 관련 노트 후보 수집 (도구는 환경별 — CLI search / MCP search_vault / vault 인덱스)
+   - deadends(나가는 링크 없는 파일) = 연결 강화 우선 후보 (CLI `deadends` 는 format 옵션 미지원 — 플레인 텍스트 목록 반환)
+3. 후보마다 link_scorer로 점수 산출 → 티어 분배:
+   payload = {"target": {새 노트}, "candidates": [{후보들}], "linking": {km-config의 linking 블록}}
+   python3 agent-office/km-tools/km-tools.py score-links payload.json
+   → 반환: inline[] (본문 [[링크]]) / related[] (하단 "관련 문서" 섹션) / log[] (미등재, 후보 기록만)
+   - 신호(코어 = 무의존 stdlib): 제목·별칭 매칭 / 태그 교집합 / 폴더·MOC 근접 / 본문 공출현 / 최근성
+   - semantic_adapter 설정 시에만 의미 유사도 신호 가산 (미설정 시 코어 휴리스틱만으로 완전히 동작)
+   - 임계: inline 기본 0.6 (km-config linking.inlineThreshold로 조정), related 0.4. 상한 인라인 5·관련 7.
+4. inline 후보 = 개념 첫 등장 위치에 [[링크]] / related 후보 = 하단 "## 관련 문서" 섹션
+5. 각 링크의 대상 노트에 역방향 링크 추가 (양방향) — append / update_note
+   - 네비게이션 헤더는 prepend
+```
+
+### 6-1.5. 시리즈/MOC 편입 의무 (standalone 고아 = 미완)
+
+> 새 노트가 시리즈·여정(Journey)·주제 MOC와 관련되면, 그 **MOC 타임라인 등록 + 양방향 wikilink까지가 저장의 완료 조건**이다. 단독(standalone) 노트로 던져 고아를 만들지 말 것.
+
+```
+1. 새 노트가 기존 시리즈/MOC에 속하는지 판정 (6-1의 관련 노트 중 MOC/인덱스 노트 확인)
+2. 속하면: 해당 MOC의 타임라인/목록에 새 노트 항목 append + 새 노트 frontmatter에 parent/series 링크
+3. 반복될 방법론·절차 산출물은 `*-playbook.md`로 별도 저장하고 원 노트와 양방향 링크 (재사용 자산화)
+4. 편입 대상이 없으면 그 사유를 로그 (진짜 신규 주제 = OK, 판정 누락 = 고아 위험)
 ```
 
 ### 6-2. Filed Back — 환류 (Explorations add up)
