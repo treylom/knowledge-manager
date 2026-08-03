@@ -184,6 +184,39 @@ except Exception: print('unknown')" 2>/dev/null || echo unknown)
     echo "[SKIP] 8. semantic-label guard (index db or sqlite3 not available)"
   fi
 
+  # 9. asset inventory (an optional asset can vanish and every other check still
+  #    passes: the loader returns empty instead of raising, so a whole retrieval
+  #    channel goes dark with no error, no log, no metric. Worse, generation
+  #    dirs are built by copying the previous one — so one missing file is
+  #    faithfully reproduced forever. Only counting the files that must exist
+  #    catches it; "the search answered" does not, because the surviving
+  #    channels fill the results.)
+  local gen_link="${ROOT:+$ROOT/index-generations/current}"
+  if [ -n "$gen_link" ] && [ -d "$gen_link" ]; then
+    local required=(embeddings.npy concept_embeddings.npy)
+    local missing=() f
+    for f in "${required[@]}"; do
+      [ -f "$gen_link/$f" ] || missing+=("$f")
+    done
+    if [ "${#required[@]}" -eq 0 ]; then
+      echo "[FAIL] 9. asset inventory: required-list is empty — this check can detect nothing (a green here would be meaningless)."
+      fails=$((fails+1))
+    elif [ "${#missing[@]}" -eq 0 ]; then
+      echo "[OK]   9. asset inventory: ${#required[@]}/${#required[@]} generation assets present"
+    else
+      local gen_name; gen_name=$(readlink "$gen_link" 2>/dev/null || echo current)
+      echo "[FAIL] 9. asset inventory: MISSING ${missing[*]}  (generation: ${gen_name##*/})"
+      echo "       a missing asset surfaces nowhere else — that channel returns empty, not an error,"
+      echo "       and a rebuild copies the absence into the next generation."
+      echo "       fix: restore the file(s) into the current generation — older generations under"
+      echo "            \$GRAPHRAG_ROOT/index-generations/ or \$GRAPHRAG_ROOT/index/ may still hold a copy;"
+      echo "            then re-run a search and confirm that channel contributes candidates again."
+      fails=$((fails+1))
+    fi
+  else
+    echo "[SKIP] 9. asset inventory (no index-generations/ layout — this install does not use generations)"
+  fi
+
   echo
   echo "summary: ${fails} fail, ${warns} warn — $( [ $fails -eq 0 ] && echo 'usable' || echo 'needs attention' )"
   return $fails
