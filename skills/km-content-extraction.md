@@ -83,12 +83,14 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 >
 > | | anydoc | kordoc |
 > |---|---|---|
-> | 고유 영역 | epub · rtf · odt/ods/odp · ppt 계열 | **HWP3/HWP/HWPX/HWPML** (anydoc 미지원) |
-> | 겹치는 영역 | DOCX · XLSX · PDF · CSV | DOCX · XLSX · PDF |
-> | 성격 | 순수 Rust · 로컬 · API 키 불필요 | Node · 한국어 문서 특화 |
+> | 고유 영역 | epub · rtf · odt/ods/odp · ppt 계열(단 KM 편입 보류 — 슬라이드 경계 소실) | **HWP3/HWP/HWPX/HWPML** (anydoc 미지원) |
+> | 겹치는 영역 | DOCX · XLS/XLSX · PDF | DOCX · XLS/XLSX · PDF |
+> | 성격 | 순수 Rust · 로컬 · API 키 불필요 · **1회 호출 = 1개 문서** | Node · 한국어 문서 특화 · `<files>` 복수 일괄 |
 >
 > - **DOCX·XLSX 기본 경로 = anydoc**(아래 각 절). 표가 복잡해 anydoc 산출이 깨지거나 **한글(HWP) 계열**이면 kordoc.
 > - anydoc 의 지원 포맷 목록에 **HWP 는 없다**(`anydoc --help` 기준) — 한글 문서는 처음부터 kordoc.
+> - 🔴 **PDF 는 anydoc 으로 보내지 않는다** — 글자 손실은 0이지만 다단 레이아웃을 표로 오인해 **읽는 순서가 무너진다**(내부 실측: 특징 문구 6개의 등장 순서가 뒤섞임). 종료코드도 글자수도 이 결함을 못 잡는다. 스캔·이미지 PDF 는 `unsupported` 로 실패한다. PDF 는 **위 소스별 표의 5단 경로**를 유지한다.
+> - **CSV 는 anydoc 단독 영역이지만 KM 은 편입 보류**(헤더 밀림 — 아래 CSV 절). kordoc 지원 목록에는 CSV 가 없다.
 > - 어느 쪽을 쓰든 위의 **원문 보존 검증**(표 행수·수치 표본 대조)은 동일하게 적용한다.
 
 ---
@@ -606,8 +608,8 @@ npx -y @firecrawl/anydoc "{파일경로}"                # Markdown 을 stdout �
 npx -y @firecrawl/anydoc "{파일경로}" -o "{출력.md}"  # 파일로 저장
 
 - 헤딩/리스트/테이블을 GitHub-Flavored Markdown 으로 변환
-- 한글 docx 실측: 한글 글자수 1258 = 1258 손실 0, 문단 순서 보존
-- 왕복 약 0.9초 (대부분이 npx 기동 비용 — 순수 변환은 수~수십 ms)
+- 한글 docx 1건 실측(2026-08-05): 한글 글자수 1258 = 1258, 문단 순서 보존
+- 왕복 약 0.9초 (14KB docx 1건). 이 중 약 0.4초는 npx 기동 비용 — 순수 변환 시간은 미측정
 - exit: 0 성공 / 1 변환 실패 / 2 사용법 오류
 - doc·docm·odt·rtf 도 같은 명령 (내용 마커로 포맷 자동 판별)
 
@@ -615,7 +617,7 @@ npx -y @firecrawl/anydoc "{파일경로}" -o "{출력.md}"  # 파일로 저장
 
 3순위: docx 스킬 — ⚠️ 추출용이 아니다
   tracked changes·주석·서식 보존 편집·신규 문서 생성이 필요할 때만.
-  단순 텍스트 추출에 부르면 과잉.
+  단순 텍스트 추출에는 과하다.
 
 한글(HWP/HWPX)이거나 표가 복잡해 산출이 깨지면 → kordoc (위 "역할 분리" 표)
 
@@ -632,7 +634,7 @@ Step 2: 구조화된 정보 추출
 npx -y @firecrawl/anydoc "{파일경로}"
 
 - 표 구조·병합 셀을 마크다운 표로 보존
-- 🔴 실측 결함 2개 — 부르기 전에 확인:
+- 🔴 실측 결함 2개 (fixture 대조) — 호출 전 확인:
   (a) 수식 셀이 빈칸으로 나온다. '=SUM(B2:B3)' 는 수식도 계산값도 없이 사라짐
   (b) 첫 행이 빈 헤더로 잡혀 진짜 헤더가 데이터 첫 행으로 밀린다
       |  |  |            ← 이게 헤더로 잡힘

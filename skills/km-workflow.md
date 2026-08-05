@@ -451,8 +451,10 @@ else:
 | **소셜 미디어 (Threads/Instagram)** | `mcp__playwright__browser_navigate` → `wait_for` → `snapshot` ⭐ |
 | **일반 웹 페이지** | `mcp__playwright__browser_navigate` → `snapshot` |
 | PDF | `marker_single` 또는 `Read` |
-| DOCX/TXT/MD | `Read` 도구 |
-| Excel/CSV | `Read` 도구 |
+| DOCX | `npx -y @firecrawl/anydoc "[파일]"` → 실패 시 `Read` |
+| TXT/MD | `Read` 도구 |
+| Excel (XLSX) | `npx -y @firecrawl/anydoc "[파일]"` (수식 없는 표) → 수식·분석은 `xlsx` 스킬 |
+| CSV | `Read` 도구 |
 | PowerPoint | `Read` 도구 |
 | 이미지 | `Read` 도구 (Vision) |
 | Notion | `mcp__notion__API-get-block-children` |
