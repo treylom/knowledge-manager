@@ -90,7 +90,7 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 > - **DOCX·XLSX 기본 경로 = anydoc**(아래 각 절). 표가 복잡해 anydoc 산출이 깨지거나 **한글(HWP) 계열**이면 kordoc.
 > - anydoc 의 지원 포맷 목록에 **HWP 는 없다**(`anydoc --help` 기준) — 한글 문서는 처음부터 kordoc.
 > - 🔴 **PDF 는 anydoc 으로 보내지 않는다** — 글자 손실은 0이지만 다단 레이아웃을 표로 오인해 **읽는 순서가 무너진다**(내부 실측: 특징 문구 6개의 등장 순서가 뒤섞임). 종료코드도 글자수도 이 결함을 못 잡는다. 스캔·이미지 PDF 는 `unsupported` 로 실패한다. PDF 는 **위 소스별 표의 5단 경로**를 유지한다.
-> - **CSV 는 anydoc 단독 영역이지만 KM 은 편입 보류**(헤더 밀림 — 아래 CSV 절). kordoc 지원 목록에는 CSV 가 없다.
+> - **kordoc 이 지원하지 않는 CSV 는 anydoc 만 가능하나 KM 은 편입 보류**(헤더 밀림 — 아래 CSV 절).
 > - 어느 쪽을 쓰든 위의 **원문 보존 검증**(표 행수·수치 표본 대조)은 동일하게 적용한다.
 
 ---
