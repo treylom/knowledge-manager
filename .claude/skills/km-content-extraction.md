@@ -60,9 +60,10 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 | **소셜 미디어** | `playwright-cli open → snapshot` ⭐ (fallback: MCP → WebFetch) | 미디어 URL 수집 | → km-social-media.md |
 | **일반 웹 페이지** | `playwright-cli open → snapshot` (fallback: MCP → WebFetch) | img/figure 파싱 + 차트 스크린샷 | 이 문서 |
 | PDF | **1순위**: `Read` → **2순위**: `opendataloader-pdf` → **3순위**: `marker_single` → **4순위**: `GLM-OCR` → **5순위**: Gemini OCR | ODL/marker images/ 폴더 스캔 | → pdf 스킬, km-glm-ocr |
-| Word (DOCX) | `Read` 도구 | 임베디드 이미지 설명 추출 | → docx 스킬 |
-| Excel/CSV | `Read` 도구 | 차트 없음 (데이터만) | → xlsx 스킬 |
-| PowerPoint | `Read` 도구 | 슬라이드 이미지 설명 추출 | → pptx 스킬 |
+| Word (DOCX) | **1순위**: `npx -y @firecrawl/anydoc "[파일]"` → **2순위**: `Read` | 임베디드 이미지 설명 추출 | → 아래 "Word 문서" · docx 스킬은 **편집 전용** |
+| Excel (XLSX) | **1순위**: `npx -y @firecrawl/anydoc "[파일]"` (수식 없는 표 한정) → **2순위**: `xlsx` 스킬 (수식·분석·편집) | 차트 없음 (데이터만) | → 아래 "Excel" — 🔴 수식 셀 소실·헤더 밀림 주의 |
+| CSV | `Read` 도구 (anydoc 편입 보류 — 헤더 밀림) | 해당 없음 | → 아래 "CSV" |
+| PowerPoint | `Read` 도구 | 슬라이드 이미지 설명 추출 | → pptx 스킬 (anydoc 은 슬라이드 경계 소실로 미편입) |
 | 한글 (HWP/HWPX) | **kordoc**: `npx kordoc <files> -d <outdir>` → md 변환 후 `Read` | 변환 md 표·수치 원문 대조 | → 아래 "한국어 로컬 문서 fallback" |
 | 이미지 | `Read` 도구 (Vision) | 원본 그대로 활용 | 이 문서 |
 | Notion | `mcp__notion__API-get-block-children` | image 블록 URL 수집 | 이 문서 |
@@ -77,6 +78,18 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 > - 변환된 md 는 **원문 보존 검증**(표 행수·수치 표본 대조) 후 사용한다.
 > - PDF 입력은 `pdfjs-dist@4` peer 의존이 필요하다(v6 비호환).
 > - MCP 로도 쓸 수 있다(`kordoc-mcp` 바이너리). 다만 KM ingest 는 CLI 일괄 변환이 기본 핏이라 CLI 를 우선한다.
+
+> **anydoc ↔ kordoc 역할 분리** (겹치는 포맷이 있어 순서를 못 박아 둔다):
+>
+> | | anydoc | kordoc |
+> |---|---|---|
+> | 고유 영역 | epub · rtf · odt/ods/odp · ppt 계열 | **HWP3/HWP/HWPX/HWPML** (anydoc 미지원) |
+> | 겹치는 영역 | DOCX · XLSX · PDF · CSV | DOCX · XLSX · PDF |
+> | 성격 | 순수 Rust · 로컬 · API 키 불필요 | Node · 한국어 문서 특화 |
+>
+> - **DOCX·XLSX 기본 경로 = anydoc**(아래 각 절). 표가 복잡해 anydoc 산출이 깨지거나 **한글(HWP) 계열**이면 kordoc.
+> - anydoc 의 지원 포맷 목록에 **HWP 는 없다**(`anydoc --help` 기준) — 한글 문서는 처음부터 kordoc.
+> - 어느 쪽을 쓰든 위의 **원문 보존 검증**(표 행수·수치 표본 대조)은 동일하게 적용한다.
 
 ---
 
@@ -587,37 +600,62 @@ print(response.text)
 ### Word 문서 (DOCX)
 
 ```
-Step 1: 파일 내용 읽기
-  - Read 도구 또는 docx 스킬 사용
+1순위: anydoc (기본 경로 — 로컬 실행, API 키 불필요, MIT)
 
-Step 2: 마크업 파싱
-  - 헤딩, 리스트, 테이블 구조 추출
-  - 스타일 정보 보존 (필요 시)
+npx -y @firecrawl/anydoc "{파일경로}"                # Markdown 을 stdout 으로
+npx -y @firecrawl/anydoc "{파일경로}" -o "{출력.md}"  # 파일로 저장
 
-Step 3: 구조화된 정보 추출
+- 헤딩/리스트/테이블을 GitHub-Flavored Markdown 으로 변환
+- 한글 docx 실측: 한글 글자수 1258 = 1258 손실 0, 문단 순서 보존
+- 왕복 약 0.9초 (대부분이 npx 기동 비용 — 순수 변환은 수~수십 ms)
+- exit: 0 성공 / 1 변환 실패 / 2 사용법 오류
+- doc·docm·odt·rtf 도 같은 명령 (내용 마커로 포맷 자동 판별)
+
+2순위: Read 도구 (anydoc 실패 시 폴백)
+
+3순위: docx 스킬 — ⚠️ 추출용이 아니다
+  tracked changes·주석·서식 보존 편집·신규 문서 생성이 필요할 때만.
+  단순 텍스트 추출에 부르면 과잉.
+
+한글(HWP/HWPX)이거나 표가 복잡해 산출이 깨지면 → kordoc (위 "역할 분리" 표)
+
+Step 2: 구조화된 정보 추출
   - 섹션별 콘텐츠 분리
   - 메타데이터 추출 (작성자, 날짜 등)
 ```
 
-### Excel/CSV 파일
+### Excel 파일 (XLSX)
 
 ```
-Step 1: xlsx 스킬로 데이터 로드
-  - pandas DataFrame으로 변환
-  - 수식 및 포맷 정보 보존
+1순위: anydoc — 단, 수식이 없는 데이터 표에 한정
 
-Step 2: 데이터 분석
-  - 트렌드 및 패턴 식별
-  - 통계 요약 생성
-  - 차트/시각화 데이터 추출
+npx -y @firecrawl/anydoc "{파일경로}"
 
-Step 3: 인사이트 도출
-  - 주요 발견사항 정리
-  - 노트용 텍스트 형식으로 변환
+- 표 구조·병합 셀을 마크다운 표로 보존
+- 🔴 실측 결함 2개 — 부르기 전에 확인:
+  (a) 수식 셀이 빈칸으로 나온다. '=SUM(B2:B3)' 는 수식도 계산값도 없이 사라짐
+  (b) 첫 행이 빈 헤더로 잡혀 진짜 헤더가 데이터 첫 행으로 밀린다
+      |  |  |            ← 이게 헤더로 잡힘
+      | 항목 | 금액 |     ← 진짜 헤더가 데이터로 내려감
+  ⇒ 집계·인용에 쓰기 전 헤더 위치와 수식 셀 유무를 먼저 확인
 
-CRITICAL: 수식은 항상 그대로 사용!
+2순위: xlsx 스킬 — 아래 중 하나라도 걸리면 anydoc 대신 이쪽
+  - 수식이 든 시트 (합계·참조·재계산)
+  - 데이터 분석·통계·차트/시각화 데이터 추출
+  - 파일을 수정하거나 새로 생성해야 할 때
+
+CRITICAL: 수식은 항상 그대로 사용! (xlsx 스킬 경로)
 ✅ sheet['B10'] = '=SUM(B2:B9)'
 ❌ sheet['B10'] = 5000  # 하드코딩 금지
+```
+
+### CSV 파일
+
+```
+Read 도구로 충분 (anydoc 편입 보류)
+
+이유: anydoc 의 CSV 경로에도 위 (b) 헤더 밀림이 있고,
+      CSV 는 애초에 Read 로 온전히 읽혀 편입 실익이 작다.
 ```
 
 ### PowerPoint 파일
