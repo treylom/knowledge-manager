@@ -161,8 +161,10 @@ browser = {
 | `https://threads.net/*` | Social Media | → km-browser-abstraction (stealth recommended) |
 | `https://instagram.com/*` | Social Media | → km-browser-abstraction (stealth recommended) |
 | `https://*` | Web URL | → km-browser-abstraction |
-| `*.pdf` | PDF File | → Read tool |
-| `*.docx` | Word File | → Read tool |
+| `*.hwp` `*.hwp3` `*.hwpx` `*.hwpml` | 한글 File | → km-content-extraction (`npx kordoc` 자동 변환) |
+| `*.pdf` | PDF File | → km-content-extraction (Read 1순위) |
+| `*.docx` `*.xlsx` | Office File | → km-content-extraction (anydoc 1순위) |
+| 기타 로컬 파일 (`*.md` `*.txt` `*.csv` 등) | Local File | → km-content-extraction |
 | `notion.so/*` | Notion Page | → Notion MCP |
 
 ---
