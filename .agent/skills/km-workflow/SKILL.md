@@ -169,7 +169,22 @@ browser = {
 
 ## Phase 2: Extract Content
 
-### Use Browser Abstraction Layer
+**입력 유형을 먼저 판정하고 라우팅한다** — 도구 호출 없이 콘텐츠 추측 금지.
+
+### A. Local file input → Content Extraction Router
+
+→ See `km-content-extraction` skill (로컬 문서 형식별 필수 도구 표)
+
+핵심 규칙 요약:
+
+| 파일 형식 | 필수 도구 |
+|----------|----------|
+| **한글 (HWP/HWPX)** | `npx kordoc <files> -d <outdir>` → 변환 md 를 `Read` (자동 — 사용자에게 수동 변환을 요구하지 않는다) |
+| PDF | `Read` → 실패 시 km-content-extraction 의 다단 경로 |
+| DOCX/XLSX | `npx -y @firecrawl/anydoc "[파일]"` → 깨지면 kordoc |
+| TXT/MD/CSV/이미지 | `Read` |
+
+### B. URL input → Browser Abstraction Layer
 
 → See `km-browser-abstraction` skill
 
