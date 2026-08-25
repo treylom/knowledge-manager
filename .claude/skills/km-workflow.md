@@ -300,15 +300,16 @@ Agent Team 구성:
 ### Vault 구조 참조 규칙
 
 **CRITICAL**: vault 탐색 시 반드시 다음 순서를 따릅니다:
-1. CLAUDE.md의 "Vault 구조 네비게이션 맵" 섹션을 먼저 참조
-2. 관련 폴더/태그를 파악한 후 targeted 검색
-3. CLI backlinks/links로 기존 관계 먼저 확인:
+1. 저장 대상 root의 `VAULT-STRUCTURE.md`가 있으면 먼저 읽어 폴더 구조·소유 경계를 확인
+2. `MOC-Map.md`가 있으면 읽어 기존 허브·관련 문서를 확인 (`MOC-Map.md`는 연결 지도, 폴더 구조 정본은 `VAULT-STRUCTURE.md`)
+3. CLAUDE.md에 "Vault 구조 네비게이션 맵"이 있으면 보조 지침으로 참조한 뒤 targeted 검색
+4. Obsidian CLI/MCP 연결 root와 `target_root`가 같을 때만 CLI backlinks/links로 기존 관계를 확인:
    ```bash
    "$OBSIDIAN_CLI" backlinks path="{노트}" format=json
    "$OBSIDIAN_CLI" links path="{노트}"
    ```
-   CLI 실패 시: Wikilink Grep 패턴(`\[\[키워드\]\]`)으로 기존 관계 확인
-4. 그 후 키워드 검색으로 보완
+   root 불일치·확인 불가 또는 CLI 실패 시: `target_root` 내부에서만 Wikilink Grep 패턴(`\[\[키워드\]\]`)으로 기존 관계 확인
+5. 그 후 키워드 검색으로 보완
 
 ---
 
@@ -644,6 +645,20 @@ Research/[프로젝트명]/
 
 ---
 
+## Phase 3.4: 저장 루트·구조 선독 (Phase 5 진입 전 필수! 🔴)
+
+> 정본 동형: `.agent/skills/km-workflow/SKILL.md` STEP 2-0 (수강생 설치판). 원리는 동일 — **backend가 아니라 사용자가 연 프로젝트가 저장 root를 정한다.**
+
+1. **`target_root` 확정**: 사용자 명시 대상 폴더 > host가 제공한 primary project/workspace root > project-scoped 요청이 아닐 때만 `km-config.json` backend 순이다. ChatGPT Work 로컬 프로젝트는 primary 연결 폴더, Codex CLI는 대화를 시작한 작업 디렉터리, IDE는 선택한 workspace root를 쓴다. host가 cwd와 project root를 구분하면 cwd를 추측값으로 쓰지 않는다. 로컬 폴더 접근이 없는 ChatGPT 프로젝트에서는 저장 root를 추측하지 않고 사용자에게 연결 폴더를 요청한다.
+2. **canonicalize·봉쇄**: `target_root = realpath(host_project_root)`. 정규화한 후보 경로가 `target_root 밖`이면 저장 금지(`..`, 절대경로, symlink escape 포함).
+3. **구조 선독 (MUST-read)**: `${target_root}/VAULT-STRUCTURE.md`가 있으면 경로 결정 전에 read하고 구조에 맞는 폴더를 정한다. 있으면 `${target_root}/MOC-Map.md`도 read하여 기존 허브·관련 문서 연결에 쓴다. 사용자 지시 경로가 우선이다. 부재·read 실패 시 새 최상위 폴더를 추정 생성하지 말고, 명시 경로가 없으면 root 저장 + fallback 보고로 처리한다.
+4. **도구 일치**: Obsidian CLI/MCP는 연결 볼트를 canonicalize하여 `target_root`와 동일함을 확인한 때만 사용한다. 불일치·확인 불가면 Write 도구로 target root 안에 저장한다. 설정 경로가 project root를 덮어쓰면 안 된다.
+5. **frontmatter 형식 강제**: 파일 첫 줄 = `---`(그 앞에 빈 줄·제목·BOM ❌), `---`로 닫고 유효 YAML(탭 ❌), 노트 전체 코드펜스 감싸기 ❌. **값에 콜론(`:`)·`#`·따옴표가 들어가면 값 전체를 `"…"` 로 감싼다**(예: `title: "보고서: 8월분"` — 무인용이면 파싱이 깨져 속성 전체 미적용, 실측 최다 원인). 저장 후 첫 3바이트 `---` 확인.
+6. **사후 실측**: `actual_saved_path = realpath(저장 결과 경로)`를 구하고 존재 및 `target_root` containment를 확인한다. 성공 응답만으로 성공 판정 금지.
+7. **Provenance 보고 의무**: 최종 보고에 구조 문서 read 결과, `target_root`, 볼트 기준 상대 경로, `actual_saved_path`, 적용 규칙을 명시한다.
+
+---
+
 ## Phase 5: 내보내기 실행 (🚨 MANDATORY TOOL CALLS!)
 
 **상세 내용**: `km-export-formats.md` 참조
@@ -661,24 +676,24 @@ Research/[프로젝트명]/
 
 각 형식에 맞는 스킬을 사용하여 콘텐츠를 변환하고 저장합니다.
 
-### 파일 저장 필수 프로토콜 (🚨 MUST CALL! — 3-Tier)
+### 파일 저장 필수 프로토콜 (🚨 MUST CALL! — Root-Gated 3-Tier)
 
-**Tier 1: Obsidian CLI (최우선) - YOU MUST CALL:**
+**Tier 1: Obsidian CLI — 연결 볼트와 `target_root`가 `same_path`일 때만:**
 ```bash
 "$OBSIDIAN_CLI" create path="Zettelkasten/카테고리/파일명.md" content="노트 전체 내용"
 ```
 
-**Tier 2: Obsidian MCP (CLI 실패 시) - YOU MUST CALL:**
+**Tier 2: Obsidian MCP — CLI 실패 + 연결 볼트와 `target_root`가 `same_path`일 때만:**
 ```tool-call
 mcp__obsidian__create_note
 - path: "Zettelkasten/카테고리/파일명.md" (vault root 기준 상대경로)
 - content: "노트 전체 내용"
 ```
 
-**Tier 3: Write 도구 (MCP 실패 시) - YOU MUST CALL:**
+**Tier 3: Write 도구 — 불일치·확인 불가 시 project root 보존 경로:**
 ```tool-call
 Write 도구
-- file_path: "{{VAULT_PATH}}/Zettelkasten/카테고리/파일명.md"
+- file_path: "{target_root}/Zettelkasten/카테고리/파일명.md"
 - content: "노트 전체 내용"
 ```
 
@@ -703,6 +718,8 @@ Write 도구
 ```
 □ CLI, mcp__obsidian__create_note, 또는 Write 도구를 실제로 호출했는가?
 □ 도구 응답에서 성공 메시지 확인했는가? (CLI exit 0 / MCP success / Write 정상)
+□ `actual_saved_path`를 realpath로 관측하고 파일 존재를 확인했는가?
+□ `actual_saved_path`가 canonical `target_root` 안인가?
 □ 모든 생성해야 할 노트에 대해 도구 호출을 완료했는가?
 □ JSON만 출력하고 끝내지 않았는가?
 
@@ -840,6 +857,12 @@ AT 모드에서는 content-extractor가 Image Catalog 생성 → Lead가 Phase 5
 |------|------|------|
 | [Obsidian/Notion/etc] | [경로/URL] | [성공/실패] |
 
+### 3-1. 저장 위치 검증
+- 구조 선독: [VAULT-STRUCTURE.md read / MOC-Map.md read / 부재]
+- target_root: [canonical root]
+- 상대 경로: [root 기준 경로]
+- 실제 저장 경로: [존재 확인한 actual_saved_path]
+
 ### 4. 다음 단계
 - 제안 작업
 - 관련 콘텐츠 탐색 제안
@@ -861,6 +884,7 @@ AT 모드에서는 content-extractor가 Image Catalog 생성 → Lead가 Phase 5
 ## 파일 저장 검증 (필수!)
 □ CLI, mcp__obsidian__create_note, 또는 Write 도구를 실제로 호출했는가?
 □ 도구 호출 결과에서 성공 확인했는가? (CLI exit 0 / MCP "created successfully" / Write 정상)
+□ `actual_saved_path`가 존재하고 `target_root` 밖으로 벗어나지 않았는가?
 □ JSON 출력만 하고 끝내지 않았는가?
 ```
 

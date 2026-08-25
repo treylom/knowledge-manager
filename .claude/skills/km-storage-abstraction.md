@@ -5,41 +5,42 @@
 
 ---
 
-## 설정 읽기 (CRITICAL)
+## 저장 대상과 설정 읽기 (CRITICAL)
 
-작업 시작 전 `km-config.json`에서 저장소 설정 확인:
+저장 대상 root는 backend 설정보다 먼저 정한다. project-scoped file save에서는 workflow가 host의 primary project/workspace root를 `target_root`로 넘겨야 한다. `km-config.json`은 도구 설정이며 project root를 다른 볼트로 바꾸는 권한이 없다.
 
 ```javascript
-// 설정 파일 읽기
-config = Read("km-config.json")
+target_root = options.target_root ? realpath(options.target_root) : null
+config = Read("km-config.json") || {}
+storage = config.storage || {}
 
-primary = config.storage.primary  // "obsidian" | "notion" | "local"
-obsidian = config.storage.obsidian
-notion = config.storage.notion
-local = config.storage.local
+primary = options.explicit_backend || (options.project_scoped ? "local" : storage.primary)
+obsidian = storage.obsidian
+notion = storage.notion
+local = storage.local
 ```
 
 ---
 
 ## Provider별 도구 매핑
 
-### 🛑 MCP 도구 우선 사용 규칙 (CRITICAL)
+### 🛑 Target Root 일치 규칙 (CRITICAL)
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│ 🛑 CRITICAL: MCP 도구 사용 강제                      │
+│ 🛑 CRITICAL: target_root 보존 강제                   │
 │                                                      │
-│ MCP 도구가 사용 가능한 환경에서는 반드시 MCP 사용!    │
+│ Obsidian 도구는 연결 볼트와 target_root가 같을 때만!   │
 │                                                      │
 │ ❌ 잘못된 예:                                        │
-│    - write_to_file("vault/note.md", content)         │
-│    - Write 도구로 직접 파일 생성                      │
+│    - 연결 볼트 확인 없이 MCP로 상대경로 저장           │
 │                                                      │
 │ ✅ 올바른 예:                                        │
-│    - mcp_obsidian_create_note(path, content)         │
-│    - mcp__obsidian__create_note({path, content})     │
+│    - roots 동일 → MCP / 다름·미확인 → target_root Write│
 └─────────────────────────────────────────────────────┘
 ```
+
+우선순위: 사용자 명시 대상/backend > host가 제공한 primary project/workspace root > project-scoped 요청이 아닐 때만 configured backend. 사용자가 명시적으로 Notion을 고른 경우는 파일 containment 검증 대신 생성된 page URL/ID를 검증한다.
 
 ### 환경별 도구 이름
 
@@ -57,12 +58,17 @@ local = config.storage.local
 
 ```javascript
 // 설정 확인
-if (!config.storage.obsidian.enabled) {
+if (!config?.storage?.obsidian?.enabled) {
   // Obsidian 미설정 → 폴백
 }
 
-vaultPath = config.storage.obsidian.vaultPath
+vaultPath = realpath(config.storage.obsidian.vaultPath)
 defaultFolder = config.storage.obsidian.defaultFolder  // "Zettelkasten"
+
+// project-scoped save에서는 동일 root 확인이 선행 조건
+if (options.project_scoped && !same_path(vaultPath, target_root)) {
+  return save_to_target_root(relativePath, content, target_root)
+}
 
 // 노트 생성 (MCP 사용 - 상대 경로!)
 mcp__obsidian__create_note({
@@ -192,47 +198,119 @@ Glob({ pattern: `${outputPath}/**/*.md` })
 ### save_note(path, content, options)
 
 ```pseudo
+function canonical(path) {
+  return realpath(path)
+}
+
+function same_path(left, right) {
+  return canonical(left) === canonical(right)
+}
+
+function resolve_within(canonical_root, relativePath) {
+  current = canonical_root
+  for (component of dirname(relativePath).split('/')) {
+    next = join(current, component)
+    if (!exists(next)) mkdir(next)
+    current = canonical(next)  // resolve every existing symlink component
+    assert(is_within(current, canonical_root))
+  }
+  return join(current, basename(relativePath))
+}
+
 function save_note(relativePath, content, options = {}) {
-  // 1. Primary 저장소 시도
-  primary = config.storage.primary
+  config = Read("km-config.json") || {}
+  primary = options.explicit_backend || (options.project_scoped ? "local" : config?.storage?.primary)
+  target_root = options.target_root
+
+  if (options.project_scoped && !target_root) {
+    throw Error("target_root is required for a project-scoped save")
+  }
+
+  canonical_target_root = target_root ? canonical(target_root) : null
+  safe_relative_path = normalize_path(relativePath)
+  if (is_absolute(safe_relative_path) || has_parent_escape(safe_relative_path)) {
+    throw Error("relativePath escapes target_root")
+  }
+  target_candidate = options.project_scoped
+    ? resolve_within(canonical_target_root, safe_relative_path)
+    : null
 
   switch (primary) {
     case "obsidian":
-      if (config.storage.obsidian.enabled) {
+      if (config?.storage?.obsidian?.enabled) {
+        obsidian_root = config.storage.obsidian.vaultPath || get_obsidian_connected_root()
+        if (options.project_scoped && (!obsidian_root || !same_path(obsidian_root, canonical_target_root))) {
+          result = save_to_target_root(safe_relative_path, content, canonical_target_root)
+          break
+        }
         try {
-          return mcp__obsidian__create_note({
-            path: relativePath,
+          response = mcp__obsidian__create_note({
+            path: safe_relative_path,
             content: content
           })
+          result = {
+            ...response,
+            path: options.project_scoped
+              ? target_candidate
+              : join(canonical(obsidian_root), safe_relative_path)
+          }
+          break
         } catch (e) {
-          // MCP 실패 → Local 폴백
-          return save_to_local(relativePath, content)
+          result = options.project_scoped
+            ? save_to_target_root(safe_relative_path, content, canonical_target_root)
+            : save_to_local(safe_relative_path, content)
+          break
         }
       }
       break
 
     case "notion":
-      if (config.storage.notion.enabled) {
+      if (config?.storage?.notion?.enabled) {
+        if (options.project_scoped && options.explicit_backend !== "notion") {
+          result = save_to_target_root(safe_relative_path, content, canonical_target_root)
+          break
+        }
         try {
-          return save_to_notion(relativePath, content)
+          return save_to_notion(safe_relative_path, content)
         } catch (e) {
-          // Notion 실패 → Local 폴백
-          return save_to_local(relativePath, content)
+          result = options.project_scoped
+            ? save_to_target_root(safe_relative_path, content, canonical_target_root)
+            : save_to_local(safe_relative_path, content)
+          break
         }
       }
       break
 
     case "local":
     default:
-      return save_to_local(relativePath, content)
+      result = options.project_scoped
+        ? save_to_target_root(safe_relative_path, content, canonical_target_root)
+        : save_to_local(safe_relative_path, content)
   }
 
-  // Primary 미설정 → Local 폴백
-  return save_to_local(relativePath, content)
+  if (!result) {
+    result = options.project_scoped
+      ? save_to_target_root(safe_relative_path, content, canonical_target_root)
+      : save_to_local(safe_relative_path, content)
+  }
+
+  actual_saved_path = canonical(result.path)
+  assert(file_exists(actual_saved_path))
+  if (options.project_scoped && !is_within(actual_saved_path, canonical_target_root)) {
+    throw Error(`Save escaped target_root: ${actual_saved_path}`)
+  }
+  return { ...result, actual_saved_path }
+}
+
+function save_to_target_root(relativePath, content, canonical_target_root) {
+  fullPath = resolve_within(canonical_target_root, relativePath)
+  assert(is_within(fullPath, canonical_target_root))
+  response = Write({ file_path: fullPath, content: content })
+  return { ...response, path: fullPath }
 }
 
 function save_to_local(relativePath, content) {
-  outputPath = config.storage.local.outputPath || "./km-output"
+  outputPath = config?.storage?.local?.outputPath || "./km-output"
   fullPath = `${outputPath}/${relativePath}`
   return Write({ file_path: fullPath, content: content })
 }
@@ -293,8 +371,10 @@ function save_to_multiple(relativePath, content) {
 
 ```
 입력: Zettelkasten/AI-연구/노트.md
-저장: Write(file_path: "./km-output/Zettelkasten/AI-연구/노트.md")
-결과: {cwd}/km-output/Zettelkasten/AI-연구/노트.md
+project-scoped 저장: Write(file_path: "{target_root}/Zettelkasten/AI-연구/노트.md")
+결과: {canonical_target_root}/Zettelkasten/AI-연구/노트.md
+
+project-scoped가 아닐 때만 기존 `config.storage.local.outputPath`를 사용한다.
 ```
 
 ---
@@ -338,11 +418,11 @@ function save_to_multiple(relativePath, content) {
 ### 저장 실패 시 폴백 체인
 
 ```
-1. Primary 저장소 시도
+1. target_root와 일치하는 도구 시도
+   ↓ 실패·root 불일치·root 확인 불가
+2. target_root 안에 Write 폴백
    ↓ 실패
-2. Local 폴백 시도
-   ↓ 실패
-3. 콘텐츠를 응답에 출력
+3. 저장 성공으로 보고하지 않고 콘텐츠를 응답에 출력
    + 수동 저장 안내
 ```
 
@@ -386,4 +466,10 @@ Notion 사용 시:
 Local 사용 시:
 □ config.storage.local.outputPath 설정됨?
 □ 해당 경로에 쓰기 권한 있음?
+
+Project-scoped file save 시:
+□ canonical_target_root가 host의 primary project/workspace root와 같은가?
+□ VAULT-STRUCTURE.md와 MOC-Map.md(존재 시)를 경로 결정 전에 읽었는가?
+□ actual_saved_path가 존재하고 canonical_target_root 안인가?
+□ 최종 보고에 target_root·상대 경로·actual_saved_path를 명시했는가?
 ```

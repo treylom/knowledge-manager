@@ -9,28 +9,34 @@ description: Unified storage interface for Obsidian, Notion, and local file syst
 
 ---
 
-## Storage Selection
+## Storage Selection and Target-Root Contract
 
 ```javascript
-function get_storage_backend() {
-  config = Read("km-config.json")
+function get_storage_backend(options = {}) {
+  config = Read("km-config.json") || {}
+  if (options.explicit_backend) return options.explicit_backend
+  if (options.project_scoped) return "local"
   return config?.storage?.primary || "local"
 }
 ```
 
-## 🛑 MCP 도구 우선 사용 규칙 (CRITICAL)
+For project-scoped file saves, the workflow must pass `target_root`. The backend may choose a tool, but it must not choose or redirect the destination root.
+
+Priority: user-explicit destination/backend → host-provided primary project/workspace root → configured backend only outside project-scoped requests.
+
+## 🛑 Target Root 일치 규칙 (CRITICAL)
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│ 🛑 CRITICAL: MCP 도구 사용 강제                      │
+│ 🛑 CRITICAL: target_root 보존 강제                   │
 │                                                      │
-│ MCP 도구가 사용 가능한 환경에서는 반드시 MCP 사용!    │
+│ Obsidian 도구는 연결 볼트와 target_root가 같을 때만!   │
 │                                                      │
 │ ❌ 잘못된 예:                                        │
-│    - write_to_file("vault/note.md", content)         │
+│    - 연결 볼트 확인 없이 MCP로 상대경로 저장           │
 │                                                      │
 │ ✅ 올바른 예:                                        │
-│    - mcp_obsidian_create_note(path, content)         │
+│    - roots 동일 → MCP / 다름·미확인 → target_root Write│
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -60,20 +66,70 @@ function get_storage_backend() {
 ## Unified Save Function
 
 ```javascript
-// Antigravity/Gemini CLI용 (싱글 언더스코어 사용)
-function save_note(relativePath, content) {
-  backend = get_storage_backend()
-  config = Read("km-config.json")
+function canonical(path) {
+  return realpath(path)
+}
+
+function same_path(left, right) {
+  return canonical(left) === canonical(right)
+}
+
+function resolve_within(canonical_root, relativePath) {
+  current = canonical_root
+  for (component of dirname(relativePath).split('/')) {
+    next = join(current, component)
+    if (!exists(next)) mkdir(next)
+    current = canonical(next) // resolve every existing symlink component
+    assert(is_within(current, canonical_root))
+  }
+  return join(current, basename(relativePath))
+}
+
+function save_note(relativePath, content, options = {}) {
+  config = Read("km-config.json") || {}
+  backend = get_storage_backend(options)
+  target_root = options.target_root
+
+  if (options.project_scoped && !target_root) {
+    throw new Error("target_root is required for a project-scoped save")
+  }
+
+  canonical_target_root = target_root ? canonical(target_root) : null
+  safe_relative_path = normalize_path(relativePath)
+  if (is_absolute(safe_relative_path) || has_parent_escape(safe_relative_path)) {
+    throw new Error("relativePath escapes target_root")
+  }
+  target_candidate = options.project_scoped
+    ? resolve_within(canonical_target_root, safe_relative_path)
+    : null
+
+  function save_to_target_root() {
+    assert(is_within(target_candidate, canonical_target_root))
+    result = write_to_file(target_candidate, content)
+    return { ...result, path: target_candidate }
+  }
 
   switch (backend) {
     case "obsidian":
-      // ⚠️ 반드시 MCP 도구 사용!
-      return mcp_obsidian_create_note({
-        path: relativePath,
+      obsidian_root = config?.storage?.obsidian?.vaultPath || get_obsidian_connected_root()
+      if (options.project_scoped && (!obsidian_root || !same_path(obsidian_root, canonical_target_root))) {
+        result = save_to_target_root()
+        break
+      }
+      result = mcp_obsidian_create_note({
+        path: safe_relative_path,
         content: content
       })
+      result.path = options.project_scoped
+        ? target_candidate
+        : join(canonical(obsidian_root), safe_relative_path)
+      break
 
     case "notion":
+      if (options.project_scoped && options.explicit_backend !== "notion") {
+        result = save_to_target_root()
+        break
+      }
       return mcp_notion_API_post_page({
         parent: { page_id: config.storage.notion.parentPageId },
         properties: { title: [{ text: { content: getTitle(relativePath) } }] }
@@ -81,9 +137,22 @@ function save_note(relativePath, content) {
 
     case "local":
     default:
-      fullPath = `${config.storage.local.outputPath}/${relativePath}`
-      return write_to_file(fullPath, content)
+      if (options.project_scoped) {
+        result = save_to_target_root()
+      } else {
+        outputPath = config?.storage?.local?.outputPath || "./km-output"
+        fullPath = `${outputPath}/${safe_relative_path}`
+        result = write_to_file(fullPath, content)
+        result.path = fullPath
+      }
   }
+
+  actual_saved_path = canonical(result.path)
+  assert(file_exists(actual_saved_path))
+  if (options.project_scoped && !is_within(actual_saved_path, canonical_target_root)) {
+    throw new Error(`Save escaped target_root: ${actual_saved_path}`)
+  }
+  return { ...result, actual_saved_path }
 }
 ```
 
@@ -112,5 +181,7 @@ After every save operation:
 ```
 □ Did the tool actually execute? (no JSON-only output!)
 □ Did we receive a success response?
-□ Verify with Glob that file exists
+□ Is actual_saved_path canonicalized and does the file exist there?
+□ For a project-scoped save, is actual_saved_path inside canonical_target_root?
+□ Does the final report include target_root, relative path, and actual_saved_path?
 ```
