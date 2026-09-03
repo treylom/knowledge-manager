@@ -30,7 +30,7 @@ W_COOCCUR = 0.20
 W_RECENCY = 0.05
 SEMANTIC_CAP = 0.30  # optional adapter additive ceiling
 
-DEFAULT_INLINE_THRESHOLD = 0.6   # 재경님 확정 2026-07-03 (0.7 아님 — 과소링크 방지). 실측 후 잠금.
+DEFAULT_INLINE_THRESHOLD = 0.6   # 2026-07-03 확정 (0.7 아님 — 과소링크 방지). 실측 후 잠금.
 DEFAULT_RELATED_THRESHOLD = 0.4
 MAX_INLINE = 5
 MAX_RELATED = 7
