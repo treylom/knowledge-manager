@@ -68,6 +68,20 @@ Claude Code용 종합 지식 관리 에이전트. 다양한 소스에서 콘텐�
 - 질문 형태에 따라 quick/deep 자동 선택, MOC(지도 노트) 우선 표시
 - 답변은 항상 실제 노트 내용 기반 + 출처 경로 표기
 - **Codex CLI 설치(방법 4)에서도 같은 검색이 `km-search` 스킬로 동작합니다.**
+- 검색 전에 `000-START-HERE/` 구조 문서 3종을 먼저 참조하고, 답변 마지막 줄에 `구조 문서(<D>/3 참조 · 허브 <k>)` 로 참조 사실을 표기합니다.
+
+## 🧭 지식관리 상담·대량 변형 — `/km:interview` · `/km:reform`
+
+```
+/km:interview                 # 폴더 나누기·MOC 허브·wiki 대상/비대상·스킬 추천을 상담해 _meta/KM-DESIGN.md 로 정리
+/km:reform                    # (= plan) 변경 계획서만 작성 — 파일은 건드리지 않음
+/km:reform apply <계획서>      # 계획서대로 이동·프론트매터·링크 일괄 적용 (git 스냅샷 자동, 롤백 1줄 안내)
+/km:reform check              # 노트마다 MOC 링크 1개 + 일반 링크 1개 이상인지 코드로 검사
+```
+
+- `/km:setup` 이 `000-START-HERE/` 에 구조 문서 3종(START-HERE · VAULT-STRUCTURE · MOC-Map)을 만들고, `/km:search` 는 어느 검색 단계에서든 이 문서를 먼저 참조합니다.
+- `/km:interview` 는 셋업 때 적은 프로필과 구조 문서를 읽고 상담하므로, 셋업을 먼저 마치면 질문이 줄어듭니다.
+- 대량 변경은 항상 `plan` 으로 먼저 보고, `apply` 는 사용자가 명시할 때만 실행됩니다.
 
 ## 🚀 설치 방법
 
@@ -379,6 +393,12 @@ claude mcp list
 
 # 웹 아티클 정리
 /km https://example.com/article
+
+# 지식관리 상담
+/km:interview
+
+# 대량 변형(계획서만)
+/km:reform
 ```
 
 ---
