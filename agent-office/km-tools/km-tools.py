@@ -61,6 +61,18 @@ def main():
                            help="score >= this -> inline (default 0.6)")
     sl_parser.add_argument("--related-threshold", type=float, default=None,
                            help="score >= this -> related section (default 0.4)")
+    sl_parser.add_argument("--scheme", choices=["v1", "v2"], default="v1",
+                           help="scoring rubric: v1 = 0~1 weighted sum (default) | v2 = 0~100 axes")
+    sl_parser.add_argument("--moc-gate", choices=["auto", "confirm"], default="auto",
+                           help="v2 only: auto = register the closest MOC (default) | confirm = propose one candidate")
+
+    # print-weights
+    pw_parser = subparsers.add_parser(
+        "print-weights",
+        help="Print the link-scoring rubric as a markdown table (SoT for the skill doc)",
+    )
+    pw_parser.add_argument("--scheme", choices=["v2"], default="v2",
+                           help="rubric to print (v2)")
 
     args = parser.parse_args()
 
@@ -109,7 +121,13 @@ def main():
                 else DEFAULT_RELATED_THRESHOLD
             ),
             adapter=adapter,
+            scheme=args.scheme,
+            moc_gate=args.moc_gate,
         )
+    elif args.command == "print-weights":
+        from lib.link_scorer import weights_table_markdown
+        print(weights_table_markdown(args.scheme))
+        return
 
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
