@@ -6,7 +6,7 @@
 - `/km:reform` 신설 — 기본은 `plan`(변경 계획서만 작성), `apply` 는 사용자가 명시할 때만 실행합니다. 적용 전 git 스냅샷을 자동으로 남기고 롤백 방법을 1줄로 안내하며, `check` 로 링크 상태를 검사합니다.
 - `/km:setup` 에 Phase 5.5 추가 — `000-START-HERE/` 에 구조 문서 3종(START-HERE · VAULT-STRUCTURE · MOC-Map)을 템플릿으로 생성합니다.
 - `/km:search` 에 Phase 0.4 구조 문서 축 추가 — Tier 2·3 보다 먼저 실행하고 티어 표시 줄을 확장합니다. 링크 게이트 `scripts/km_link_gate.py`(노트마다 MOC 링크 1개 이상·일반 링크 1개 이상, 종료 코드 0/1/2)와 지식원 `km-vault-design-principles` 를 함께 추가했습니다.
-- 알려진 한계: Antigravity `km-search` 미러(`.agent/skills/km-search`)에는 구조 문서 축을 이식했지만, Codex(`.codex-plugin`) 미러와 Antigravity `km-setup` 미러(Phase 5.5)에는 아직 반영되지 않았습니다(다음 패치).
+- 알려진 한계: Codex·Antigravity 공용 스킬 미러(`.agent/skills/` — `.codex-plugin/plugin.json` 이 가리키는 곳)에는 `km-search` 구조 문서 축을 이식했지만, `km-setup` 미러에는 Phase 5.5 가 아직 없고 `/km:interview`·`/km:reform` 은 Claude Code 커맨드로만 제공됩니다(Codex·Antigravity 에서는 아직 쓸 수 없음 — 다음 패치).
 
 ## 1.2.5 이전
 

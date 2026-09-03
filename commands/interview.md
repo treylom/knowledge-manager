@@ -129,7 +129,7 @@ echo "저장: $DESIGN (completeness=${COMPLETENESS})"
 
 ## 4. 개정안 → reform 인계
 
-§G 를 적용하려면 `/km:reform plan _meta/KM-DESIGN.md` 를 사용자에게 안내한다. **이 커맨드는 노트·폴더를 옮기지 않는다** — 개정안은 문서로만 남기고, 실행은 항상 `/km:reform` 계열에 인계한다.
+§G 를 적용하려면 `/km:reform plan` 을 사용자에게 안내한다(reform 의 plan 은 `_meta/KM-DESIGN.md` §G 를 고정 경로에서 읽으므로 인자를 넘길 필요가 없다). **이 커맨드는 노트·폴더를 옮기지 않는다** — 개정안은 문서로만 남기고, 실행은 항상 `/km:reform` 계열에 인계한다.
 
 ## 제약
 
