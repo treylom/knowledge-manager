@@ -471,6 +471,28 @@ ELSE:
 
 ---
 
+## STEP 3.5: 링크 게이트 — 관련 노트 링크를 «실제로» 기입 후 통과해야 STEP 4
+
+STEP 3 Phase C 교차 검증 표(Core → Graph Only → Retrieval Only 순)와 `graphrag_results` 에서 상위 3~5건을 골라, 그 관련 노트를 draft 에 **실제로** 기입한다.
+기입 3축: frontmatter `related:` · 본문 wikilink `[[…]]` ≥1 · MOC 링크 1건(검색 결과에 잡힌 MOC 또는 저장 대상 폴더의 MOC).
+「추천 목록만 출력」은 기입이 아니다 ❌ — draft 파일에 링크가 들어가지 않으면 이 STEP 은 미완이고 STEP 4 로 넘어가지 않는다.
+
+draft 가 아직 vault 밖 임시 파일이면 vault 안 `_meta/drafts/` 로 옮긴 뒤 그 vault 상대경로로 검사한다(`--notes` 지정 시 `--exclude` 가 무시되므로 기본 제외 글롭과 무관하게 검사된다).
+
+```bash
+# DRAFT_PATH = STEP 4 로 넘길 draft 파일(vault 안 경로) · PLUGIN_ROOT = 이 플러그인 루트
+python3 "$PLUGIN_ROOT/scripts/km_link_gate.py" "$VAULT_PATH" --notes "$DRAFT_PATH"; GATE_RC=$?
+echo "LINK_GATE_RC=$GATE_RC"
+```
+
+| exit | 처리 |
+|---|---|
+| exit 0 | 통과 — STEP 4 진입 |
+| exit 1 | 미통과 — 링크 보강 재시도 **≤2회**. 출력 표의 `moc_links`/`links` 열에서 부족한 축(MOC 링크 / 일반 링크)을 읽어 draft 에 채우고 같은 명령을 다시 돌린다. 재시도 2회 뒤에도 1 이면 미통과 표(note·moc_links·links·reason)를 사용자에게 사유로 표시하고 **정지**한다(STEP 4 진입 ❌). |
+| exit 2 | 측정 불가(vault 경로 오류·노트 없음 등) — 통과 취급 ❌. 사유를 그대로 표시하고 **정지**한다. |
+
+---
+
 ## STEP 4: COMPILE — raw→wiki 컴파일 (draft 생성)
 
 > **Karpathy 핵심: "raw → wiki는 컴파일이다."**

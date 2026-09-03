@@ -65,9 +65,35 @@ IF query가 비어있으면:
 - DEEP: 문장형 5단어+, "~하려면/방법/비교/차이/관계/영향", 분석 요청("설명해줘/정리해줘"), 복수 개념("A vs B"), 방법론("어떻게/왜")
 - QUICK: 그 외 (키워드 1-3개, 정의형 "~란?", 노트 찾기)
 
+## Phase 0.4: 구조 문서 축 (000-START-HERE)
+
+셋업이 만든 3문서(`START-HERE`·`VAULT-STRUCTURE`·`MOC-Map`)는 **어느 티어든 본 검색 전에 먼저 참조**한다 — 있으면 `MOC-Map` 을 Read(≤130줄)해서 질문을 허브에 매핑한 뒤 검색에 들어간다.
+입력 변수는 `VAULT_PATH` 와 `QUERY_KEYWORDS`(핵심 키워드 1~3개, 공백 구분) 둘이고, 아래 블록은 그대로 실행할 수 있다.
+
+```bash
+STRUCT_DIR="${VAULT_PATH}/000-START-HERE"; STRUCT_DOCS=0; STRUCT_MISSING=""
+for f in START-HERE VAULT-STRUCTURE MOC-Map; do
+  if [ -f "$STRUCT_DIR/$f.md" ]; then STRUCT_DOCS=$((STRUCT_DOCS+1)); else STRUCT_MISSING="$STRUCT_MISSING $f"; fi
+done
+echo "STRUCT_DOCS=${STRUCT_DOCS}/3 missing=[${STRUCT_MISSING# }]"
+# 허브 매핑: MOC-Map 앞 130줄의 표 행에서 질의 키워드와 겹치는 [[허브]] ≤3
+ROUTE_HUBS=""
+if [ -f "$STRUCT_DIR/MOC-Map.md" ]; then
+  for kw in $QUERY_KEYWORDS; do
+    ROUTE_HUBS="$ROUTE_HUBS $(head -130 "$STRUCT_DIR/MOC-Map.md" | grep -i -- "$kw" | grep -o '\[\[[^]|#]*' | sed 's/^\[\[//')"
+  done
+  ROUTE_HUBS="$(echo $ROUTE_HUBS | tr ' ' '\n' | awk 'NF' | sort -u | head -3 | tr '\n' ' ')"
+fi
+ROUTE_HUB_COUNT=$(echo $ROUTE_HUBS | wc -w | tr -d ' ')
+echo "ROUTE_HUBS=[${ROUTE_HUBS% }] count=${ROUTE_HUB_COUNT}"
+```
+
+- `STRUCT_DOCS` 가 3 미만이면 답변에 「구조 문서 없음(<빠진 것>) — `/km:setup` 재실행으로 생성」 1줄을 적고 **그대로 계속 진행**한다(멈춤 ❌).
+
 ## Phase 0.5: MOC 우선 라우팅
 
 검색 결과 중 MOC 성격 노트(frontmatter `type`/`tags`에 MOC 포함, 또는 파일명에 `-MOC`)를 최상위로 고정한다:
+0. `000-START-HERE/` 의 3문서가 결과에 있으면 파일명 축으로 MOC 로 «즉시» 분류하고, Phase 0.4 의 `ROUTE_HUBS` 를 📌 최상단 고정 후보에 합류시킨다.
 1. 결과를 MOC / 원자 노트로 분류
 2. 상위 최대 3개 MOC를 맨 위로 고정 (점수 순)
 3. 원자 노트는 그 아래 점수 순
@@ -103,7 +129,7 @@ fi
 # 폴백 문구를 가르기 위한 상태 판정 — curl exit code 가 병명을 가른다.
 #   7  = 연결 거부  → 서버가 없다      (absent)
 #   28 = 시한 초과  → 서버는 있는데 막혔다 (unreachable)
-# v1.1 (2026-09-01 코난 T5): HTTP 상태코드 축 추가. 404 는 curl exit=0 이고 본문도
+# v1.1 (2026-09-01): HTTP 상태코드 축 추가. 404 는 curl exit=0 이고 본문도
 # 비어있지 않아(`{"detail":"Not Found"}`) 구 판정식에서 «ok» 로 분류됐고, 이후 파싱에서
 # results 부재 → 「no-hit」으로 둔갑했다(폴백조차 안 탐). 경로 오류를 misrouted 로 가른다.
 if   [ $TIER1_RC -eq 0 ] && [ "$TIER1_CODE" = "200" ] && [ -n "$TIER1_JSON" ]; then
@@ -141,6 +167,25 @@ echo "ENDPOINT_SWITCHED=${ENDPOINT_SWITCHED:-none}"
 - 서버 미기동/미설치 → 조용히 Tier 2로. (같은 플러그인의 `/tofugraph` 명령으로 GraphRAG 스택을 구축하면 이 티어가 자동으로 살아난다.)
 - **질의 형식(참고)**: 의미 기반 검색이라 문장을 통째로 넣어도 받지만, **3~7단어 키워드형**이 무난하다. 빈손이어도 **같은 질의를 그대로 다시 던지지 말 것** — 결과가 바뀌지 않는다. 표현을 한 번 바꿔 보고(별칭·영/한 표기 변형 포함), 그래도 안 나오면 다음 티어로 넘어가는 편이 빠르다.
 
+#### Tier 2·3 공통 — 구조 문서 선실행 (본 검색 전에 1회)
+
+```bash
+# 3문서만 대상으로 같은 키워드 1회 선검색(CLI 가 있으면 CLI, 없거나 0 B 면 grep) → 히트 = 📌 고정
+STRUCT_HITS=0
+if [ -d "$STRUCT_DIR" ]; then
+  for kw in $QUERY_KEYWORDS; do STRUCT_HITS=$((STRUCT_HITS + $(grep -il -- "$kw" "$STRUCT_DIR"/*.md 2>/dev/null | wc -l | tr -d ' '))); done
+fi
+echo "구조 문서: 참조함(${STRUCT_DOCS}/3 · 히트 ${STRUCT_HITS})"
+# ROUTE_HUBS 각 MOC 의 outlink 를 후보에 추가(Phase 2.5-B 와 같은 grep)
+for hub in $ROUTE_HUBS; do
+  HUB_FILE="$(find "$VAULT_PATH" -name "$hub.md" -not -path '*/.*' | head -1)"
+  [ -n "$HUB_FILE" ] && grep -o '\[\[[^]|#]*' "$HUB_FILE" | sed 's/^\[\[//' | sort -u | head -15
+done
+```
+- Obsidian CLI 는 **앱 내장 경로 우선**(mac `/Applications/Obsidian.app/Contents/MacOS/obsidian-cli`) + `vault=<볼트 이름>` 을 명시한다.
+- 출력이 0 B 인데 rc 가 0 이면 「도구가 순간 빈손」이므로 1회 재시도한다. 무결과 문구(≠0 B)일 때만 「없음」으로 판정한다.
+- 미히트여도 위 `구조 문서: 참조함(…)` 줄은 반드시 표기한다 — 참조 «했음»의 증명이다.
+
 ### Tier 2 — Obsidian CLI (전문 full-text 검색)
 ```bash
 # km-config의 obsidianCli.path 우선, 비어 있으면 자동 감지:
@@ -159,6 +204,7 @@ echo "ENDPOINT_SWITCHED=${ENDPOINT_SWITCHED:-none}"
 
 ### Tier 4 — 텍스트 검색 (비상 폴백, 항상 가능)
 ```bash
+grep -rln "${QUERY}" "${STRUCT_DIR}" --include="*.md" 2>/dev/null  # 3문서 우선
 grep -rn "${QUERY}" "${VAULT_PATH}" --include="*.md" -l | head -20
 ```
 - 문장형 질의는 통짜로 넣지 말고 **핵심 키워드 1~2개를 추출해** 검색한다(통짜 문장은 0히트).
@@ -267,7 +313,7 @@ grep -rln --include="*.md" -F "[[${KEYWORD}" "${VAULT_PATH}" | head -10
 - **읽기 전용**: 노트 생성/수정 금지
 - **hallucination 금지**: 반드시 실제 노트 내용 기반. 노트에 없는 내용은 "vault에 관련 자료가 없습니다" 명시 (Tier 1 에서는 `/api/note` 의 `body` 와 `source_note` 경로의 원문이 '실제 노트 내용'이다 — 둘 다 그 vault 노트에서 나온다. 로컬 원문 Read 는 경로가 실재할 때의 보강이지, Read 실패가 답변을 막는 게이트가 아니다)
 - **출처 필수**: 실제 읽은 노트 경로 표기
-- **사용 티어 명시 (형식 고정)**: 답변 마지막 줄은 정확히 이 형식으로 쓴다 — `검색: <티어명> + 그래프 확장(backlinks N)`. **N = Phase 2.5-B backlink grep 결과 줄 수(실측 정수, 생략·"1-hop" 같은 서술 대체 ❌)**. 그래프 확장을 안 한 답변(QUICK 얕은 질의, 또는 Tier 1 `VAULT_MODE=other` 로 Phase 2.5 를 생략한 경우)은 `검색: <티어명>` 단독 허용.
+- **사용 티어 명시 (형식 고정)**: 답변 마지막 줄은 정확히 이 형식으로 쓴다 — `검색: <티어명> + 구조 문서(<D>/3 참조 · 허브 <k>) + 그래프 확장(backlinks N)`. **D = Phase 0.4 의 `STRUCT_DOCS`, k = `ROUTE_HUB_COUNT`(둘 다 실측 정수)** · backlinks N = Phase 2.5-B backlink grep 결과 줄 수(실측 정수, 생략·"1-hop" 같은 서술 대체 ❌). 그래프 확장을 안 한 답변(QUICK 얕은 질의, 또는 Tier 1 `VAULT_MODE=other` 로 Phase 2.5 를 생략한 경우)은 `검색: <티어명> + 구조 문서(<D>/3 참조 · 허브 <k>)` 까지 허용.
 - **질문/스킬/에이전트 스폰 금지**: 직접 검색만 수행
 - 상태 메시지 없이 바로 결과 출력 · Read 실패 시 다음 노트로
 - QUICK: 5줄 이내 + 출처 1-2개 / DEEP: 제한 없음 + 출처 3-5개

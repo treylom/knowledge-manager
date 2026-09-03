@@ -68,6 +68,21 @@ Claude Code용 종합 지식 관리 에이전트. 다양한 소스에서 콘텐�
 - 질문 형태에 따라 quick/deep 자동 선택, MOC(지도 노트) 우선 표시
 - 답변은 항상 실제 노트 내용 기반 + 출처 경로 표기
 - **Codex CLI 설치(방법 4)에서도 같은 검색이 `km-search` 스킬로 동작합니다.**
+- 검색 전에 `000-START-HERE/` 구조 문서 3종을 먼저 참조하고, 답변 마지막 줄에 `구조 문서(<D>/3 참조 · 허브 <k>)` 로 참조 사실을 표기합니다.
+
+## 🧭 지식관리 상담·대량 변형 — `/km:interview` · `/km:reform`
+
+```
+/km:interview                 # 폴더 나누기·MOC 허브·wiki 대상/비대상·스킬 추천을 상담해 _meta/KM-DESIGN.md 로 정리
+/km:reform                    # (= plan) 변경 계획서만 작성 — 파일은 건드리지 않음
+/km:reform apply <계획서>      # 계획서대로 이동·프론트매터·링크 일괄 적용 (git 스냅샷 자동, 롤백 1줄 안내)
+/km:reform check              # 노트마다 MOC 링크 1개 + 일반 링크 1개 이상인지 코드로 검사
+```
+
+- `/km:setup` 이 `000-START-HERE/` 에 구조 문서 3종(START-HERE · VAULT-STRUCTURE · MOC-Map)을 만들고, `/km:search` 는 어느 검색 단계에서든 이 문서를 먼저 참조합니다.
+- `/km:interview` 는 셋업 때 적은 프로필과 구조 문서를 읽고 상담하므로, 셋업을 먼저 마치면 질문이 줄어듭니다.
+- 대량 변경은 항상 `plan` 으로 먼저 보고, `apply` 는 사용자가 명시할 때만 실행됩니다.
+- **지원 범위**: `/km:interview`·`/km:reform` 은 Claude Code 커맨드입니다. Codex·Antigravity 공용 스킬 미러(`.agent/skills/`)에는 아직 없어 그 환경에서는 쓸 수 없습니다(다음 패치).
 
 ## 🚀 설치 방법
 
@@ -242,7 +257,7 @@ codex plugin add km@knowledge-manager
 - **vault 검색도 동일하게 동작합니다** (Codex 스킬명은 `km-search`): 위 `/km:search`와 같은 4단계 자동 폴백을 수행합니다 — GraphRAG 서버가 없어도 Obsidian CLI·텍스트 검색이 받아줍니다. (③ Obsidian MCP 티어는 MCP를 연결한 경우에만 사용됩니다.)
 - Codex 환경은 이미 떠 있는 GraphRAG 서버(`GRAPHRAG_API_URL` 환경변수 또는 기본 `http://127.0.0.1:8400`)에 자동으로 연결합니다.
 - ⚠️ **Codex sandbox 주의**: Codex 기본 sandbox 는 외부 바이너리 실행·네트워크를 제한합니다 — Obsidian CLI 검색 티어를 쓰려면 승인 응답 또는 `~/.codex/config.toml` 의 `sandbox_mode` 상향이 필요합니다(막히면 텍스트 검색으로 자동 폴백은 됩니다). Obsidian 데스크톱 앱이 실행 중이어야 CLI 티어가 동작합니다.
-- **지원 범위**: Codex 플러그인은 현재 핵심 스킬 세트(km-workflow · km-setup · km-search · export · storage · social · zettelkasten 등 9종)를 제공합니다. PDF/YouTube/이미지 파이프라인·GraphRAG 구축·품질 재기(`/tofugraph`, bench 포함) 등 세부 스킬은 아직 Claude Code 전용입니다. `km-setup` 의 자동 환경분기도 Codex 미지원 — vault 경로는 첫 실행 때 직접 입력하면 됩니다.
+- **지원 범위**: Codex 플러그인은 현재 핵심 스킬 세트(km-workflow · km-setup · km-search · export · storage · social · zettelkasten 등 9종)를 제공합니다. PDF/YouTube/이미지 파이프라인·GraphRAG 구축·품질 재기(`/tofugraph`, bench 포함) 등 세부 스킬은 아직 Claude Code 전용입니다. `km-setup` 의 자동 환경분기도 Codex 미지원 — vault 경로는 첫 실행 때 직접 입력하면 됩니다. 1.3.0 에서 신설된 `/km:interview`·`/km:reform` 도 아직 Claude Code 전용입니다.
 
 ---
 
@@ -379,6 +394,12 @@ claude mcp list
 
 # 웹 아티클 정리
 /km https://example.com/article
+
+# 지식관리 상담
+/km:interview
+
+# 대량 변형(계획서만)
+/km:reform
 ```
 
 ---
@@ -487,6 +508,8 @@ claude mcp list
 | Antigravity | `C:\Users\<사용자명>\.gemini\antigravity\mcp_config.json` |
 
 ---
+
+**링크 가중치·MOC 게이트 (1.3.0)**: `km-config.json` 의 `linking.scheme` = `"v1"`(기본 — 기존 배점) 또는 `"v2"`(구조 40 · 내용 45 · 의미 25, `agent-office/km-tools/km-tools.py print-weights --scheme v2` 로 표 확인) · `linking.mocGate` = `"auto"`(가장 가까운 MOC 에 자동 등록, 기본) 또는 `"confirm"`(후보 1개를 제안한 뒤 확인). 예시는 `km-config.example.json` 의 `linking` 절에 있습니다.
 
 ## 고급 옵션
 

@@ -103,6 +103,10 @@
 
   "linking": {
     "_help": "링크 점수제 (link_scorer). 코어는 stdlib 휴리스틱만으로 동작 — 아래 값은 선택 튜닝.",
+    "scheme": "v1",
+    "_scheme_help": "점수 체계: v1 = 0~1 가중합(기본) · v2 = 0~100 배점(구조 40·내용 45·의미 25). 아래 inlineThreshold/relatedThreshold 는 v1 용이고, v2 등급은 60/40/25 고정입니다.",
+    "mocGate": "auto",
+    "_mocGate_help": "auto = 가장 가까운 MOC 자동 등록(기본) · confirm = 후보 1개 제안 후 확인",
     "inlineThreshold": 0.6,
     "_inlineThreshold_help": "이 점수 이상이면 본문 인라인 [[링크]]. 기본 0.6 (낮추면 링크↑·과잉 위험, 높이면 링크↓). 최근 노트로 실측 후 조정 권장.",
     "relatedThreshold": 0.4,
