@@ -628,6 +628,116 @@ Bash(`claude mcp list`)
 
 ---
 
+## Phase 5.5: 구조 문서 생성 (000-START-HERE)
+
+설정 파일까지 끝났으니(Phase 5), 완료 안내(Phase 6) 전에 볼트의 **현관 문서 3종**을 만들어요.
+입력은 두 가지예요 — Phase 2에서 정한 노트 폴더 경로(`vaultPath`, Obsidian을 안 쓰면 `localPath`. 둘은 똑같이 다루고, 폴더만 있으면 돼요)와 Phase 4 프로필(`_meta/USER-PROFILE.md` 의 `north_star` = 「이 볼트로 무엇을 이루고 싶은가」 한 줄)이에요.
+산출은 `<노트 폴더>/000-START-HERE/` 아래 `START-HERE.md` · `VAULT-STRUCTURE.md` · `MOC-Map.md` 세 개이고, 나중에 검색(`/km:search`)이 답을 찾을 때 **가장 먼저 읽는** 안내 문서예요.
+
+밖에서 넣어 주는 값은 `VAULT_PATH`(Phase 2 경로)와 `PLUGIN_ROOT`(이 플러그인 폴더) 둘뿐이에요. 아래 세 블록을 순서대로 실행해요.
+
+### ① 값 모으기 (이름·날짜·목표·폴더 트리)
+
+```bash
+# VAULT_PATH = Phase 2 경로(vaultPath|localPath) · PLUGIN_ROOT = 이 플러그인 루트(templates/start-here/ 가 있는 곳)
+SH_DIR="${VAULT_PATH}/000-START-HERE"; TPL="${PLUGIN_ROOT}/templates/start-here"; mkdir -p "$SH_DIR"
+VAULT_NAME="$(basename "$VAULT_PATH")"; DATE="$(date +%F)"
+PROFILE="${VAULT_PATH}/_meta/USER-PROFILE.md"
+NORTH_STAR="$( [ -f "$PROFILE" ] && sed -n 's/^north_star: *"\{0,1\}\([^"]*\)"\{0,1\}.*/\1/p' "$PROFILE" | head -1 )"
+[ -n "$NORTH_STAR" ] || NORTH_STAR="(아직 비어 있음 — /km:setup 의 프로필 인터뷰에서 채워요)"
+TREE="$(cd "$VAULT_PATH" && find . -maxdepth 2 -type d -not -path '*/.*' | sort)"
+```
+
+### ② 허브(MOC) 찾아서 표 만들기
+
+```bash
+# 허브 후보를 세 갈래로 모아 합쳐요 — ①머리말 type ②머리말 tags ③파일 이름
+# 000-START-HERE 안의 문서는 이 단계가 방금 만든 안내 문서라 허브로 세지 않아요(재실행 때 자기 자신을 잡는 것 방지)
+MOC_LIST="$( { grep -rlE --include='*.md' '^type: *MOC|^tags:.*moc' "$VAULT_PATH" 2>/dev/null; find "$VAULT_PATH" -name '*-MOC.md' 2>/dev/null; } | sort -u | grep -v "^${SH_DIR}/" )"
+MOC_COUNT="$(printf '%s\n' "$MOC_LIST" | grep -c '.')"; echo "MOC 수집: ${MOC_COUNT}건 (3축 합집합)"
+TOPDIRS="$(cd "$VAULT_PATH" && find . -maxdepth 1 -type d | sed 's|^\./||' | grep -v '^\.' | sort)"
+# 표 본문 — 헤더 `| 도메인 | 허브 MOC | 범위 | 상태 |` 는 템플릿에 이미 있어요
+MOC_TABLE=""
+if [ "$MOC_COUNT" -gt 0 ]; then
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    REL="${f#$VAULT_PATH/}"; STEM="$(basename "$f" .md)"
+    TOP="$(printf '%s' "$REL" | awk -F/ 'NF>1{print $1} NF==1{print "(루트)"}')"
+    if grep -qE '^type: *MOC' "$f"; then AXIS="type"; elif grep -qE '^tags:.*moc' "$f"; then AXIS="tags"; else AXIS="파일명"; fi
+    MOC_TABLE="${MOC_TABLE}| ${TOP} | [[${STEM}]] | ${REL} | 기존(${AXIS}) |
+"
+  done <<EOF
+$MOC_LIST
+EOF
+else
+  while IFS= read -r d; do   # 허브가 하나도 없으면 번호 접두 폴더마다 씨앗 행
+    [ -n "$d" ] || continue
+    MOC_TABLE="${MOC_TABLE}| ${d} | [[${d}-MOC]] | ${d}/ | 생성 예정 |
+"
+  done <<EOF
+$(printf '%s\n' "$TOPDIRS" | grep -E '^[0-9]{2,3}-')
+EOF
+fi
+MOC_TABLE="$(printf '%s' "$MOC_TABLE")"
+# 번호 접두 표 — 여기는 템플릿에 표 자리만 있어서 머리 두 줄까지 만들어 넣어요
+PREFIX_TABLE="| 접두 | 폴더 | 상태 |
+|---|---|---|"
+while IFS= read -r d; do
+  [ -n "$d" ] || continue
+  P="$(printf '%s' "$d" | sed -n 's/^\([0-9]\{2,3\}\)-.*/\1/p')"
+  if [ -n "$P" ]; then ROW="| ${P} | ${d} | ✅ |"; else ROW="| — | ${d} | ⚠️ 접두 없음 |"; fi
+  PREFIX_TABLE="${PREFIX_TABLE}
+${ROW}"
+done <<EOF
+$TOPDIRS
+EOF
+# 권한 표 본문 — 혼자 쓰는 볼트 기본값 한 줄
+OWNER_ROWS="| (전체) | 본인 | ✅ | ✅ |
+<!-- 협업자·봇이 있으면 폴더별 행을 추가하세요 -->"
+```
+
+### ③ 템플릿 채워서 저장 (이미 있으면 덮지 않기)
+
+```bash
+# 값은 환경변수로 넘겨요 — 따옴표·줄바꿈이 섞여도 안전해요
+export VAULT_NAME DATE NORTH_STAR TREE PREFIX_TABLE OWNER_ROWS MOC_TABLE SH_DIR TPL
+python3 - <<'PY'
+import os, pathlib
+sh = pathlib.Path(os.environ["SH_DIR"]); tpl = pathlib.Path(os.environ["TPL"])
+keys = ["VAULT_NAME", "DATE", "NORTH_STAR", "TREE", "PREFIX_TABLE", "OWNER_ROWS", "MOC_TABLE"]
+for name in ("START-HERE", "VAULT-STRUCTURE", "MOC-Map"):
+    text = (tpl / (name + ".md")).read_text(encoding="utf-8")
+    for k in keys: text = text.replace("{{" + k + "}}", os.environ.get(k, ""))
+    dst = sh / (name + ".md")
+    if not dst.exists():
+        dst.write_text(text, encoding="utf-8"); print("새로 만듦: " + str(dst))
+    elif dst.read_text(encoding="utf-8") == text:
+        print("그대로 둠(내용 같음): " + str(dst))
+    else:
+        pathlib.Path(str(dst) + ".new").write_text(text, encoding="utf-8"); print("달라짐 → " + str(dst) + ".new 로 저장")
+PY
+# 이미 있고 내용이 다른 파일 — 무엇이 달라지는지 보여 주고, 물어본 뒤에만 바꿔요
+ASK=0
+for NEWF in "$SH_DIR"/*.md.new; do
+  [ -f "$NEWF" ] || continue
+  OLDF="${NEWF%.new}"; echo "── $(basename "$OLDF") 달라진 곳(앞 20줄)"; diff "$OLDF" "$NEWF" | head -20
+  if [ "${KM_STRUCT_OVERWRITE:-0}" = "1" ]; then
+    cp "$OLDF" "${OLDF}.bak-$(date +%Y%m%d-%H%M%S)" && mv "$NEWF" "$OLDF" && echo "  갱신했어요(원래 파일은 .bak- 로 남겨 둠)"
+  else ASK=1; fi
+done
+[ "$ASK" = "0" ] || echo "❓ 위 파일을 새 내용으로 갱신할까요? (예/아니오)"
+# 채우지 못한 자리가 남았는지 확인 — 하나라도 남으면 멈춰요
+for F in "$SH_DIR"/*.md; do N="$(grep -c '{{' "$F")"; [ "$N" = "0" ] || { echo "❌ 치환 누락 ${N}건: $F"; exit 1; }; done
+printf '✅ 구조 문서 3종을 만들었어요\n   - %s/START-HERE.md\n   - %s/VAULT-STRUCTURE.md\n   - %s/MOC-Map.md\n' "$SH_DIR" "$SH_DIR" "$SH_DIR"
+echo "   폴더를 나누거나 허브를 더 만드는 게 고민되면 /km:interview 로 상담할 수 있어요"
+```
+
+- 사용자가 **「예」** 라고 답하면: `for N in "$SH_DIR"/*.md.new; do O="${N%.new}"; cp "$O" "${O}.bak-$(date +%Y%m%d-%H%M%S)"; mv "$N" "$O"; done`
+- 사용자가 **「아니오」** 라고 답하면: `rm -f "$SH_DIR"/*.md.new` (원래 파일은 손대지 않아요)
+- 사람 없이 자동으로 돌릴 때(점검 스크립트 등)는 `KM_STRUCT_OVERWRITE=1` 을 앞에 붙여요. 묻지 않고 「예」와 같게 처리해요.
+
+---
+
 ## Phase 6: 완료!
 
 ```
@@ -661,6 +771,8 @@ Bash(`claude mcp list`)
   • 정리된 노트는 ${hasObsidianMcp ? "Obsidian에서" : localPath + " 폴더에서"} 확인할 수 있어요
   • "상세하게 정리해줘" 라고 하면 더 자세한 노트를 만들어요
   • 도움이 필요하면 /knowledge-manager help 라고 해보세요
+  • 볼트 구조 문서 3종: 000-START-HERE/START-HERE.md · VAULT-STRUCTURE.md · MOC-Map.md
+  • 폴더 나누기·MOC 설계가 고민된다면 /km:interview 로 상담할 수 있어요
 
 ═══════════════════════════════════════════════════════════
 
