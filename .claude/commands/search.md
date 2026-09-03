@@ -109,10 +109,12 @@ QUERY_ENCODED=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sy
 
 # --max-time 필수: 서버가 "죽은 게 아니라 막힌" 상태면 연결은 성공하므로
 # --connect-timeout 은 걸리지 않는다(무한 대기). 실측 근거는 아래 주석 참조.
-gr_fetch() { curl -s --connect-timeout 3 --max-time 20 \
+gr_fetch() { curl -s -w '\n%{http_code}' --connect-timeout 3 --max-time 20 \
   "$1/api/search?q=${QUERY_ENCODED}&top_k=${TOP_K}&mode=hybrid"; }
 
-TIER1_JSON="$(gr_fetch "${SEARCH_ENDPOINT}")"; TIER1_RC=$?
+_raw="$(gr_fetch "${SEARCH_ENDPOINT}")"; TIER1_RC=$?
+TIER1_CODE="${_raw##*$'\n'}"   # 마지막 줄 = http_code
+TIER1_JSON="${_raw%$'\n'*}"    # 그 앞 전체 = 본문
 
 # 설정된 곳이 원격(다른 기계)일 수 있다. 거기가 안 되면 로컬 서버를 한 번 더 두드린다.
 if { [ $TIER1_RC -ne 0 ] || [ -z "$TIER1_JSON" ]; } \
@@ -127,7 +129,13 @@ fi
 # 폴백 문구를 가르기 위한 상태 판정 — curl exit code 가 병명을 가른다.
 #   7  = 연결 거부  → 서버가 없다      (absent)
 #   28 = 시한 초과  → 서버는 있는데 막혔다 (unreachable)
-if   [ $TIER1_RC -eq 0 ] && [ -n "$TIER1_JSON" ]; then GRAPHRAG_STATE=ok
+# v1.1 (2026-09-01): HTTP 상태코드 축 추가. 404 는 curl exit=0 이고 본문도
+# 비어있지 않아(`{"detail":"Not Found"}`) 구 판정식에서 «ok» 로 분류됐고, 이후 파싱에서
+# results 부재 → 「no-hit」으로 둔갑했다(폴백조차 안 탐). 경로 오류를 misrouted 로 가른다.
+if   [ $TIER1_RC -eq 0 ] && [ "$TIER1_CODE" = "200" ] && [ -n "$TIER1_JSON" ]; then
+  GRAPHRAG_STATE=ok
+elif [ $TIER1_RC -eq 0 ] && [ -n "$TIER1_CODE" ] && [ "$TIER1_CODE" != "200" ]; then
+  GRAPHRAG_STATE=misrouted
 elif [ $TIER1_RC -eq 7 ];                          then GRAPHRAG_STATE=absent
 else                                                    GRAPHRAG_STATE=unreachable
 fi
@@ -201,6 +209,7 @@ grep -rn "${QUERY}" "${VAULT_PATH}" --include="*.md" -l | head -20
 ```
 - 문장형 질의는 통짜로 넣지 말고 **핵심 키워드 1~2개를 추출해** 검색한다(통짜 문장은 0히트).
 - 이 티어를 쓴 경우 답변에 **왜 여기까지 내려왔는지**를 명시한다. 문구는 `GRAPHRAG_STATE` 로 가른다:
+  - `misrouted` → **"GraphRAG 서버는 응답했으나 검색 경로가 HTTP `${TIER1_CODE}` 를 반환했습니다(엔드포인트 경로 불일치 가능) — 텍스트 검색으로 대체했습니다. 서버 부재가 아니므로 «자료 없음»으로 읽지 마십시오"**
   - `absent` → **"의미 검색 엔진 미설치로 텍스트 검색 결과입니다"**
   - `unreachable` → **"GraphRAG 서버(`${SEARCH_ENDPOINT}`)가 응답하지 않아 텍스트 검색으로 대체했습니다 — 결과가 평소보다 부정확할 수 있습니다"**
   - `blocked` → **"이 세션은 네트워크가 막혀 있어 GraphRAG 서버에 접속할 수 없습니다 — 서버 문제가 아닙니다. 에이전트 실행 시 네트워크를 허용하면(codex: `-c sandbox_workspace_write.network_access=true`) 의미 검색이 살아납니다"**
