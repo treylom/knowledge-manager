@@ -153,6 +153,6 @@ Main Lead <-> DA (교차 검증)
 | `commands/knowledge-manager-at.md` | AT 오케스트레이션 워크플로우 |
 | `.team-os/spawn-prompts/*.md` | 팀원 스폰 프롬프트 |
 | `.team-os/registry.yaml` | 팀 구성 레지스트리 |
-| `.claude/skills/km-*.md` | KM 스킬 파일 (공유) |
+| `skills/km-*.md` | KM 스킬 파일 (공유) — 프로젝트 설치에서는 `.claude/skills/km-*.md`, install-to-project.sh 가 복사 |
 | `agent-office/server.js` | Agent Office 서버 (API 엔드포인트) |
 | `agent-office/lib/team-os-parser.js` | 파서 계약 (컬럼 순서, Checkpoints 포맷) |

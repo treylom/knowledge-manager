@@ -826,7 +826,7 @@ AI 모델명 작성 시:
 | 5순위 | **WebFetch** | 빠름, 정적 콘텐츠 | 정적 웹페이지 |
 | 6순위 | **Hyperbrowser** | 클라우드, stealth | 크레딧 있고 위 모두 실패 시 |
 
-모든 스킬은 `.claude/skills/` 디렉토리에서 로드됩니다.
+모든 스킬은 플러그인 설치에서는 `skills/`, 프로젝트 설치에서는 `.claude/skills/`(install-to-project.sh 가 복사)에서 로드됩니다.
 
 ---
 

@@ -80,7 +80,6 @@ not_contains ".agent/skills/km-workflow/SKILL.md" "__KM_TEST_NEGATIVE_BAIT__" \
 workflow_files=(
   ".agent/skills/km-workflow/SKILL.md"
   "skills/km-workflow.md"
-  ".claude/skills/km-workflow.md"
 )
 
 for file in "${workflow_files[@]}"; do
@@ -102,7 +101,6 @@ done
 storage_files=(
   ".agent/skills/km-storage-abstraction/SKILL.md"
   "skills/km-storage-abstraction.md"
-  ".claude/skills/km-storage-abstraction.md"
 )
 
 for file in "${storage_files[@]}"; do
@@ -113,11 +111,6 @@ for file in "${storage_files[@]}"; do
   not_contains "$file" "MCP 도구가 사용 가능한 환경에서는 반드시 MCP 사용" \
     "$file no longer makes MCP availability override the target root"
 done
-
-same_file "skills/km-workflow.md" ".claude/skills/km-workflow.md" \
-  "full workflow mirrors are byte-identical"
-same_file "skills/km-storage-abstraction.md" ".claude/skills/km-storage-abstraction.md" \
-  "full storage mirrors are byte-identical"
 
 # Executable boundary fixture: the reference containment predicate must accept
 # an in-root result and reject both a direct outside result and a symlink escape.

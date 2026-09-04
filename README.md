@@ -107,10 +107,11 @@ Claude Code 1.0.33 이상에서 플러그인으로 설치할 수 있습니다.
 git clone https://github.com/treylom/knowledge-manager.git
 cd knowledge-manager
 
-# .claude 폴더를 프로젝트에 복사
-cp -r .claude /your/project/.claude
-cp km-config.example.json /your/project/
+# 커맨드·스킬·에이전트를 프로젝트에 설치
+bash scripts/install-to-project.sh /your/project
 ```
+
+기존 프로젝트 파일은 그대로 두고 플러그인 파일만 추가·갱신합니다.
 
 복사 후 `/knowledge-manager setup`으로 셋업 위저드를 실행하세요.
 
@@ -130,8 +131,8 @@ git clone https://github.com/treylom/knowledge-manager.git
 # .agent 폴더를 프로젝트에 복사 (Antigravity 스킬)
 cp -r knowledge-manager/.agent /your/antigravity/project/
 
-# .claude 폴더도 복사 (에이전트 및 명령어)
-cp -r knowledge-manager/.claude /your/antigravity/project/
+# 에이전트·명령어는 설치 스크립트로 (프로젝트 .claude/ 에 복사)
+bash knowledge-manager/scripts/install-to-project.sh /your/antigravity/project
 ```
 
 > **참고**: `.agent/skills/` 폴더는 Antigravity, Gemini CLI, Claude Code, OpenCode 등 Agent Skills 표준을 지원하는 모든 도구에서 호환됩니다.
@@ -611,10 +612,11 @@ After installation, run `/km:setup` to start the setup wizard.
 git clone https://github.com/treylom/knowledge-manager.git
 cd knowledge-manager
 
-# Copy .claude folder to your project
-cp -r .claude /your/project/.claude
-cp km-config.example.json /your/project/
+# Install commands, skills, and agents into your project
+bash scripts/install-to-project.sh /your/project
 ```
+
+Existing project files are kept; only the plugin's files are added or refreshed.
 
 After copying, run `/knowledge-manager setup` to start the setup wizard.
 
@@ -634,8 +636,8 @@ git clone https://github.com/treylom/knowledge-manager.git
 # Copy .agent folder (Antigravity skills)
 cp -r knowledge-manager/.agent /your/antigravity/project/
 
-# Also copy .claude folder (agents and commands)
-cp -r knowledge-manager/.claude /your/antigravity/project/
+# Agents and commands go in via the install script (copied into the project's .claude/)
+bash knowledge-manager/scripts/install-to-project.sh /your/antigravity/project
 ```
 
 > **Note**: The `.agent/skills/` folder is compatible with all tools supporting the Agent Skills standard, including Antigravity, Gemini CLI, Claude Code, and OpenCode.
@@ -872,7 +874,7 @@ The setup wizard will:
 1. Ask for your Obsidian vault path (e.g. `/home/you/Documents/MyVault` or `C:/Users/You/Documents/MyVault`).
 2. Auto-detect your Obsidian CLI executable (v1.12.4+) if Obsidian desktop is installed.
 3. Generate `km-config.json` in the repo root (this file is gitignored — your personal config stays local).
-4. Run `scripts/configure-vault-paths.sh` which replaces every `{{VAULT_PATH}}`, `{{VAULT_NAME}}`, `{{OBSIDIAN_CLI}}`, `{{ZETTELKASTEN_ROOT}}`, and `{{RESEARCH_ROOT}}` placeholder in `skills/`, `agents/`, `commands/`, and `.claude/` with your real values.
+4. Run `scripts/configure-vault-paths.sh` which replaces every `{{VAULT_PATH}}`, `{{VAULT_NAME}}`, `{{OBSIDIAN_CLI}}`, `{{ZETTELKASTEN_ROOT}}`, and `{{RESEARCH_ROOT}}` placeholder in `skills/`, `agents/`, and `commands/` with your real values.
 5. Mark the substituted files with `git update-index --skip-worktree` so the replacements never show up as dirty in `git status`.
 
 When the wizard finishes, every skill and command file points to **your** vault — no manual find-and-replace required.
