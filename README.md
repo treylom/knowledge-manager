@@ -111,6 +111,8 @@ cd knowledge-manager
 bash scripts/install-to-project.sh /your/project
 ```
 
+기존 프로젝트 파일은 그대로 두고 플러그인 파일만 추가·갱신합니다.
+
 복사 후 `/knowledge-manager setup`으로 셋업 위저드를 실행하세요.
 
 ### 방법 3: Antigravity 설정
@@ -613,6 +615,8 @@ cd knowledge-manager
 # Install commands, skills, and agents into your project
 bash scripts/install-to-project.sh /your/project
 ```
+
+Existing project files are kept; only the plugin's files are added or refreshed.
 
 After copying, run `/knowledge-manager setup` to start the setup wizard.
 

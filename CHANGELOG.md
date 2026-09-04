@@ -4,6 +4,7 @@
 
 - 저장소 안 `.claude/` 미러를 제거했습니다. 커맨드·스킬·에이전트는 최상위 `commands/`·`skills/`·`agents/` 한 곳에만 있고, 프로젝트 설치는 `scripts/install-to-project.sh` 가 담당합니다.
 - `scripts/install-to-project.sh` 추가 — `bash scripts/install-to-project.sh /your/project` 로 커맨드·스킬·에이전트를 프로젝트 `.claude/` 에 복사하고, `scripts/send_kakao.py` 와 `km-config.example.json` 도 함께 놓습니다. 복사 뒤 파일 수를 디렉터리별로 검사해 하나라도 빠지면 종료 코드 1 로 멈춥니다.
+- 설치 스크립트는 프로젝트에 이미 있던 파일을 지우지 않습니다 — 같은 경로의 파일만 새 내용으로 바뀌고 나머지는 그대로 남습니다. 검사 기준은 「저장소가 제공하는 파일이 전부 프로젝트에 있는가」입니다.
 - `.claude/` 에만 있던 파일 8개를 최상위로 옮겼습니다 — `skills/docx.md`, `skills/drawio-diagram.md`, `skills/notion-knowledge-capture.md`, `skills/notion-research-documentation.md`, `skills/pptx.md`, `skills/stealth-browsing.md`, `skills/xlsx.md`, `scripts/send_kakao.py`.
 - 미러 사이에서 어긋나 있던 `km-link-strengthening` 스킬 1건을 최상위 최신 파일로 정리했습니다.
 
