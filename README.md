@@ -129,8 +129,8 @@ git clone https://github.com/treylom/knowledge-manager.git
 # .agent 폴더를 프로젝트에 복사 (Antigravity 스킬)
 cp -r knowledge-manager/.agent /your/antigravity/project/
 
-# .claude 폴더도 복사 (에이전트 및 명령어)
-cp -r knowledge-manager/.claude /your/antigravity/project/
+# 에이전트·명령어는 설치 스크립트로 (프로젝트 .claude/ 에 복사)
+bash knowledge-manager/scripts/install-to-project.sh /your/antigravity/project
 ```
 
 > **참고**: `.agent/skills/` 폴더는 Antigravity, Gemini CLI, Claude Code, OpenCode 등 Agent Skills 표준을 지원하는 모든 도구에서 호환됩니다.
@@ -632,8 +632,8 @@ git clone https://github.com/treylom/knowledge-manager.git
 # Copy .agent folder (Antigravity skills)
 cp -r knowledge-manager/.agent /your/antigravity/project/
 
-# Also copy .claude folder (agents and commands)
-cp -r knowledge-manager/.claude /your/antigravity/project/
+# Agents and commands go in via the install script (copied into the project's .claude/)
+bash knowledge-manager/scripts/install-to-project.sh /your/antigravity/project
 ```
 
 > **Note**: The `.agent/skills/` folder is compatible with all tools supporting the Agent Skills standard, including Antigravity, Gemini CLI, Claude Code, and OpenCode.
