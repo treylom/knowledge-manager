@@ -7,7 +7,7 @@ allowedTools: Read, Write, Bash, Glob, Grep, mcp__obsidian__*, mcp__notion__*, m
 
 > **이 명령어는 단일 에이전트가 모든 작업을 순차적으로 직접 수행합니다.**
 > Agent Teams 풀스케일 버전: `/knowledge-manager-at` (tmux + .team-os 필요)
-> 에이전트 정의: `.claude/agents/knowledge-manager.md` 참조
+> 에이전트 정의: `agents/knowledge-manager.md` 참조 (프로젝트 설치에서는 `.claude/agents/knowledge-manager.md` — install-to-project.sh 가 복사)
 > **⚡ Karpathy Pipeline**: `km-karpathy-pipeline.md` — Linting + Filed Back + Q&A 오버레이
 
 ---

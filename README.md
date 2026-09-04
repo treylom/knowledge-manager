@@ -107,9 +107,8 @@ Claude Code 1.0.33 이상에서 플러그인으로 설치할 수 있습니다.
 git clone https://github.com/treylom/knowledge-manager.git
 cd knowledge-manager
 
-# .claude 폴더를 프로젝트에 복사
-cp -r .claude /your/project/.claude
-cp km-config.example.json /your/project/
+# 커맨드·스킬·에이전트를 프로젝트에 설치
+bash scripts/install-to-project.sh /your/project
 ```
 
 복사 후 `/knowledge-manager setup`으로 셋업 위저드를 실행하세요.
@@ -611,9 +610,8 @@ After installation, run `/km:setup` to start the setup wizard.
 git clone https://github.com/treylom/knowledge-manager.git
 cd knowledge-manager
 
-# Copy .claude folder to your project
-cp -r .claude /your/project/.claude
-cp km-config.example.json /your/project/
+# Install commands, skills, and agents into your project
+bash scripts/install-to-project.sh /your/project
 ```
 
 After copying, run `/knowledge-manager setup` to start the setup wizard.
@@ -872,7 +870,7 @@ The setup wizard will:
 1. Ask for your Obsidian vault path (e.g. `/home/you/Documents/MyVault` or `C:/Users/You/Documents/MyVault`).
 2. Auto-detect your Obsidian CLI executable (v1.12.4+) if Obsidian desktop is installed.
 3. Generate `km-config.json` in the repo root (this file is gitignored — your personal config stays local).
-4. Run `scripts/configure-vault-paths.sh` which replaces every `{{VAULT_PATH}}`, `{{VAULT_NAME}}`, `{{OBSIDIAN_CLI}}`, `{{ZETTELKASTEN_ROOT}}`, and `{{RESEARCH_ROOT}}` placeholder in `skills/`, `agents/`, `commands/`, and `.claude/` with your real values.
+4. Run `scripts/configure-vault-paths.sh` which replaces every `{{VAULT_PATH}}`, `{{VAULT_NAME}}`, `{{OBSIDIAN_CLI}}`, `{{ZETTELKASTEN_ROOT}}`, and `{{RESEARCH_ROOT}}` placeholder in `skills/`, `agents/`, and `commands/` with your real values.
 5. Mark the substituted files with `git update-index --skip-worktree` so the replacements never show up as dirty in `git status`.
 
 When the wizard finishes, every skill and command file points to **your** vault — no manual find-and-replace required.

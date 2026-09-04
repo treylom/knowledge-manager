@@ -53,7 +53,7 @@ SUBST_COUNT=0
 while IFS= read -r -d '' f; do
   # Skip anti-pattern teaching file
   case "$f" in
-    ./skills/km-storage-abstraction.md|./.claude/skills/km-storage-abstraction.md)
+    ./skills/km-storage-abstraction.md)
       continue ;;
   esac
 
@@ -67,7 +67,7 @@ while IFS= read -r -d '' f; do
       "$f"
     SUBST_COUNT=$((SUBST_COUNT + 1))
   fi
-done < <(find skills agents commands .claude -type f -name "*.md" -print0 2>/dev/null)
+done < <(find skills agents commands -type f -name "*.md" -print0 2>/dev/null)
 
 echo "✅ Substituted placeholders in $SUBST_COUNT files"
 
@@ -78,13 +78,13 @@ while IFS= read -r -d '' f; do
   # Strip leading ./
   f="${f#./}"
   case "$f" in
-    skills/km-storage-abstraction.md|.claude/skills/km-storage-abstraction.md)
+    skills/km-storage-abstraction.md)
       continue ;;
   esac
   if git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
     git update-index --skip-worktree "$f" 2>/dev/null && MARKED=$((MARKED + 1)) || true
   fi
-done < <(find skills agents commands .claude -type f -name "*.md" -print0 2>/dev/null)
+done < <(find skills agents commands -type f -name "*.md" -print0 2>/dev/null)
 
 echo "✅ skip-worktree enabled on $MARKED tracked files"
 echo

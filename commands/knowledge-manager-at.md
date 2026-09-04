@@ -7,8 +7,8 @@ allowedTools: Task, Read, Write, Bash, Glob, Grep, mcp__obsidian__*, mcp__notion
 
 > **이 명령어는 풀스케일 Agent Teams(9명)를 자동 구성합니다.**
 > 단일 에이전트 버전: `/knowledge-manager` (Agent Teams 미지원 환경용)
-> 에이전트 정의: `.claude/agents/knowledge-manager-at.md` 참조
-> 공유 사양: `.claude/agents/knowledge-manager.md` 참조
+> 에이전트 정의: `agents/knowledge-manager-at.md` 참조 (프로젝트 설치에서는 `.claude/agents/knowledge-manager-at.md` — install-to-project.sh 가 복사)
+> 공유 사양: `agents/knowledge-manager.md` 참조
 
 ---
 

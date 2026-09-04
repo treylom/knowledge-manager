@@ -12,7 +12,7 @@ If you hardcode `/home/tofu/AI/AI_Second_Brain` (or any other personal path) int
 
 ## Critical: Placeholder System
 
-Every file under `skills/`, `agents/`, `commands/`, and their `.claude/` mirrors is either:
+Every file under `skills/`, `agents/`, and `commands/` is either:
 
 1. **Pristine source** (what lives in git) — contains placeholder tokens like `{{VAULT_PATH}}`.
 2. **Substituted local copy** (what the user actually uses) — tokens replaced with real values from `km-config.json`, and marked `git update-index --skip-worktree` so the changes don't show up as dirty.
@@ -50,7 +50,7 @@ You will sometimes read files where the substituted form is visible in your work
    "{{OBSIDIAN_CLI}}" create --vault "{{VAULT_NAME}}" "Zettelkasten/note.md"
    ```
 
-3. **Mirror `skills/` ↔ `.claude/skills/` atomically.** Every file under `skills/`, `agents/`, or `commands/` has a byte-identical twin under `.claude/`. If you edit one, edit both in the same commit. Use `diff -q skills/foo.md .claude/skills/foo.md` to verify.
+3. **Single source: top-level `commands/ skills/ agents/`.** Project-mode install = `scripts/install-to-project.sh`. No mirror directory in the repo.
 
 4. **Do not edit `skills/km-storage-abstraction.md`'s anti-pattern example** to use placeholders. That file intentionally teaches users **not** to prefix paths with the vault name, and the literal vault-name example is pedagogical. It uses the generic string `YourVaultName` instead.
 
@@ -64,31 +64,23 @@ Before committing any change that touches a skill, agent, or command file:
 
 1. **Grep for personal paths** to make sure you haven't accidentally introduced one:
    ```bash
-   grep -rE "/home/[^/]+/|/Users/[^/]+/|C:\\\\Users\\\\" skills/ agents/ commands/ .claude/
+   grep -rE "/home/[^/]+/|/Users/[^/]+/|C:\\\\Users\\\\" skills/ agents/ commands/
    ```
    Expected: 0 hits.
 
-2. **Verify mirror sync**:
-   ```bash
-   for f in skills/*.md agents/*.md commands/*.md; do
-     diff -q "$f" ".claude/$f" || echo "OUT OF SYNC: $f"
-   done
-   ```
-   Expected: no `OUT OF SYNC` lines.
-
-3. **Dry-run the substitution engine** against a sample `km-config.json`:
+2. **Dry-run the substitution engine** against a sample `km-config.json`:
    ```bash
    bash scripts/configure-vault-paths.sh --dry-run
    ```
    Inspect the output; no errors, every placeholder should be replaced.
 
-4. **Check the skip-worktree state** of files you edited:
+3. **Check the skip-worktree state** of files you edited:
    ```bash
    git ls-files -v skills/ | grep '^S'
    ```
    If a file you want to commit is marked `S`, you must `git update-index --no-skip-worktree <file>` before the change can be staged.
 
-5. **Run the `/knowledge-manager-setup` wizard end-to-end** in a scratch clone if you changed the substitution logic, wizard Phase 4, or the placeholder taxonomy.
+4. **Run the `/knowledge-manager-setup` wizard end-to-end** in a scratch clone if you changed the substitution logic, wizard Phase 4, or the placeholder taxonomy.
 
 ---
 
@@ -110,11 +102,7 @@ knowledge-manager/
 │   └── km-update.sh              # Update orchestrator
 ├── skills/                       # Skill .md files (placeholder form in HEAD)
 ├── agents/                       # Agent .md files
-├── commands/                     # Slash command .md files
-└── .claude/                      # Mirror of skills/ + agents/ + commands/
-    ├── skills/
-    ├── agents/
-    └── commands/
+└── commands/                     # Slash command .md files
 ```
 
 ---
@@ -136,7 +124,7 @@ If you are opening a PR against knowledge-manager:
 
 - **Never commit `km-config.json`.** It is in `.gitignore` for good reason.
 - **Always grep for personal paths** before pushing (see step 1 above).
-- **Keep `.claude/` mirrors in sync** — CI (when enabled) will reject out-of-sync mirrors.
+- **Do not add a mirror directory** — the top-level `commands/`, `skills/`, and `agents/` are the single source, and `scripts/install-to-project.sh` installs them into a project.
 - **When adding a new skill file**, use placeholders from day one, even if you're the only person who will ever read it. Future contributors will thank you.
 - **When editing an existing skill file**, if you see a raw personal path left over from before the placeholder refactor, replace it with the correct placeholder token and note it in your commit message.
 

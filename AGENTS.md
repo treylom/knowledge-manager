@@ -60,9 +60,9 @@ The following 5 tokens appear verbatim in committed source files and **must be p
 
 ## Editing Workflow
 
-For any change that touches `skills/`, `agents/`, `commands/`, or `.claude/`:
+For any change that touches `skills/`, `agents/`, or `commands/`:
 
-1. **Identify the target file(s).** If the file has a mirror under `.claude/`, both must be edited together (see File Synchronization Invariant below).
+1. **Identify the target file(s).** Each file has exactly one copy, under the top-level `skills/`, `agents/`, or `commands/` directory.
 
 2. **Read the committed form, not the working-tree form**, if you suspect skip-worktree may be active:
    ```bash
@@ -72,57 +72,35 @@ For any change that touches `skills/`, `agents/`, `commands/`, or `.claude/`:
 
 3. **Make your edit in placeholder form.** If you need to reference the vault root, write `{{VAULT_PATH}}`. If you need a file under Zettelkasten, write `{{VAULT_PATH}}/{{ZETTELKASTEN_ROOT}}/...`.
 
-4. **Mirror the change** to the `.claude/` twin immediately, in the same commit.
+4. **Run the verification commands** in the next section before `git commit`.
 
-5. **Run the verification commands** in the next section before `git commit`.
-
-6. **Write a commit message** that explains the intent; if you replaced a hardcoded path, call out which placeholder you used.
+5. **Write a commit message** that explains the intent; if you replaced a hardcoded path, call out which placeholder you used.
 
 ---
 
-## File Synchronization Invariant
+## Single Source of Truth
 
-Every file under `skills/`, `agents/`, or `commands/` has a byte-identical mirror under the matching `.claude/` path:
-
-```
-skills/km-workflow.md              ≡  .claude/skills/km-workflow.md
-agents/knowledge-manager.md        ≡  .claude/agents/knowledge-manager.md
-commands/knowledge-manager-at.md   ≡  .claude/commands/knowledge-manager-at.md
-```
-
-Check invariant:
-
-```bash
-for f in skills/*.md agents/*.md commands/*.md; do
-  diff -q "$f" ".claude/$f" || echo "OUT OF SYNC: $f"
-done
-```
-
-Expected output: nothing (no `OUT OF SYNC` lines).
-
-If you add a new skill, create it in **both** locations. If you delete one, delete both. If you rename one, rename both.
+Single source: top-level `commands/ skills/ agents/`. Project-mode install = `scripts/install-to-project.sh`. No mirror directory in the repo.
 
 ---
 
 ## Verification Before Commit
 
-Run these four checks and confirm the expected output before every commit that touches skill/agent/command files:
+Run these three checks and confirm the expected output before every commit that touches skill/agent/command files:
 
 1. **No hardcoded personal paths**:
    ```bash
-   grep -rE "/home/[^/]+/|/Users/[^/]+/|C:\\\\Users\\\\|/mnt/c/Users/[^/]+/" skills/ agents/ commands/ .claude/
+   grep -rE "/home/[^/]+/|/Users/[^/]+/|C:\\\\Users\\\\|/mnt/c/Users/[^/]+/" skills/ agents/ commands/
    ```
    Expected: 0 matching lines (exit 1 from grep is the success case).
 
-2. **Mirrors are in sync** (see command above). Expected: no output.
-
-3. **Substitution engine still runs cleanly** against a sample config:
+2. **Substitution engine still runs cleanly** against a sample config:
    ```bash
    bash scripts/configure-vault-paths.sh --dry-run
    ```
    Expected: no errors, summary of substitutions printed.
 
-4. **Placeholder set unchanged**:
+3. **Placeholder set unchanged**:
    ```bash
    grep -rhoE "\{\{[A-Z_]+\}\}" skills/ agents/ commands/ | sort -u
    ```
@@ -161,9 +139,9 @@ You should **not** take the following actions without explicit user confirmation
 | Reference the user's vault root | Write `{{VAULT_PATH}}` |
 | Reference `<vault>/Zettelkasten/foo.md` | Write `{{VAULT_PATH}}/{{ZETTELKASTEN_ROOT}}/foo.md` |
 | Call Obsidian CLI | Write `"{{OBSIDIAN_CLI}}" create --vault "{{VAULT_NAME}}" ...` |
-| Add a new skill file | Create under both `skills/X.md` and `.claude/skills/X.md`, use placeholders |
+| Add a new skill file | Create `skills/X.md`, use placeholders |
 | Update upstream | Tell the user to run `/km-update` (not raw `git pull`) |
-| Check for hardcoded paths | `grep -rE "/home/[^/]+/|/Users/[^/]+/|C:\\\\Users\\\\" skills/ agents/ commands/ .claude/` |
-| Check mirror sync | `diff -q skills/X.md .claude/skills/X.md` |
+| Check for hardcoded paths | `grep -rE "/home/[^/]+/|/Users/[^/]+/|C:\\\\Users\\\\" skills/ agents/ commands/` |
+| Install into a project | `bash scripts/install-to-project.sh /your/project` |
 
 For deeper context — the config schema, the exact substitution algorithm, the skip-worktree rationale, troubleshooting recipes — read [`docs/vault-path-configuration.md`](docs/vault-path-configuration.md).
