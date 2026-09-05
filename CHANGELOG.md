@@ -15,7 +15,7 @@
 ## 1.4.1 (2026-09-05)
 
 - `scripts/install-to-project.sh` 가 심볼릭 링크를 따라가지 않습니다 — 설치기가 쓰는 경로(`.claude/`·`commands/`·`skills/`·`agents/`·`scripts/`·설치 대상 파일) 중 하나라도 심볼릭 링크이면 아무것도 쓰지 않고 종료 코드 1 로 멈춥니다(프로젝트 밖으로 파일이 새는 경로 차단).
-- 설치가 검사 후 교체 방식으로 바뀌었습니다 — 파일을 `.claude/.km-install-staging.<pid>/` 에 먼저 모아 검사한 뒤 이름 바꾸기로 교체합니다. 검사 단계에서 실패하면 프로젝트는 그대로이고, 교체 단계에서 실패하면 이전 파일을 되돌린 뒤 멈춥니다(되돌리지 못하면 그 위치를 알려 줍니다). 검사 단계에서 실패해 되돌린 경우에는 다시 실행하면 됩니다. 기존 파일 보존 규칙(같은 경로만 갱신, 나머지는 그대로)은 변하지 않았습니다.
+- 설치가 검사 후 교체 방식으로 바뀌었습니다 — 파일을 `.claude/.km-install-staging.<pid>/` 에 먼저 모아 검사한 뒤 이름 바꾸기로 교체합니다. 검사 단계에서 실패하면 프로젝트는 그대로이고, 교체 단계에서 실패하면 이전 파일을 되돌린 뒤 멈춥니다(되돌리지 못하면 그 위치를 알려 줍니다). 프로젝트가 그대로이거나 이전 파일을 되돌린 경우에는 다시 실행하면 됩니다. 기존 파일 보존 규칙(같은 경로만 갱신, 나머지는 그대로)은 변하지 않았습니다.
 - 플러그인에 없는 스크립트를 가리키던 문서 3건을 정리했습니다 — `skills/stealth-browsing.md`·`skills/km-content-extraction.md`(TS 스텔스 스크립트)·`skills/km-paddleocr-vl.md`(`paddleocr-env-check.py`)에 「플러그인 미포함」을 명시했습니다. 대체 수단으로 안내한 Scrapling stealth 모드의 `scripts/scrapling-crawl.py` 도 이 플러그인에 포함되지 않으며(별도 준비), 없으면 `playwright-cli` 로 갑니다.
 - `scripts/tests/test_km_link_gate.sh` 의 픽스처를 저장소 안(`scripts/tests/fixtures/km-link-gate-vault/`)으로 옮겨 신선한 clone 에서도 바로 돕니다.
 - GitHub Actions 워크플로(`.github/workflows/test.yml`)를 추가했습니다 — 셸 테스트 3종과 `agent-office/km-tools` pytest 를 push·PR 마다 실행합니다.

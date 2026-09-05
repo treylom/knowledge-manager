@@ -17,7 +17,7 @@ usage() {
   echo "  plus scripts/send_kakao.py and km-config.example.json." >&2
   echo "  Not copied (available only in a repo clone or the plugin install): scripts/configure-vault-paths.sh, scripts/_lib-config.sh, scripts/km-update.sh, scripts/km_link_gate.py, templates/start-here/." >&2
   echo "  Existing files in the project's .claude/ are overwritten only when they have the same path; other files are left as they are." >&2
-  echo "  Files are staged and checked first. If anything fails before the final swap the project is left unchanged; if the swap itself fails the previous files are put back, and the script says so if it could not." >&2
+  echo "  Files are staged and checked first. If anything fails before the final swap the project is left unchanged; if the swap fails or the install is interrupted, the previous files are put back (anything that could not be put back is kept beside the new files and listed)." >&2
   echo "  Symbolic links at .claude/, its commands/skills/agents/scripts directories, or any path this script writes are refused." >&2
 }
 
