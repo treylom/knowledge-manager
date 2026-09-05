@@ -8,7 +8,7 @@ aliases: [KM Tools, km-tools]
 
 # Good Draft Note
 
-This note links to [[Obsidian]], [[GraphRAG]], [[Karpathy]], [[Claude Code]], and [[Zettelkasten]].
+This note links to [[Obsidian]], [[GraphRAG]], [[Second Brain]], [[Claude Code]], and [[Zettelkasten]].
 
 ## Section One
 

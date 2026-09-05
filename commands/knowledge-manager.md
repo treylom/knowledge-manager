@@ -8,14 +8,14 @@ allowedTools: Read, Write, Bash, Glob, Grep, mcp__obsidian__*, mcp__notion__*, m
 > **이 명령어는 단일 에이전트가 모든 작업을 순차적으로 직접 수행합니다.**
 > Agent Teams 풀스케일 버전: `/knowledge-manager-at` (tmux + .team-os 필요)
 > 에이전트 정의: `agents/knowledge-manager.md` 참조 (프로젝트 설치에서는 `.claude/agents/knowledge-manager.md` — install-to-project.sh 가 복사)
-> **⚡ Karpathy Pipeline**: `km-karpathy-pipeline.md` — Linting + Filed Back + Q&A 오버레이
+> **⚡ km 파이프라인**: `km-pipeline.md` — Linting + Filed Back + Q&A 오버레이
 
 ---
 
 ## 아키텍처
 
 ```
-Main (Opus 1M, 단일 세션) — Karpathy 7-Layer Fusion
+Main (Opus 1M, 단일 세션) — 7-Layer Fusion
  └── Phase 0: /using-superpowers 게이트 + 환경 감지 + 모드/선호도
  └── Phase 1: DATA INGEST — 콘텐츠 추출
  └── Phase 2: EXTRA TOOLS — Vault 탐색 + GraphRAG (Mode I에서도 항상)
@@ -40,7 +40,7 @@ MUST: Skill("/using-superpowers") 호출
   → 적용 가능 스킬 목록 식별, 작업 순서에 매핑
   → 이 호출 없이 STEP 1 이후 진행 금지
 
-참조: km-karpathy-pipeline.md (Karpathy Pipeline 오버레이)
+참조: km-pipeline.md (km 파이프라인 오버레이)
   → STEP 4.5에서 /autoresearch 패턴 적용 (lint 루프)
 ```
 
@@ -303,7 +303,7 @@ Main이 입력 소스를 직접 추출합니다. 스킬 참조: `km-content-extr
 
 ### 증분 처리 — 중복 소스 감지 + 변경점 자동 추출 (Incremental Processing)
 
-> **Karpathy 원칙: "새 소스가 도착하면 LLM이 읽고, 핵심 정보를 추출하고, 기존 위키에 통합한다."**
+> **파이프라인 원칙: "새 소스가 도착하면 LLM이 읽고, 핵심 정보를 추출하고, 기존 위키에 통합한다."**
 > 단순히 "있는지 없는지"만 보는 게 아니라, **"뭐가 바뀌었는지"까지 자동으로 추출**해야 한다.
 
 ```
@@ -395,7 +395,7 @@ Main이 입력 소스를 직접 추출합니다. 스킬 참조: `km-content-extr
 ### Phase A-G: GraphRAG 하이브리드 검색 (Dense + Sparse + Reranker)
 
 > **⚡ Mode I에서도 항상 실행.** GraphRAG 검색은 Mode G 전용이 아니다.
-> Karpathy 원칙: "Search/CLI tools는 모든 컴파일에 참여한다."
+> 파이프라인 원칙: "Search/CLI tools는 모든 컴파일에 참여한다."
 > DB 미존재 시에만 스킵 (graceful fallback).
 
 ```
@@ -497,7 +497,7 @@ echo "LINK_GATE_RC=$GATE_RC"
 
 ## STEP 4: COMPILE — raw→wiki 컴파일 (draft 생성)
 
-> **Karpathy 핵심: "raw → wiki는 컴파일이다."**
+> **파이프라인 핵심: "raw → wiki는 컴파일이다."**
 > 이 단계의 출력은 **draft** — 아직 확정이 아니다.
 > draft는 STEP 4.5 Linting을 통과해야만 STEP 5에서 저장된다.
 
@@ -509,7 +509,7 @@ echo "LINK_GATE_RC=$GATE_RC"
 1. 핵심 개념 추출 및 분류
 2. 사용자 선호도 반영한 깊이/초점 조정
 3. 기존 vault 노트와의 관계 분석
-4. [NEW] 모순 즉시 표기 (Karpathy Ingest 패턴):
+4. [NEW] 모순 즉시 표기 (Ingest 패턴):
    - STEP 3 교차검증 Core 노트의 핵심 주장 추출
    - 새 소스의 주장과 비교
    - 모순 발견 시 draft에 인라인 표기:
@@ -603,10 +603,10 @@ draft 생성 시 포함:
 
 ## STEP 4.5: LINTING — 지식 Health Check
 
-> **⚠️ Karpathy 핵심: "지식에도 Linting이 필요하다."**
+> **⚠️ 파이프라인 핵심: "지식에도 Linting이 필요하다."**
 > draft 노트의 품질을 검증하고 자동 수정하는 health check 루프.
 > **lint 통과 전까지 STEP 5 저장 진행 금지.**
-> 참조 스킬: `km-karpathy-pipeline.md`
+> 참조 스킬: `km-pipeline.md`
 
 ### 4.5-1. Lint 규칙 6가지
 
@@ -636,7 +636,7 @@ draft 생성 시 포함:
    [증분 모드] 원문 변경점 → 기존 노트 반영 여부 검증 → 미반영 항목 표기
    - 증분 시 "## 변경점 요약" 섹션이 draft에 없으면 → lint 실패 (HARD GATE)
 
-6. Orphan detection (고아 페이지 탐지) ← Karpathy Lint 패턴
+6. Orphan detection (고아 페이지 탐지) ← Lint 패턴
    - CLI: "$OBSIDIAN_CLI" orphans → 들어오는 링크(inbound) 없는 페이지 목록
    - CLI: "$OBSIDIAN_CLI" deadends → 나가는 링크(outbound) 없는 페이지 목록
    - 고아 페이지 중 draft와 관련된 것 → wikilink 연결 제안
@@ -819,9 +819,9 @@ NO → Library/ 하위 (기본):
 
 ---
 
-## STEP 5.5: PROPAGATE — 기존 노트 업데이트 (Karpathy Wiki Pattern)
+## STEP 5.5: PROPAGATE — 기존 노트 업데이트 (Wiki Pattern)
 
-> **Karpathy 핵심: "단일 소스가 10-15개 기존 위키 페이지를 터치한다."**
+> **파이프라인 핵심: "단일 소스가 10-15개 기존 위키 페이지를 터치한다."**
 > 새 노트를 생성하는 것만으로는 지식이 복리로 쌓이지 않는다.
 > 기존 노트에 새 정보를 반영해야 위키가 compounding artifact가 된다.
 
@@ -929,7 +929,7 @@ FOR EACH target_note IN update_targets (최대 15개):
 
 ### 6-2. Filed Back — 환류 (Explorations add up)
 
-> **Karpathy 핵심: "모든 탐색은 Wiki로 환류된다."**
+> **파이프라인 핵심: "모든 탐색은 Wiki로 환류된다."**
 > 이번 세션에서 생성된 산출물과 발견을 Wiki에 축적한다.
 
 ```
@@ -963,7 +963,7 @@ FOR EACH target_note IN update_targets (최대 15개):
 
 ### 입력 요약
 - 소스: [URL/파일/vault종합]
-- 모드: 단일 에이전트 순차 처리 (Karpathy Pipeline)
+- 모드: 단일 에이전트 순차 처리 (km 파이프라인)
 
 ### Vault 탐색 결과
 | 카테고리 | 수 | 비고 |
@@ -1020,7 +1020,7 @@ FOR EACH target_note IN update_targets (최대 15개):
 
 ### 6-4. 엔티티 페이지 자동 생성 제안
 
-> **Karpathy 패턴: log.md는 시간순, 추가 전용(append-only), grep 파싱 가능.**
+> **파이프라인 패턴: log.md는 시간순, 추가 전용(append-only), grep 파싱 가능.**
 
 ```
 STEP 6 결과 보고 완료 후, vault의 _km-log.md에 자동 append:
@@ -1052,7 +1052,7 @@ CLI: "$OBSIDIAN_CLI" append path="{LOG_PATH}" content="
 
 ### 6-5. 세션 로그 자동 기록 (_km-log.md) — 모든 작업 완료 후 마지막
 
-> **Karpathy 패턴: 엔티티별 전용 페이지가 있어야 새 소스마다 정보가 축적된다.**
+> **파이프라인 패턴: 엔티티별 전용 페이지가 있어야 새 소스마다 정보가 축적된다.**
 
 ```
 STEP 5.5 Propagation 중 발견된 엔티티 중,
@@ -1114,7 +1114,7 @@ done
 
 | 기능 | 참조 스킬 |
 |------|----------|
-| **Karpathy Pipeline 오버레이** | `km-karpathy-pipeline.md` |
+| **km 파이프라인 오버레이** | `km-pipeline.md` |
 | 전체 워크플로우 | `km-workflow.md` |
 | 콘텐츠 추출 | `km-content-extraction.md` |
 | **YouTube 트랜스크립트** | `km-youtube-transcript.md` |
