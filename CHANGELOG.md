@@ -2,7 +2,7 @@
 
 ## 1.5.0 (2026-09-06)
 
-- rename: pipeline naming neutralized (skill km-pipeline, docs/fixture) — D-077
+- 파이프라인 스킬 이름을 `km-pipeline` 으로 바꿨습니다(명령·스킬 문서와 테스트 픽스처의 표기도 함께 맞춤). 동작 변화는 없습니다.
 
 ## 1.4.3 (2026-09-05)
 

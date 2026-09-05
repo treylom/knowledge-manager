@@ -509,7 +509,7 @@ echo "LINK_GATE_RC=$GATE_RC"
 1. 핵심 개념 추출 및 분류
 2. 사용자 선호도 반영한 깊이/초점 조정
 3. 기존 vault 노트와의 관계 분석
-4. [NEW] 모순 즉시 표기 (Ingest 패턴):
+4. [NEW] 모순 즉시 표기 (Ingest 단계 패턴):
    - STEP 3 교차검증 Core 노트의 핵심 주장 추출
    - 새 소스의 주장과 비교
    - 모순 발견 시 draft에 인라인 표기:
@@ -636,7 +636,7 @@ draft 생성 시 포함:
    [증분 모드] 원문 변경점 → 기존 노트 반영 여부 검증 → 미반영 항목 표기
    - 증분 시 "## 변경점 요약" 섹션이 draft에 없으면 → lint 실패 (HARD GATE)
 
-6. Orphan detection (고아 페이지 탐지) ← Lint 패턴
+6. Orphan detection (고아 페이지 탐지)
    - CLI: "$OBSIDIAN_CLI" orphans → 들어오는 링크(inbound) 없는 페이지 목록
    - CLI: "$OBSIDIAN_CLI" deadends → 나가는 링크(outbound) 없는 페이지 목록
    - 고아 페이지 중 draft와 관련된 것 → wikilink 연결 제안
