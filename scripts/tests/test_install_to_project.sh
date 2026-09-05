@@ -26,6 +26,15 @@ fail() {
   echo "FAIL ${1} — ${2}"
 }
 
+# Checksum of one file, used where a test has to show a file's contents did not change.
+file_sha() {
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "${1}" | awk '{print $1}'
+  else
+    sha256sum "${1}" | awk '{print $1}'
+  fi
+}
+
 # The expected number of files is counted from this repository, never hard-coded.
 EXPECTED_TREE="$(find "${REPO_ROOT}/commands" "${REPO_ROOT}/skills" "${REPO_ROOT}/agents" -type f | wc -l | tr -d ' ')"
 EXPECTED_TOTAL=$(( EXPECTED_TREE + 2 ))  # + scripts/send_kakao.py + km-config.example.json
@@ -246,6 +255,10 @@ case "${KM_TEST_FAIL_AT:-}:$1:${2:-}" in
   nested:*/.claude/skills:*/.km-install-staging.*/skills) echo "TEST_INJECTED_RENAME_FAILURE" >&2; exit 71 ;;
   aside:*/.claude/commands:*/.km-install-staging.*.old-commands) /bin/mv "$@"; kill -TERM "${PPID}"; exit 0 ;;
   configint:*/.km-install-staging.*/km-config.example.json:*/km-config.example.json) /bin/mv "$@"; kill -TERM "${PPID}"; exit 0 ;;
+  # T17: the phase-1 aside rename of commands refuses outright and moves nothing.
+  asidefail:*/.claude/commands:*/.km-install-staging.*.old-commands) echo "TEST_INJECTED_RENAME_FAILURE" >&2; exit 1 ;;
+  # T18: the phase-1 aside rename of commands copies instead of moving, so both copies exist, and the installer is interrupted right there.
+  bothexist:*/.claude/commands:*/.km-install-staging.*.old-commands) /bin/cp -R "$1" "$2"; kill -TERM "${PPID}"; exit 0 ;;
 esac
 exec /bin/mv "$@"
 FAKE
@@ -426,7 +439,61 @@ else
   fail "T16" "exit=${T16_RC} put_back_message=${T16_PUT_BACK_MSG} config_present=${T16_CONFIG} command='${T16_CMD}' skill='${T16_SKILL}' new_skill_present=${T16_NEW_SKILL} residue=${T16_RESIDUE}"
 fi
 
-echo "PASS ${PASS_COUNT}/16"
-if [ "${PASS_COUNT}" -ne 16 ]; then
+# T17 — the phase-1 aside rename fails outright and nothing is moved: exits non-zero, names what could not be moved, says the project was restored, and it is — the project's own files are byte-for-byte unchanged, no previous copy is left beside them, and nothing new was written.
+T17_PROJ="${TMP_ROOT}/t17-project"
+make_swap_fixture "${T17_PROJ}"
+T17_CMD_SHA_BEFORE="$(file_sha "${T17_PROJ}/.claude/commands/search.md")"
+T17_SKILL_SHA_BEFORE="$(file_sha "${T17_PROJ}/.claude/skills/my-private.md")"
+set +e
+T17_OUT="$(PATH="${FAKE_BIN}:${PATH}" KM_TEST_FAIL_AT=asidefail bash "${INSTALLER}" "${T17_PROJ}" 2>&1)"
+T17_RC=$?
+set -e
+T17_INJECTED="$(printf '%s\n' "${T17_OUT}" | ${GREP} -c 'TEST_INJECTED_RENAME_FAILURE' || true)"
+# The wording asserted here is the failure branch the installer actually takes: swap_failed "the previous ${DIR_NAME}" with an empty NOT_RESTORED.
+T17_NAMED="$(printf '%s\n' "${T17_OUT}" | ${GREP} -c 'could not move the previous commands into place' || true)"
+T17_RESTORED_MSG="$(printf '%s\n' "${T17_OUT}" | ${GREP} -c 'the project was restored' || true)"
+T17_HONEST_MSG="$(printf '%s\n' "${T17_OUT}" | ${GREP} -c 'could not all be put back' || true)"
+T17_CMD_SHA_AFTER="$(file_sha "${T17_PROJ}/.claude/commands/search.md" 2>/dev/null || echo MISSING)"
+T17_SKILL_SHA_AFTER="$(file_sha "${T17_PROJ}/.claude/skills/my-private.md" 2>/dev/null || echo MISSING)"
+T17_OLD="$(find "${T17_PROJ}/.claude" -maxdepth 1 -name '.km-install-staging.*.old-*' | wc -l | tr -d ' ')"
+T17_NEW_SKILL=0; [ -e "${T17_PROJ}/.claude/skills/km-workflow.md" ] && T17_NEW_SKILL=1
+T17_CONFIG=0; [ -e "${T17_PROJ}/km-config.example.json" ] && T17_CONFIG=1
+T17_RESIDUE="$(find "${T17_PROJ}" -name '.km-install-*' | wc -l | tr -d ' ')"
+if [ "${T17_RC}" -ne 0 ] && [ "${T17_INJECTED}" -eq 1 ] && [ "${T17_NAMED}" -eq 1 ] \
+   && [ "${T17_RESTORED_MSG}" -eq 1 ] && [ "${T17_HONEST_MSG}" -eq 0 ] \
+   && [ "${T17_CMD_SHA_AFTER}" = "${T17_CMD_SHA_BEFORE}" ] && [ "${T17_SKILL_SHA_AFTER}" = "${T17_SKILL_SHA_BEFORE}" ] \
+   && [ "${T17_OLD}" -eq 0 ] && [ "${T17_NEW_SKILL}" -eq 0 ] && [ "${T17_CONFIG}" -eq 0 ] && [ "${T17_RESIDUE}" -eq 0 ]; then
+  pass "T17"
+else
+  fail "T17" "exit=${T17_RC} injected=${T17_INJECTED} named_what_failed=${T17_NAMED} restored_message=${T17_RESTORED_MSG} honest_message=${T17_HONEST_MSG} command_sha=${T17_CMD_SHA_BEFORE}/${T17_CMD_SHA_AFTER} skill_sha=${T17_SKILL_SHA_BEFORE}/${T17_SKILL_SHA_AFTER} old_copies=${T17_OLD} new_skill_present=${T17_NEW_SKILL} config_present=${T17_CONFIG} residue=${T17_RESIDUE}"
+fi
+
+# T18 — the phase-1 aside step leaves both copies in place (a copy at .old-commands and the previous directory still in the project) and the installer is interrupted right there: exits 143, touches neither copy, and says where the previous one is.
+T18_PROJ="${TMP_ROOT}/t18-project"
+make_swap_fixture "${T18_PROJ}"
+T18_CMD_SHA_BEFORE="$(file_sha "${T18_PROJ}/.claude/commands/search.md")"
+set +e
+T18_OUT="$(PATH="${FAKE_BIN}:${PATH}" KM_TEST_FAIL_AT=bothexist bash "${INSTALLER}" "${T18_PROJ}" 2>&1)"
+T18_RC=$?
+set -e
+T18_LEFT_AS_FOUND="$(printf '%s\n' "${T18_OUT}" | ${GREP} -c 'was left as found' || true)"
+T18_PREVIOUS_COPY="$(printf '%s\n' "${T18_OUT}" | ${GREP} -c 'previous copy of commands' || true)"
+T18_HONEST_MSG="$(printf '%s\n' "${T18_OUT}" | ${GREP} -c 'could not all be put back' || true)"
+T18_RESTORED_MSG="$(printf '%s\n' "${T18_OUT}" | ${GREP} -c 'the previous files were put back' || true)"
+T18_DEST_SHA="$(file_sha "${T18_PROJ}/.claude/commands/search.md" 2>/dev/null || echo MISSING)"
+T18_OLD_DIR="$(find "${T18_PROJ}/.claude" -maxdepth 1 -name '.km-install-staging.*.old-commands' | head -n 1)"
+T18_OLD_SHA=MISSING; [ -n "${T18_OLD_DIR}" ] && [ -f "${T18_OLD_DIR}/search.md" ] && T18_OLD_SHA="$(file_sha "${T18_OLD_DIR}/search.md")"
+T18_SKILL="$(cat "${T18_PROJ}/.claude/skills/my-private.md" 2>/dev/null || echo MISSING)"
+if [ "${T18_RC}" -eq 143 ] && [ "${T18_LEFT_AS_FOUND}" -ge 1 ] && [ "${T18_PREVIOUS_COPY}" -ge 1 ] \
+   && [ "${T18_HONEST_MSG}" -eq 1 ] && [ "${T18_RESTORED_MSG}" -eq 0 ] \
+   && [ "${T18_DEST_SHA}" = "${T18_CMD_SHA_BEFORE}" ] && [ "${T18_OLD_SHA}" = "${T18_CMD_SHA_BEFORE}" ] \
+   && [ "${T18_SKILL}" = "ORIGINAL_SKILL" ]; then
+  pass "T18"
+else
+  fail "T18" "exit=${T18_RC} left_as_found=${T18_LEFT_AS_FOUND} previous_copy_message=${T18_PREVIOUS_COPY} honest_message=${T18_HONEST_MSG} put_back_message=${T18_RESTORED_MSG} destination_sha=${T18_CMD_SHA_BEFORE}/${T18_DEST_SHA} previous_copy_sha=${T18_CMD_SHA_BEFORE}/${T18_OLD_SHA} skill='${T18_SKILL}'"
+fi
+
+echo "PASS ${PASS_COUNT}/18"
+if [ "${PASS_COUNT}" -ne 18 ]; then
   exit 1
 fi
