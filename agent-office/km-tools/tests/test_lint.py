@@ -211,6 +211,6 @@ class TestEvalSourceEdgeCases:
             assert r["proof_class"] == "self-lint", f"{src!r} wrongly independent"
 
     def test_unicode_eval_source_preserved(self):
-        r = run_lint(os.path.join(FIXTURES, "good_draft.md"), 1.0, 1.0, 1.0, eval_source="subagent:손석희")
+        r = run_lint(os.path.join(FIXTURES, "good_draft.md"), 1.0, 1.0, 1.0, eval_source="subagent:reviewer-a")
         assert r["proof_class"] == "independent"
-        assert r["breakdown"]["consistency"]["source"] == "subagent:손석희"
+        assert r["breakdown"]["consistency"]["source"] == "subagent:reviewer-a"
