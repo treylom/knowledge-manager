@@ -225,7 +225,94 @@ else
   fail "T8" "exit=${T8_RC} named_the_link=${T8_NAMED} link_message=${T8_LINK_MSG} outside_content='${T8_OUTSIDE_CONTENT}' files_inside=${T8_INSIDE} staging_left=${T8_STAGING}"
 fi
 
-echo "PASS ${PASS_COUNT}/8"
-if [ "${PASS_COUNT}" -ne 8 ]; then
+# Failure injection for T9–T11: a fake `mv` first in PATH that refuses one specific rename
+# (the same method as the PR #7 review reproduction) and otherwise defers to /bin/mv.
+FAKE_BIN="${TMP_ROOT}/fake-bin"
+mkdir -p "${FAKE_BIN}"
+cat > "${FAKE_BIN}/mv" <<'FAKE'
+#!/bin/bash
+case "${KM_TEST_FAIL_AT:-}:$1" in
+  skills:*/.km-install-staging.*/skills|undo:*/.km-install-staging.*/skills) echo "TEST_INJECTED_RENAME_FAILURE" >&2; exit 71 ;;
+  config:*/.km-install-staging.*/km-config.example.json) echo "TEST_INJECTED_RENAME_FAILURE" >&2; exit 71 ;;
+  undo:*/.km-install-staging.*.old-commands) echo "TEST_INJECTED_RENAME_FAILURE" >&2; exit 71 ;;
+esac
+exec /bin/mv "$@"
+FAKE
+chmod +x "${FAKE_BIN}/mv"
+
+make_swap_fixture() {
+  # $1 = project dir. A project that already has all four directories plus one file of its own in two of them.
+  mkdir -p "$1/.claude/commands" "$1/.claude/skills" "$1/.claude/agents" "$1/.claude/scripts"
+  printf 'ORIGINAL_COMMAND\n' > "$1/.claude/commands/search.md"
+  printf 'ORIGINAL_SKILL\n' > "$1/.claude/skills/my-private.md"
+}
+
+# T9 — the rename of skills fails after commands was already swapped: exits 1, says the project was restored, and it is.
+T9_PROJ="${TMP_ROOT}/t9-project"
+make_swap_fixture "${T9_PROJ}"
+set +e
+T9_OUT="$(PATH="${FAKE_BIN}:${PATH}" KM_TEST_FAIL_AT=skills bash "${INSTALLER}" "${T9_PROJ}" 2>&1)"
+T9_RC=$?
+set -e
+T9_INJECTED="$(printf '%s\n' "${T9_OUT}" | ${GREP} -c 'TEST_INJECTED_RENAME_FAILURE' || true)"
+T9_RESTORED_MSG="$(printf '%s\n' "${T9_OUT}" | ${GREP} -c 'the project was restored' || true)"
+T9_CMD="$(cat "${T9_PROJ}/.claude/commands/search.md")"
+T9_SKILL="$(cat "${T9_PROJ}/.claude/skills/my-private.md")"
+T9_NEW_SKILL=0; [ -e "${T9_PROJ}/.claude/skills/km-workflow.md" ] && T9_NEW_SKILL=1
+T9_CONFIG=0; [ -e "${T9_PROJ}/km-config.example.json" ] && T9_CONFIG=1
+T9_RESIDUE="$(find "${T9_PROJ}" -name '.km-install-*' | wc -l | tr -d ' ')"
+if [ "${T9_RC}" -eq 1 ] && [ "${T9_INJECTED}" -eq 1 ] && [ "${T9_RESTORED_MSG}" -eq 1 ] \
+   && [ "${T9_CMD}" = "ORIGINAL_COMMAND" ] && [ "${T9_SKILL}" = "ORIGINAL_SKILL" ] \
+   && [ "${T9_NEW_SKILL}" -eq 0 ] && [ "${T9_CONFIG}" -eq 0 ] && [ "${T9_RESIDUE}" -eq 0 ]; then
+  pass "T9"
+else
+  fail "T9" "exit=${T9_RC} injected=${T9_INJECTED} restored_message=${T9_RESTORED_MSG} command='${T9_CMD}' skill='${T9_SKILL}' new_skill_present=${T9_NEW_SKILL} config_present=${T9_CONFIG} residue=${T9_RESIDUE}"
+fi
+
+# T10 — the last rename (km-config.example.json) fails after all four directories were swapped: exits 1 and the project is restored.
+T10_PROJ="${TMP_ROOT}/t10-project"
+make_swap_fixture "${T10_PROJ}"
+set +e
+T10_OUT="$(PATH="${FAKE_BIN}:${PATH}" KM_TEST_FAIL_AT=config bash "${INSTALLER}" "${T10_PROJ}" 2>&1)"
+T10_RC=$?
+set -e
+T10_INJECTED="$(printf '%s\n' "${T10_OUT}" | ${GREP} -c 'TEST_INJECTED_RENAME_FAILURE' || true)"
+T10_RESTORED_MSG="$(printf '%s\n' "${T10_OUT}" | ${GREP} -c 'the project was restored' || true)"
+T10_CMD="$(cat "${T10_PROJ}/.claude/commands/search.md")"
+T10_SKILL="$(cat "${T10_PROJ}/.claude/skills/my-private.md")"
+T10_NEW_SKILL=0; [ -e "${T10_PROJ}/.claude/skills/km-workflow.md" ] && T10_NEW_SKILL=1
+T10_CONFIG=0; [ -e "${T10_PROJ}/km-config.example.json" ] && T10_CONFIG=1
+T10_RESIDUE="$(find "${T10_PROJ}" -name '.km-install-*' | wc -l | tr -d ' ')"
+if [ "${T10_RC}" -eq 1 ] && [ "${T10_INJECTED}" -eq 1 ] && [ "${T10_RESTORED_MSG}" -eq 1 ] \
+   && [ "${T10_CMD}" = "ORIGINAL_COMMAND" ] && [ "${T10_SKILL}" = "ORIGINAL_SKILL" ] \
+   && [ "${T10_NEW_SKILL}" -eq 0 ] && [ "${T10_CONFIG}" -eq 0 ] && [ "${T10_RESIDUE}" -eq 0 ]; then
+  pass "T10"
+else
+  fail "T10" "exit=${T10_RC} injected=${T10_INJECTED} restored_message=${T10_RESTORED_MSG} command='${T10_CMD}' skill='${T10_SKILL}' new_skill_present=${T10_NEW_SKILL} config_present=${T10_CONFIG} residue=${T10_RESIDUE}"
+fi
+
+# T11 — the rename of skills fails AND the previous commands cannot be put back: exits 71, does not claim a restore, names the copy it left behind, and that copy still holds the original file.
+T11_PROJ="${TMP_ROOT}/t11-project"
+make_swap_fixture "${T11_PROJ}"
+set +e
+T11_OUT="$(PATH="${FAKE_BIN}:${PATH}" KM_TEST_FAIL_AT=undo bash "${INSTALLER}" "${T11_PROJ}" 2>&1)"
+T11_RC=$?
+set -e
+T11_RESTORED_MSG="$(printf '%s\n' "${T11_OUT}" | ${GREP} -c 'the project was restored' || true)"
+T11_HONEST_MSG="$(printf '%s\n' "${T11_OUT}" | ${GREP} -c 'could not all be put back' || true)"
+T11_NAMED_OLD="$(printf '%s\n' "${T11_OUT}" | ${GREP} -c 'old-commands' || true)"
+T11_OLD_DIR="$(find "${T11_PROJ}/.claude" -maxdepth 1 -name '.km-install-staging.*.old-commands' | head -n 1)"
+T11_OLD_CONTENT=""; [ -n "${T11_OLD_DIR}" ] && [ -f "${T11_OLD_DIR}/search.md" ] && T11_OLD_CONTENT="$(cat "${T11_OLD_DIR}/search.md")"
+T11_CMD_DIR=0; [ -e "${T11_PROJ}/.claude/commands" ] && T11_CMD_DIR=1
+T11_SKILL="$(cat "${T11_PROJ}/.claude/skills/my-private.md" 2>/dev/null || echo MISSING)"
+if [ "${T11_RC}" -eq 71 ] && [ "${T11_RESTORED_MSG}" -eq 0 ] && [ "${T11_HONEST_MSG}" -eq 1 ] && [ "${T11_NAMED_OLD}" -ge 1 ] \
+   && [ "${T11_OLD_CONTENT}" = "ORIGINAL_COMMAND" ] && [ "${T11_CMD_DIR}" -eq 0 ] && [ "${T11_SKILL}" = "ORIGINAL_SKILL" ]; then
+  pass "T11"
+else
+  fail "T11" "exit=${T11_RC} restored_message=${T11_RESTORED_MSG} honest_message=${T11_HONEST_MSG} named_old=${T11_NAMED_OLD} old_content='${T11_OLD_CONTENT}' commands_dir_present=${T11_CMD_DIR} skill='${T11_SKILL}'"
+fi
+
+echo "PASS ${PASS_COUNT}/11"
+if [ "${PASS_COUNT}" -ne 11 ]; then
   exit 1
 fi

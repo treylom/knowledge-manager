@@ -16,7 +16,7 @@ usage() {
   echo "  Copies commands/, skills/, and agents/ into <project-dir>/.claude/," >&2
   echo "  plus scripts/send_kakao.py and km-config.example.json." >&2
   echo "  Existing files in the project's .claude/ are overwritten only when they have the same path; other files are left as they are." >&2
-  echo "  Files are staged and checked first; if anything fails, the project is left unchanged and you can simply run it again." >&2
+  echo "  Files are staged and checked first. If anything fails before the final swap the project is left unchanged; if the swap itself fails the previous files are put back, and the script says so if it could not." >&2
   echo "  Symbolic links at .claude/, its commands/skills/agents/scripts directories, or any path this script writes are refused." >&2
 }
 
@@ -155,29 +155,84 @@ else
 fi
 SUMMARY="${SUMMARY}km-config.example.json 1"
 
-# --- Everything verified: move the staged trees into place (renames only). ---
-for DIR_NAME in commands skills agents scripts; do
-  DEST="${CLAUDE_DIR}/${DIR_NAME}"
-  OLD="${STAGE_ROOT}.old-${DIR_NAME}"
-  if [ -d "${DEST}" ]; then
-    mv "${DEST}" "${OLD}"
+# --- Everything verified: swap the staged trees into place (renames only, in two phases). ---
+# Phase 1 moves every directory the project already has aside (to <staging>.old-<name>).
+# Phase 2 moves every staged directory, then the config file, into place.
+# Nothing is deleted until both phases have finished, so a failure in either phase is undone
+# by moving things back; the previous copies are removed only after everything is in place.
+SWAP_DIRS="commands skills agents scripts"
+ASIDE=""        # directories whose previous copy was moved aside in phase 1, in order
+PLACED=""       # directories already moved into place in phase 2, in order
+CONFIG_PLACED=0
+NOT_RESTORED=""
+
+reverse_words() {
+  local out="" w
+  for w in "$@"; do out="${w} ${out}"; done
+  printf '%s' "${out}"
+}
+
+undo_swap() {
+  # Newest change first: take back what phase 2 placed, then return what phase 1 moved aside.
+  local d
+  if [ "${CONFIG_PLACED}" -eq 1 ]; then
+    rm -f "${PROJECT_DIR}/km-config.example.json" || NOT_RESTORED="${NOT_RESTORED} ${PROJECT_DIR}/km-config.example.json (new file left in place)"
   fi
-  if ! mv "${STAGE_ROOT}/${DIR_NAME}" "${DEST}"; then
-    if [ -d "${OLD}" ]; then
-      mv "${OLD}" "${DEST}"
-    fi
-    echo "Error: could not move ${DIR_NAME} into place; the project was restored." >&2
+  for d in $(reverse_words ${PLACED}); do
+    mv "${CLAUDE_DIR}/${d}" "${STAGE_ROOT}/${d}" || NOT_RESTORED="${NOT_RESTORED} ${CLAUDE_DIR}/${d} (new copy left in place)"
+  done
+  for d in $(reverse_words ${ASIDE}); do
+    mv "${STAGE_ROOT}.old-${d}" "${CLAUDE_DIR}/${d}" || NOT_RESTORED="${NOT_RESTORED} ${STAGE_ROOT}.old-${d} (previous copy of ${d})"
+  done
+}
+
+swap_failed() {
+  # $1 = what could not be moved
+  undo_swap
+  if [ -z "${NOT_RESTORED}" ]; then
+    echo "Error: could not move $1 into place; the previous files were put back and the project was restored." >&2
     exit 1
   fi
-  if [ -d "${OLD}" ]; then
-    chmod -R u+w "${OLD}" 2>/dev/null || true
-    rm -rf "${OLD}" || echo "Warning: could not remove the previous copy at ${OLD}; remove it by hand." >&2
+  trap - EXIT
+  echo "Error: could not move $1 into place, and the previous files could not all be put back." >&2
+  echo "Left for you to sort out by hand:${NOT_RESTORED}" >&2
+  echo "The staged copy is kept at ${STAGE_ROOT}." >&2
+  exit 71
+}
+
+# Phase 1
+for DIR_NAME in ${SWAP_DIRS}; do
+  DEST="${CLAUDE_DIR}/${DIR_NAME}"
+  if [ -d "${DEST}" ]; then
+    if ! mv "${DEST}" "${STAGE_ROOT}.old-${DIR_NAME}"; then
+      swap_failed "the previous ${DIR_NAME}"
+    fi
+    ASIDE="${ASIDE} ${DIR_NAME}"
   fi
 done
+
+# Phase 2
+for DIR_NAME in ${SWAP_DIRS}; do
+  DEST="${CLAUDE_DIR}/${DIR_NAME}"
+  if ! mv "${STAGE_ROOT}/${DIR_NAME}" "${DEST}"; then
+    swap_failed "${DIR_NAME}"
+  fi
+  PLACED="${PLACED} ${DIR_NAME}"
+done
 if [ "${CONFIG_STAGED}" -eq 1 ]; then
-  mv "${STAGE_ROOT}/km-config.example.json" "${PROJECT_DIR}/km-config.example.json"
+  if ! mv "${STAGE_ROOT}/km-config.example.json" "${PROJECT_DIR}/km-config.example.json"; then
+    swap_failed "km-config.example.json"
+  fi
+  CONFIG_PLACED=1
 fi
+
+# Everything is in place: only now remove the previous copies and the staging area.
 trap - EXIT
+for DIR_NAME in ${ASIDE}; do
+  OLD="${STAGE_ROOT}.old-${DIR_NAME}"
+  chmod -R u+w "${OLD}" 2>/dev/null || true
+  rm -rf "${OLD}" || echo "Warning: could not remove the previous copy at ${OLD}; remove it by hand." >&2
+done
 rm -rf "${STAGE_ROOT}"
 
 echo "Next: run /knowledge-manager setup inside your project."
