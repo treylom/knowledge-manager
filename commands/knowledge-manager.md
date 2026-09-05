@@ -162,10 +162,10 @@ Mode G는 다음을 수행합니다:
 - Phase G5: 인사이트 분석 (커뮤니티 요약, 글로벌 인사이트)
 - Phase G6: Frontmatter 동기화 (graph_entity/community/connections 갱신)
 
-참조 스킬: km-graphrag-workflow.md
+참조 스킬: km-graphrag-ops.md(구축·운영 = `/tofugraph`) + `commands/search.md`(검색 = `/km:search`)
 ```
 
-**Mode G 선택 시** → `km-graphrag-workflow.md` 스킬의 Phase G0-G6 실행. 아래 STEP 1-6 대신 Mode G 워크플로우를 따릅니다.
+**Mode G 선택 시** → `skills/km-graphrag-ops.md`(구축·운영 = `/tofugraph`)와 `commands/search.md`(검색 = `/km:search`)를 따릅니다. 아래 STEP 1-6 대신 Mode G 워크플로우를 따릅니다.
 
 **Mode I 선택 시** → 아래 STEP 1부터 기존 워크플로우 계속.
 
@@ -184,7 +184,7 @@ Read(USER-PROFILE.md)  # vault _meta/ 우선, 없으면 ~/.claude/
 - **프로필 있음** → `roles`/`info_flow`/`workflows`에서 4개 기본값 유도 후 **확인 1질문만**:
   - 유도 규칙(예): info_flow="링크·PDF 다수·자주 못 찾음" → 연결수준=최대·분할=3-tier / roles="코드/기술 중심" → 중점=기술·코드 / roles="글쓰기·리서치" → 중점=개념·이론, 상세=상세 / 기본 분할=3-tier·연결=최대
   - 질문: `AskUserQuestion` 1개 — "당신 프로필 기준 이렇게 정리할게요: [상세수준 X·중점 Y·분할 Z·연결 W]. 이대로 진행할까요?" 옵션 = {이대로 진행 / 이번만 바꾸기(→ 아래 4질문)}
-- **프로필 없음** → 아래 기존 4질문 그대로 (fallback). 끝에 "다음부터 반복 질문을 없애려면 `/knowledge-manager setup`으로 1회 프로파일 인터뷰를 하세요" 안내 1줄.
+- **프로필 없음** → 아래 기존 4질문 그대로 (fallback). 끝에 "다음부터 반복 질문을 없애려면 `/knowledge-manager-setup`(플러그인 설치 = `/km:setup`)으로 1회 프로파일 인터뷰를 하세요" 안내 1줄.
 
 ### (프로필 없을 때 fallback) 4개 질문
 
@@ -287,6 +287,8 @@ AskUserQuestion({
 Main이 입력 소스를 직접 추출합니다. 스킬 참조: `km-content-extraction.md`, `km-youtube-transcript.md`, `km-social-media.md`
 
 ### 소스 유형별 추출
+
+> `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 `playwright-cli`.
 
 | 입력 유형 | 추출 방법 |
 |----------|----------|
@@ -402,7 +404,7 @@ INDEX_DIR=".team-os/graphrag/index"
 
 IF DB 존재 (Mode I, Mode G 모두 해당):
   1. 하이브리드 검색 (Dense Embedding + FTS5 Sparse + Reranker):
-     Bash("python3 .team-os/graphrag/scripts/graph_search.py hybrid '{키워드}' --top-k 20 2>/dev/null || echo '[]'")
+     Bash("curl -s -m 30 \"${GRAPHRAG_API_URL:-http://127.0.0.1:8400}/api/search?q={키워드}&mode=hybrid&top_k=20\" 2>/dev/null || echo '[]'")
      → JSON 결과 파싱: results[].entity, results[].source_note, results[].score, results[].source
      → 실패 시 기존 LIKE 폴백:
        Bash("python3 -c \"import sqlite3; c=sqlite3.connect('{DB_PATH}').cursor(); [print(r) for r in c.execute(\\\"SELECT name, type, description, source_note FROM entities WHERE name LIKE '%{키워드}%' OR name_ko LIKE '%{키워드}%' LIMIT 20\\\")]\"")
@@ -1126,7 +1128,7 @@ done
 | **Mode R: 아카이브 재편** | `km-archive-reorganization.md` |
 | **Mode R: 규칙 엔진** | `km-rules-engine.md` |
 | **Mode R: 배치 실행** | `km-batch-python.md` |
-| **Mode G: GraphRAG 워크플로우** | `km-graphrag-workflow.md` |
+| **Mode G: GraphRAG 워크플로우** | `km-graphrag-ops.md` |
 | **Mode G: 온톨로지 설계** | `km-graphrag-ontology.md` |
 | **Mode G: 그래프 검색** | `km-graphrag-search.md` |
 | **Mode G: 인사이트 리포트** | `km-graphrag-report.md` |

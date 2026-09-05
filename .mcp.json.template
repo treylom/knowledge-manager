@@ -1,6 +1,6 @@
 {
   "_readme": "이 파일을 .mcp.json으로 복사하고 {{플레이스홀더}}를 실제 값으로 교체하세요",
-  "_tip": "셋업 위저드가 자동으로 설정해줍니다: /knowledge-manager setup",
+  "_tip": "셋업 위저드가 자동으로 설정해줍니다: /knowledge-manager-setup",
 
   "mcpServers": {
     "_comment": "=== 필수 서버 ===",

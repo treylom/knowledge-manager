@@ -9,15 +9,15 @@ CONFIG_FILE="${CONFIG_FILE:-km-config.json}"
 config_get() {
   local path="$1"
   local default="${2:-}"
-  node -e "
+  KM_CONFIG="$CONFIG_FILE" KM_PATH="$path" KM_DEFAULT="$default" node -e "
     try {
-      const c = require('./$CONFIG_FILE');
-      const parts = '$path'.split('.');
+      const c = require(require('path').resolve(process.env.KM_CONFIG));
+      const parts = process.env.KM_PATH.split('.');
       let v = c;
       for (const p of parts) v = v == null ? undefined : v[p];
-      console.log(v == null ? '$default' : v);
+      console.log(v == null ? process.env.KM_DEFAULT : v);
     } catch (e) {
-      console.log('$default');
+      console.log(process.env.KM_DEFAULT);
     }
   "
 }
@@ -26,8 +26,8 @@ config_get() {
 # Usage: vault_name "/path/to/MyVault"
 vault_name() {
   local vp="$1"
-  node -e "
-    const p = ('$vp').replace(/\\\\/g, '/').replace(/\/+\$/, '');
+  KM_VP="$vp" node -e "
+    const p = process.env.KM_VP.replace(/\\\\/g, '/').replace(/\/+$/, '');
     const parts = p.split('/').filter(Boolean);
     console.log(parts[parts.length - 1] || 'MyVault');
   "
@@ -36,5 +36,5 @@ vault_name() {
 # Normalize path (Windows backslash → forward slash).
 # Usage: path_normalize 'C:\Users\foo'
 path_normalize() {
-  node -e "console.log(('$1').replace(/\\\\/g, '/'))"
+  KM_P="$1" node -e "console.log(process.env.KM_P.replace(/\\\\/g, '/'))"
 }

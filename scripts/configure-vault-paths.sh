@@ -58,13 +58,13 @@ while IFS= read -r -d '' f; do
   esac
 
   if grep -q "{{VAULT_PATH}}\|{{VAULT_NAME}}\|{{OBSIDIAN_CLI}}\|{{ZETTELKASTEN_ROOT}}\|{{RESEARCH_ROOT}}" "$f" 2>/dev/null; then
-    sed -i \
+    tmp="$(mktemp)"; sed \
       -e "s|{{VAULT_PATH}}|$VAULT_PATH|g" \
       -e "s|{{VAULT_NAME}}|$VAULT_NAME|g" \
       -e "s|{{OBSIDIAN_CLI}}|$OBSIDIAN_CLI|g" \
       -e "s|{{ZETTELKASTEN_ROOT}}|$ZETTELKASTEN_ROOT|g" \
       -e "s|{{RESEARCH_ROOT}}|$RESEARCH_ROOT|g" \
-      "$f"
+      "$f" > "$tmp" && cat "$tmp" > "$f"; rm -f "$tmp"
     SUBST_COUNT=$((SUBST_COUNT + 1))
   fi
 done < <(find skills agents commands -type f -name "*.md" -print0 2>/dev/null)

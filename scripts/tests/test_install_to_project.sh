@@ -37,7 +37,7 @@ missing_expected() {
   local dir_name rel file_path
   for dir_name in commands skills agents; do
     while IFS= read -r -d '' file_path; do
-      rel="${file_path#${REPO_ROOT}/${dir_name}/}"
+      rel="${file_path#"${REPO_ROOT}/${dir_name}"/}"
       if [ ! -f "${proj}/.claude/${dir_name}/${rel}" ]; then
         missing=$(( missing + 1 ))
       fi
@@ -236,6 +236,17 @@ case "${KM_TEST_FAIL_AT:-}:$1" in
   config:*/.km-install-staging.*/km-config.example.json) echo "TEST_INJECTED_RENAME_FAILURE" >&2; exit 71 ;;
   undo:*/.km-install-staging.*.old-commands) echo "TEST_INJECTED_RENAME_FAILURE" >&2; exit 71 ;;
 esac
+# T12–T13 need both arguments: "interrupt" carries out the rename that places skills, then sends the installer SIGTERM;
+# "interrupt2" also fires on the restore of skills, so the installer takes a second SIGTERM while the previous files are being put back (T14).
+# "nested" refuses the config rename and then refuses to take the new skills back.
+case "${KM_TEST_FAIL_AT:-}:$1:${2:-}" in
+  interrupt:*/.km-install-staging.*/skills:*/.claude/skills) /bin/mv "$@"; kill -TERM "${PPID}"; exit 0 ;;
+  interrupt2:*:*/.claude/skills) /bin/mv "$@"; kill -TERM "${PPID}"; exit 0 ;;
+  nested:*/.km-install-staging.*/km-config.example.json:*) echo "TEST_INJECTED_RENAME_FAILURE" >&2; exit 71 ;;
+  nested:*/.claude/skills:*/.km-install-staging.*/skills) echo "TEST_INJECTED_RENAME_FAILURE" >&2; exit 71 ;;
+  aside:*/.claude/commands:*/.km-install-staging.*.old-commands) /bin/mv "$@"; kill -TERM "${PPID}"; exit 0 ;;
+  configint:*/.km-install-staging.*/km-config.example.json:*/km-config.example.json) /bin/mv "$@"; kill -TERM "${PPID}"; exit 0 ;;
+esac
 exec /bin/mv "$@"
 FAKE
 chmod +x "${FAKE_BIN}/mv"
@@ -312,7 +323,110 @@ else
   fail "T11" "exit=${T11_RC} restored_message=${T11_RESTORED_MSG} honest_message=${T11_HONEST_MSG} named_old=${T11_NAMED_OLD} old_content='${T11_OLD_CONTENT}' commands_dir_present=${T11_CMD_DIR} skill='${T11_SKILL}'"
 fi
 
-echo "PASS ${PASS_COUNT}/11"
-if [ "${PASS_COUNT}" -ne 11 ]; then
+# T12 — the installer is interrupted (SIGTERM) right after the new skills were moved into place: exits 143, says the previous files were put back, and they are; nothing is left behind.
+T12_PROJ="${TMP_ROOT}/t12-project"
+make_swap_fixture "${T12_PROJ}"
+set +e
+T12_OUT="$(PATH="${FAKE_BIN}:${PATH}" KM_TEST_FAIL_AT=interrupt bash "${INSTALLER}" "${T12_PROJ}" 2>&1)"
+T12_RC=$?
+set -e
+T12_PUT_BACK_MSG="$(printf '%s\n' "${T12_OUT}" | ${GREP} -c 'the previous files were put back' || true)"
+T12_CMD="$(cat "${T12_PROJ}/.claude/commands/search.md" 2>/dev/null || echo MISSING)"
+T12_SKILL="$(cat "${T12_PROJ}/.claude/skills/my-private.md" 2>/dev/null || echo MISSING)"
+T12_AGENTS=0; [ -d "${T12_PROJ}/.claude/agents" ] && T12_AGENTS=1
+T12_SCRIPTS=0; [ -d "${T12_PROJ}/.claude/scripts" ] && T12_SCRIPTS=1
+T12_RESIDUE="$(find "${T12_PROJ}" -name '.km-install-*' | wc -l | tr -d ' ')"
+if [ "${T12_RC}" -eq 143 ] && [ "${T12_PUT_BACK_MSG}" -eq 1 ] \
+   && [ "${T12_CMD}" = "ORIGINAL_COMMAND" ] && [ "${T12_SKILL}" = "ORIGINAL_SKILL" ] \
+   && [ "${T12_AGENTS}" -eq 1 ] && [ "${T12_SCRIPTS}" -eq 1 ] && [ "${T12_RESIDUE}" -eq 0 ]; then
+  pass "T12"
+else
+  fail "T12" "exit=${T12_RC} put_back_message=${T12_PUT_BACK_MSG} command='${T12_CMD}' skill='${T12_SKILL}' agents_dir=${T12_AGENTS} scripts_dir=${T12_SCRIPTS} residue=${T12_RESIDUE}"
+fi
+
+# T13 — the config rename fails AND the new skills cannot be taken back: exits 71, leaves the new skills in place, keeps the previous skills beside them (never inside them), and says where.
+T13_PROJ="${TMP_ROOT}/t13-project"
+make_swap_fixture "${T13_PROJ}"
+set +e
+T13_OUT="$(PATH="${FAKE_BIN}:${PATH}" KM_TEST_FAIL_AT=nested bash "${INSTALLER}" "${T13_PROJ}" 2>&1)"
+T13_RC=$?
+set -e
+T13_RESTORED_MSG="$(printf '%s\n' "${T13_OUT}" | ${GREP} -c 'restored' || true)"
+T13_STILL_AT_MSG="$(printf '%s\n' "${T13_OUT}" | ${GREP} -c 'the new copy is still at' || true)"
+T13_NEW_SKILL=0; [ -e "${T13_PROJ}/.claude/skills/km-workflow.md" ] && T13_NEW_SKILL=1
+# The new skills copy carries the project's own top-level my-private.md (staging starts from the project's files); nesting means a copy one level deeper.
+T13_NESTED="$(find "${T13_PROJ}/.claude/skills" -mindepth 2 -name my-private.md | wc -l | tr -d ' ')"
+T13_BESIDE="$(find "${T13_PROJ}/.claude" -maxdepth 2 -path '*/.claude/.km-install-staging.*.old-skills/my-private.md' | wc -l | tr -d ' ')"
+if [ "${T13_RC}" -eq 71 ] && [ "${T13_RESTORED_MSG}" -eq 0 ] && [ "${T13_STILL_AT_MSG}" -eq 1 ] \
+   && [ "${T13_NEW_SKILL}" -eq 1 ] && [ "${T13_NESTED}" -eq 0 ] && [ "${T13_BESIDE}" -eq 1 ]; then
+  pass "T13"
+else
+  fail "T13" "exit=${T13_RC} restored_message=${T13_RESTORED_MSG} still_at_message=${T13_STILL_AT_MSG} new_skill_present=${T13_NEW_SKILL} nested_old_file=${T13_NESTED} old_file_beside=${T13_BESIDE}"
+fi
+
+# T14 — a second SIGTERM arrives while the previous files are being put back: same outcome as T12 (the restore is not interrupted).
+T14_PROJ="${TMP_ROOT}/t14-project"
+make_swap_fixture "${T14_PROJ}"
+set +e
+T14_OUT="$(PATH="${FAKE_BIN}:${PATH}" KM_TEST_FAIL_AT=interrupt2 bash "${INSTALLER}" "${T14_PROJ}" 2>&1)"
+T14_RC=$?
+set -e
+T14_PUT_BACK_MSG="$(printf '%s\n' "${T14_OUT}" | ${GREP} -c 'the previous files were put back' || true)"
+T14_CMD="$(cat "${T14_PROJ}/.claude/commands/search.md" 2>/dev/null || echo MISSING)"
+T14_SKILL="$(cat "${T14_PROJ}/.claude/skills/my-private.md" 2>/dev/null || echo MISSING)"
+T14_AGENTS=0; [ -d "${T14_PROJ}/.claude/agents" ] && T14_AGENTS=1
+T14_SCRIPTS=0; [ -d "${T14_PROJ}/.claude/scripts" ] && T14_SCRIPTS=1
+T14_RESIDUE="$(find "${T14_PROJ}" -name '.km-install-*' | wc -l | tr -d ' ')"
+if [ "${T14_RC}" -eq 143 ] && [ "${T14_PUT_BACK_MSG}" -eq 1 ] \
+   && [ "${T14_CMD}" = "ORIGINAL_COMMAND" ] && [ "${T14_SKILL}" = "ORIGINAL_SKILL" ] \
+   && [ "${T14_AGENTS}" -eq 1 ] && [ "${T14_SCRIPTS}" -eq 1 ] && [ "${T14_RESIDUE}" -eq 0 ]; then
+  pass "T14"
+else
+  fail "T14" "exit=${T14_RC} put_back_message=${T14_PUT_BACK_MSG} command='${T14_CMD}' skill='${T14_SKILL}' agents_dir=${T14_AGENTS} scripts_dir=${T14_SCRIPTS} residue=${T14_RESIDUE}"
+fi
+
+# T15 — the installer is interrupted (SIGTERM) right after the previous commands were moved aside in phase 1, before that move was recorded: exits 143, says the previous files were put back, and they are; nothing is left behind.
+T15_PROJ="${TMP_ROOT}/t15-project"
+make_swap_fixture "${T15_PROJ}"
+set +e
+T15_OUT="$(PATH="${FAKE_BIN}:${PATH}" KM_TEST_FAIL_AT=aside bash "${INSTALLER}" "${T15_PROJ}" 2>&1)"
+T15_RC=$?
+set -e
+T15_PUT_BACK_MSG="$(printf '%s\n' "${T15_OUT}" | ${GREP} -c 'the previous files were put back' || true)"
+T15_HONEST_MSG="$(printf '%s\n' "${T15_OUT}" | ${GREP} -c 'could not all be put back' || true)"
+T15_CMD="$(cat "${T15_PROJ}/.claude/commands/search.md" 2>/dev/null || echo MISSING)"
+T15_SKILL="$(cat "${T15_PROJ}/.claude/skills/my-private.md" 2>/dev/null || echo MISSING)"
+T15_RESIDUE="$(find "${T15_PROJ}" -name '.km-install-*' | wc -l | tr -d ' ')"
+if [ "${T15_RC}" -eq 143 ] && [ "${T15_PUT_BACK_MSG}" -eq 1 ] && [ "${T15_HONEST_MSG}" -eq 0 ] \
+   && [ "${T15_CMD}" = "ORIGINAL_COMMAND" ] && [ "${T15_SKILL}" = "ORIGINAL_SKILL" ] \
+   && [ "${T15_RESIDUE}" -eq 0 ]; then
+  pass "T15"
+else
+  fail "T15" "exit=${T15_RC} put_back_message=${T15_PUT_BACK_MSG} honest_message=${T15_HONEST_MSG} command='${T15_CMD}' skill='${T15_SKILL}' residue=${T15_RESIDUE}"
+fi
+
+# T16 — the installer is interrupted (SIGTERM) right after km-config.example.json was moved into the project, before that move was recorded: exits 143, the new config file is gone again, the previous files are back, and nothing is left behind.
+T16_PROJ="${TMP_ROOT}/t16-project"
+make_swap_fixture "${T16_PROJ}"
+set +e
+T16_OUT="$(PATH="${FAKE_BIN}:${PATH}" KM_TEST_FAIL_AT=configint bash "${INSTALLER}" "${T16_PROJ}" 2>&1)"
+T16_RC=$?
+set -e
+T16_PUT_BACK_MSG="$(printf '%s\n' "${T16_OUT}" | ${GREP} -c 'the previous files were put back' || true)"
+T16_CONFIG=0; [ -e "${T16_PROJ}/km-config.example.json" ] && T16_CONFIG=1
+T16_CMD="$(cat "${T16_PROJ}/.claude/commands/search.md" 2>/dev/null || echo MISSING)"
+T16_SKILL="$(cat "${T16_PROJ}/.claude/skills/my-private.md" 2>/dev/null || echo MISSING)"
+T16_NEW_SKILL=0; [ -e "${T16_PROJ}/.claude/skills/km-workflow.md" ] && T16_NEW_SKILL=1
+T16_RESIDUE="$(find "${T16_PROJ}" -name '.km-install-*' | wc -l | tr -d ' ')"
+if [ "${T16_RC}" -eq 143 ] && [ "${T16_PUT_BACK_MSG}" -eq 1 ] && [ "${T16_CONFIG}" -eq 0 ] \
+   && [ "${T16_CMD}" = "ORIGINAL_COMMAND" ] && [ "${T16_SKILL}" = "ORIGINAL_SKILL" ] \
+   && [ "${T16_NEW_SKILL}" -eq 0 ] && [ "${T16_RESIDUE}" -eq 0 ]; then
+  pass "T16"
+else
+  fail "T16" "exit=${T16_RC} put_back_message=${T16_PUT_BACK_MSG} config_present=${T16_CONFIG} command='${T16_CMD}' skill='${T16_SKILL}' new_skill_present=${T16_NEW_SKILL} residue=${T16_RESIDUE}"
+fi
+
+echo "PASS ${PASS_COUNT}/16"
+if [ "${PASS_COUNT}" -ne 16 ]; then
   exit 1
 fi

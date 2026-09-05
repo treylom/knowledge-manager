@@ -85,7 +85,7 @@ ROUTE_HUB_COUNT=$(echo $ROUTE_HUBS | wc -w | tr -d ' ')
 echo "ROUTE_HUBS=[${ROUTE_HUBS% }] count=${ROUTE_HUB_COUNT}"
 ```
 
-- `STRUCT_DOCS` 가 3 미만이면 답변에 「구조 문서 없음(<빠진 것>) — `km-setup` 재실행으로 생성」 1줄을 적고 **그대로 계속 진행**한다(멈춤 ❌).
+- `STRUCT_DOCS` 가 3 미만이면 답변에 「구조 문서 없음(<빠진 것>) — Claude Code 의 `/km:setup`(Phase 5.5)으로 생성. Codex 의 `km-setup` 스킬과 `install-to-project.sh` 는 이 문서를 만들지 않음」 1줄을 적고 **그대로 계속 진행**한다(멈춤 ❌).
 
 ## Phase 0.5: MOC 우선 라우팅
 

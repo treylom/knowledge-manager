@@ -15,8 +15,9 @@ usage() {
   echo "Usage: bash scripts/install-to-project.sh <project-dir>" >&2
   echo "  Copies commands/, skills/, and agents/ into <project-dir>/.claude/," >&2
   echo "  plus scripts/send_kakao.py and km-config.example.json." >&2
+  echo "  Not copied (available only in a repo clone or the plugin install): scripts/configure-vault-paths.sh, scripts/_lib-config.sh, scripts/km-update.sh, scripts/km_link_gate.py, templates/start-here/." >&2
   echo "  Existing files in the project's .claude/ are overwritten only when they have the same path; other files are left as they are." >&2
-  echo "  Files are staged and checked first. If anything fails before the final swap the project is left unchanged; if the swap itself fails the previous files are put back, and the script says so if it could not." >&2
+  echo "  Files are staged and checked first. If anything fails before the final swap the project is left unchanged; if the swap fails or the install is interrupted, the previous files are put back (anything that could not be put back is kept beside the new files and listed)." >&2
   echo "  Symbolic links at .claude/, its commands/skills/agents/scripts directories, or any path this script writes are refused." >&2
 }
 
@@ -57,7 +58,7 @@ for DIR_NAME in commands skills agents; do
     exit 1
   fi
   while IFS= read -r -d '' ENTRY; do
-    REL="${ENTRY#${EXPECTED_SRC}/}"
+    REL="${ENTRY#"${EXPECTED_SRC}"/}"
     refuse_symlink "${CLAUDE_DIR}/${DIR_NAME}/${REL}"
   done < <(find "${EXPECTED_SRC}" -mindepth 1 -print0)
 done
@@ -75,13 +76,31 @@ fi
 
 # Staging area on the same filesystem as .claude/ so the final step is a rename, not a copy.
 STAGE_ROOT="${CLAUDE_DIR}/.km-install-staging.$$"
+SWAP_STARTED=0
 cleanup_on_failure() {
+  # A second Ctrl-C (or another stop signal) while the previous files are being put back would leave
+  # the project half-restored: ignore further signals until cleanup is done.
+  trap '' HUP INT TERM
+  if [ "${SWAP_STARTED}" -eq 1 ]; then
+    # The install was interrupted while the previous files were moved aside: put them back first.
+    undo_swap
+    if [ -n "${NOT_RESTORED}" ]; then
+      echo "Error: the install was interrupted, and the previous files could not all be put back." >&2
+      echo "Left for you to sort out by hand:${NOT_RESTORED}" >&2
+      echo "The staged copy is kept at ${STAGE_ROOT} so nothing is lost." >&2
+      return 0
+    fi
+    echo "The install was interrupted; the previous files were put back." >&2
+  fi
   rm -rf "${STAGE_ROOT}"
   if [ "${CREATED_CLAUDE_DIR}" -eq 1 ]; then
     rmdir "${CLAUDE_DIR}" 2>/dev/null || true
   fi
 }
 trap cleanup_on_failure EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
 mkdir "${STAGE_ROOT}"
 echo "Staging in ${STAGE_ROOT}; the project is changed only after every expected file is verified."
 
@@ -110,7 +129,7 @@ for DIR_NAME in commands skills agents; do
   EXPECTED=0
   PRESENT=0
   while IFS= read -r -d '' FILE_PATH; do
-    REL="${FILE_PATH#${EXPECTED_SRC}/}"
+    REL="${FILE_PATH#"${EXPECTED_SRC}"/}"
     EXPECTED=$(( EXPECTED + 1 ))
     if [ -f "${STAGE}/${REL}" ]; then
       PRESENT=$(( PRESENT + 1 ))
@@ -164,6 +183,8 @@ SWAP_DIRS="commands skills agents scripts"
 ASIDE=""        # directories whose previous copy was moved aside in phase 1, in order
 PLACED=""       # directories already moved into place in phase 2, in order
 CONFIG_PLACED=0
+ASIDE_PENDING=""  # a directory whose previous copy is being moved aside right now (phase 1)
+CONFIG_PENDING=0  # set while km-config.example.json is being moved into the project
 NOT_RESTORED=""
 
 reverse_words() {
@@ -174,7 +195,30 @@ reverse_words() {
 
 undo_swap() {
   # Newest change first: take back what phase 2 placed, then return what phase 1 moved aside.
+  # Safe to call twice: the bookkeeping is cleared at the end, so a second call does nothing.
   local d
+  # Settle anything that was in flight when the install was interrupted: the rename may or may not have run.
+  if [ -n "${ASIDE_PENDING}" ]; then
+    if [ -e "${STAGE_ROOT}.old-${ASIDE_PENDING}" ]; then
+      if [ -e "${CLAUDE_DIR}/${ASIDE_PENDING}" ]; then
+        # Both copies exist: the move did not finish cleanly. Touch neither; say where the previous one is.
+        NOT_RESTORED="${NOT_RESTORED} ${STAGE_ROOT}.old-${ASIDE_PENDING} (previous copy of ${ASIDE_PENDING}; ${CLAUDE_DIR}/${ASIDE_PENDING} was left as found)"
+      else
+        ASIDE="${ASIDE} ${ASIDE_PENDING}"   # the move ran: put it back like any recorded one
+      fi
+    fi                                        # otherwise the move never ran: nothing to undo
+    ASIDE_PENDING=""
+  fi
+  if [ "${CONFIG_PENDING}" -eq 1 ]; then
+    if [ -e "${PROJECT_DIR}/km-config.example.json" ]; then
+      if [ -e "${STAGE_ROOT}/km-config.example.json" ]; then
+        NOT_RESTORED="${NOT_RESTORED} ${PROJECT_DIR}/km-config.example.json (new file; the move did not finish cleanly, left as found)"
+      else
+        CONFIG_PLACED=1                       # the move ran: remove it like a recorded one
+      fi
+    fi
+    CONFIG_PENDING=0
+  fi
   if [ "${CONFIG_PLACED}" -eq 1 ]; then
     rm -f "${PROJECT_DIR}/km-config.example.json" || NOT_RESTORED="${NOT_RESTORED} ${PROJECT_DIR}/km-config.example.json (new file left in place)"
   fi
@@ -182,8 +226,18 @@ undo_swap() {
     mv "${CLAUDE_DIR}/${d}" "${STAGE_ROOT}/${d}" || NOT_RESTORED="${NOT_RESTORED} ${CLAUDE_DIR}/${d} (new copy left in place)"
   done
   for d in $(reverse_words ${ASIDE}); do
+    if [ -e "${CLAUDE_DIR}/${d}" ]; then
+      # A new copy is still in the way: either the take-back above failed, or the install was
+      # interrupted right after the move and before it was recorded. Try once more to take it back;
+      # if that fails too, leave both copies side by side and say where the previous one is.
+      if ! mv "${CLAUDE_DIR}/${d}" "${STAGE_ROOT}/${d}"; then
+        NOT_RESTORED="${NOT_RESTORED} ${STAGE_ROOT}.old-${d} (previous copy of ${d}; the new copy is still at ${CLAUDE_DIR}/${d})"
+        continue
+      fi
+    fi
     mv "${STAGE_ROOT}.old-${d}" "${CLAUDE_DIR}/${d}" || NOT_RESTORED="${NOT_RESTORED} ${STAGE_ROOT}.old-${d} (previous copy of ${d})"
   done
+  PLACED=""; ASIDE=""; CONFIG_PLACED=0; SWAP_STARTED=0; ASIDE_PENDING=""; CONFIG_PENDING=0
 }
 
 swap_failed() {
@@ -201,13 +255,16 @@ swap_failed() {
 }
 
 # Phase 1
+SWAP_STARTED=1
 for DIR_NAME in ${SWAP_DIRS}; do
   DEST="${CLAUDE_DIR}/${DIR_NAME}"
   if [ -d "${DEST}" ]; then
+    ASIDE_PENDING="${DIR_NAME}"
     if ! mv "${DEST}" "${STAGE_ROOT}.old-${DIR_NAME}"; then
       swap_failed "the previous ${DIR_NAME}"
     fi
     ASIDE="${ASIDE} ${DIR_NAME}"
+    ASIDE_PENDING=""
   fi
 done
 
@@ -220,10 +277,12 @@ for DIR_NAME in ${SWAP_DIRS}; do
   PLACED="${PLACED} ${DIR_NAME}"
 done
 if [ "${CONFIG_STAGED}" -eq 1 ]; then
+  CONFIG_PENDING=1
   if ! mv "${STAGE_ROOT}/km-config.example.json" "${PROJECT_DIR}/km-config.example.json"; then
     swap_failed "km-config.example.json"
   fi
   CONFIG_PLACED=1
+  CONFIG_PENDING=0
 fi
 
 # Everything is in place: only now remove the previous copies and the staging area.
@@ -235,5 +294,5 @@ for DIR_NAME in ${ASIDE}; do
 done
 rm -rf "${STAGE_ROOT}"
 
-echo "Next: run /knowledge-manager setup inside your project."
+echo "Next: run /knowledge-manager-setup inside your project."
 echo "Installed: ${SUMMARY} — all expected files present (existing files in ${CLAUDE_DIR} are kept)"

@@ -99,9 +99,17 @@ knowledge-manager/
 ├── scripts/
 │   ├── _lib-config.sh            # JSON parser (Node.js-backed)
 │   ├── configure-vault-paths.sh  # Substitution engine
-│   └── km-update.sh              # Update orchestrator
+│   ├── km-update.sh              # Update orchestrator
+│   ├── install-to-project.sh     # Project-mode installer (copies commands/ skills/ agents/ + send_kakao.py)
+│   ├── km_link_gate.py           # Link gate
+│   ├── send_kakao.py             # KakaoTalk helper (copied by installer)
+│   ├── graphrag-ops/             # tofugraph.sh + km-tools/ (GraphRAG ops)
+│   └── tests/                    # Shell tests + fixtures
 ├── skills/                       # Skill .md files (placeholder form in HEAD)
 ├── agents/                       # Agent .md files
+├── templates/start-here/         # 000-START-HERE seed docs (used by setup Phase 5.5; not copied by installer)
+├── .agent/skills/                # Codex/Gemini-CLI skill surface (.codex-plugin/plugin.json → skills)
+├── agent-office/                 # Agent Office assets
 └── commands/                     # Slash command .md files
 ```
 

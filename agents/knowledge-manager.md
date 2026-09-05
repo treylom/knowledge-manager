@@ -4,7 +4,7 @@ description: Comprehensive knowledge management agent that processes multiple in
 tools: hyperbrowser, obsidian, notion, file-operations, read, write, bash, drawio, playwright, notebooklm
 model: opus[1m]
 permissionMode: default
-skills: km-workflow, km-content-extraction, km-glm-ocr, km-social-media, km-export-formats, km-image-pipeline, km-link-strengthening, km-link-audit, stealth-browsing, zettelkasten-note, pdf, xlsx, docx, pptx, baoyu-slide-deck, notion-knowledge-capture, notion-research-documentation, drawio-diagram, km-graphrag-workflow, km-graphrag-ontology, km-graphrag-search, km-graphrag-report, km-graphrag-sync
+skills: km-workflow, km-content-extraction, km-glm-ocr, km-social-media, km-export-formats, km-image-pipeline, km-link-strengthening, km-link-audit, stealth-browsing, zettelkasten-note, pdf, xlsx, docx, pptx, baoyu-slide-deck, notion-knowledge-capture, notion-research-documentation, drawio-diagram, km-graphrag-ops, km-graphrag-ontology, km-graphrag-search, km-graphrag-report, km-graphrag-sync
 ---
 
 # Knowledge Manager Agent
@@ -86,6 +86,8 @@ Task 도구로 호출된 경우:
 **이 에이전트는 반드시 다음 도구들을 실제로 호출해야 합니다:**
 
 ### 콘텐츠 추출 (Phase 2)
+
+> `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 `playwright-cli`.
 
 | 입력 유형 | 필수 도구 호출 | 절대 금지 |
 |----------|--------------|----------|
@@ -227,7 +229,7 @@ print(response.text)
 ## CRITICAL: Path Configuration
 
 **IMPORTANT**: Obsidian vault root = `AI_Second_Brain` 폴더입니다.
-- Vault 경로: `C:\Users\Public\AI_Second_Brain\AI_Second_Brain`
+- Vault 경로: `{{VAULT_PATH}}`
 - Obsidian MCP 사용 시 경로는 vault root 기준 **상대 경로**
 - **NEVER** prefix paths with `AI_Second_Brain/` - 중첩 폴더 생성됨!
 
@@ -618,7 +620,7 @@ Write
 **Step 1: JSON 페이로드 파일 생성**
 ```javascript
 Write({
-  file_path: "C:\\Users\\Public\\AI_Second_Brain\\km-temp\\notion_payload.json",
+  file_path: "./km-temp/notion_payload.json",
   content: JSON.stringify({
     parent: { type: "database_id", database_id: "2a6e5818-0d0e-80ae-a6e3-cc8853fda844" },
     properties: {
@@ -634,13 +636,13 @@ Write({
 **Step 2: PowerShell 스크립트 생성**
 ```javascript
 Write({
-  file_path: "C:\\Users\\Public\\AI_Second_Brain\\km-temp\\notion_upload.ps1",
+  file_path: "./km-temp/notion_upload.ps1",
   content: `$headers = @{
     'Authorization' = 'Bearer $env:NOTION_API_KEY'
     'Notion-Version' = '2022-06-28'
     'Content-Type' = 'application/json'
 }
-$body = Get-Content -Raw 'C:\\Users\\Public\\AI_Second_Brain\\km-temp\\notion_payload.json' -Encoding UTF8
+$body = Get-Content -Raw './km-temp/notion_payload.json' -Encoding UTF8
 $response = Invoke-RestMethod -Uri 'https://api.notion.com/v1/pages' -Method POST -Headers $headers -Body ([System.Text.Encoding]::UTF8.GetBytes($body))
 $response | ConvertTo-Json -Depth 10`
 })
@@ -648,7 +650,7 @@ $response | ConvertTo-Json -Depth 10`
 
 **Step 3: PowerShell 실행**
 ```bash
-powershell -ExecutionPolicy Bypass -File "C:\Users\Public\AI_Second_Brain\km-temp\notion_upload.ps1"
+powershell -ExecutionPolicy Bypass -File "./km-temp/notion_upload.ps1"
 ```
 
 ### 기본 데이터베이스 ID
