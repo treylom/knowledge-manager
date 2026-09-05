@@ -183,6 +183,8 @@ SWAP_DIRS="commands skills agents scripts"
 ASIDE=""        # directories whose previous copy was moved aside in phase 1, in order
 PLACED=""       # directories already moved into place in phase 2, in order
 CONFIG_PLACED=0
+ASIDE_PENDING=""  # a directory whose previous copy is being moved aside right now (phase 1)
+CONFIG_PENDING=0  # set while km-config.example.json is being moved into the project
 NOT_RESTORED=""
 
 reverse_words() {
@@ -195,6 +197,28 @@ undo_swap() {
   # Newest change first: take back what phase 2 placed, then return what phase 1 moved aside.
   # Safe to call twice: the bookkeeping is cleared at the end, so a second call does nothing.
   local d
+  # Settle anything that was in flight when the install was interrupted: the rename may or may not have run.
+  if [ -n "${ASIDE_PENDING}" ]; then
+    if [ -e "${STAGE_ROOT}.old-${ASIDE_PENDING}" ]; then
+      if [ -e "${CLAUDE_DIR}/${ASIDE_PENDING}" ]; then
+        # Both copies exist: the move did not finish cleanly. Touch neither; say where the previous one is.
+        NOT_RESTORED="${NOT_RESTORED} ${STAGE_ROOT}.old-${ASIDE_PENDING} (previous copy of ${ASIDE_PENDING}; ${CLAUDE_DIR}/${ASIDE_PENDING} was left as found)"
+      else
+        ASIDE="${ASIDE} ${ASIDE_PENDING}"   # the move ran: put it back like any recorded one
+      fi
+    fi                                        # otherwise the move never ran: nothing to undo
+    ASIDE_PENDING=""
+  fi
+  if [ "${CONFIG_PENDING}" -eq 1 ]; then
+    if [ -e "${PROJECT_DIR}/km-config.example.json" ]; then
+      if [ -e "${STAGE_ROOT}/km-config.example.json" ]; then
+        NOT_RESTORED="${NOT_RESTORED} ${PROJECT_DIR}/km-config.example.json (new file; the move did not finish cleanly, left as found)"
+      else
+        CONFIG_PLACED=1                       # the move ran: remove it like a recorded one
+      fi
+    fi
+    CONFIG_PENDING=0
+  fi
   if [ "${CONFIG_PLACED}" -eq 1 ]; then
     rm -f "${PROJECT_DIR}/km-config.example.json" || NOT_RESTORED="${NOT_RESTORED} ${PROJECT_DIR}/km-config.example.json (new file left in place)"
   fi
@@ -213,7 +237,7 @@ undo_swap() {
     fi
     mv "${STAGE_ROOT}.old-${d}" "${CLAUDE_DIR}/${d}" || NOT_RESTORED="${NOT_RESTORED} ${STAGE_ROOT}.old-${d} (previous copy of ${d})"
   done
-  PLACED=""; ASIDE=""; CONFIG_PLACED=0; SWAP_STARTED=0
+  PLACED=""; ASIDE=""; CONFIG_PLACED=0; SWAP_STARTED=0; ASIDE_PENDING=""; CONFIG_PENDING=0
 }
 
 swap_failed() {
@@ -235,10 +259,12 @@ SWAP_STARTED=1
 for DIR_NAME in ${SWAP_DIRS}; do
   DEST="${CLAUDE_DIR}/${DIR_NAME}"
   if [ -d "${DEST}" ]; then
+    ASIDE_PENDING="${DIR_NAME}"
     if ! mv "${DEST}" "${STAGE_ROOT}.old-${DIR_NAME}"; then
       swap_failed "the previous ${DIR_NAME}"
     fi
     ASIDE="${ASIDE} ${DIR_NAME}"
+    ASIDE_PENDING=""
   fi
 done
 
@@ -251,10 +277,12 @@ for DIR_NAME in ${SWAP_DIRS}; do
   PLACED="${PLACED} ${DIR_NAME}"
 done
 if [ "${CONFIG_STAGED}" -eq 1 ]; then
+  CONFIG_PENDING=1
   if ! mv "${STAGE_ROOT}/km-config.example.json" "${PROJECT_DIR}/km-config.example.json"; then
     swap_failed "km-config.example.json"
   fi
   CONFIG_PLACED=1
+  CONFIG_PENDING=0
 fi
 
 # Everything is in place: only now remove the previous copies and the staging area.
