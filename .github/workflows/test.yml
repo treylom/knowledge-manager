@@ -12,6 +12,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: install-to-project contract
         run: bash scripts/tests/test_install_to_project.sh
+      - name: installer signal and interrupted-retry contract
+        run: python3 scripts/tests/test_install_signals.py
       - name: link gate
         run: bash scripts/tests/test_km_link_gate.sh
       - name: project-root save contract

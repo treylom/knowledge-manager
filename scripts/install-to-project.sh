@@ -17,7 +17,8 @@ usage() {
   echo "  plus scripts/send_kakao.py and km-config.example.json." >&2
   echo "  Not copied (available only in a repo clone or the plugin install): scripts/configure-vault-paths.sh, scripts/_lib-config.sh, scripts/km-update.sh, scripts/km_link_gate.py, templates/start-here/." >&2
   echo "  Existing files in the project's .claude/ are overwritten only when they have the same path; other files are left as they are." >&2
-  echo "  Files are staged and checked first. If anything fails before the final swap the project is left unchanged; if the swap fails or the install is interrupted, the previous files are put back (anything that could not be put back is kept beside the new files and listed)." >&2
+  echo "  Files are staged and checked first. If anything fails before the final swap the project is left unchanged; if the swap fails or HUP/INT/TERM interrupts it, the previous files are put back (anything that could not be put back is kept beside the new files and listed)." >&2
+  echo "  SIGKILL and power loss cannot run cleanup. A retry refuses retained .km-install-staging.* paths until you review and recover them; this is not a disk-durability guarantee." >&2
   echo "  Symbolic links at .claude/, its commands/skills/agents/scripts directories, or any path this script writes are refused." >&2
 }
 
@@ -47,6 +48,16 @@ refuse_symlink() {
 }
 
 refuse_symlink "${CLAUDE_DIR}"
+# A prior process may have died without running its EXIT trap. Do not install
+# over a partly swapped project, or remove any of its surviving old copies.
+# Include dangling links; do not follow them to decide whether residue exists.
+for LEFTOVER in "${CLAUDE_DIR}"/.km-install-staging.*; do
+  if [ -e "${LEFTOVER}" ] || [ -L "${LEFTOVER}" ]; then
+    echo "Error: unfinished install at ${LEFTOVER}; the project was left as found." >&2
+    echo "Review and recover the retained staged/previous copies before retrying; this installer will not delete them automatically." >&2
+    exit 1
+  fi
+done
 for DIR_NAME in commands skills agents scripts; do
   refuse_symlink "${CLAUDE_DIR}/${DIR_NAME}"
 done

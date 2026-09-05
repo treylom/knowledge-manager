@@ -112,7 +112,9 @@ bash scripts/install-to-project.sh /your/project
 ```
 
 기존 프로젝트 파일은 그대로 두고 플러그인 파일만 추가·갱신합니다.
-설치기는 심볼릭 링크를 따라가지 않고(링크가 있으면 멈춤), 검사가 끝나기 전에는 최종 위치에 쓰지 않습니다(작업 파일은 `.claude/.km-install-staging.<pid>/` 에 모았다가 실패하면 제거하되, 되돌리지 못한 경우에는 보관하고 그 위치를 알려 줍니다) — 검사 단계에서 실패하면 프로젝트는 그대로이고, 교체 단계에서 실패하면 이전 파일을 되돌립니다(되돌리지 못한 경우 그 위치를 알려 줍니다). 설치 도중 중단(Ctrl-C·종료 신호)돼도 같은 방식으로 이전 파일을 되돌립니다.
+설치기는 심볼릭 링크를 따라가지 않고(링크가 있으면 멈춤), 검사가 끝나기 전에는 최종 위치에 쓰지 않습니다(작업 파일은 `.claude/.km-install-staging.<pid>/` 에 모았다가 실패하면 제거하되, 되돌리지 못한 경우에는 보관하고 그 위치를 알려 줍니다) — 검사 단계에서 실패하면 프로젝트는 그대로이고, 교체 단계에서 실패하면 이전 파일을 되돌립니다(되돌리지 못한 경우 그 위치를 알려 줍니다). 설치 도중 HUP·INT(Ctrl-C)·TERM 신호를 받으면 같은 방식으로 이전 파일을 되돌립니다.
+
+강제 종료(SIGKILL)나 전원 손실 때는 복구 코드를 실행할 수 없습니다. `.claude/.km-install-staging.*`가 남아 있으면 다음 설치는 파일을 바꾸지 않고 중단합니다. 안내된 작업 폴더와 `.old-*` 사본을 확인해 필요한 파일을 복구한 뒤 재시도하세요. 복구 전에 이 사본을 지우지 마세요. 신호 주입 시험은 실제 정전이나 디스크 기록의 내구성을 검증한 것이 아닙니다.
 
 설치 후 `/knowledge-manager-setup`으로 셋업 위저드를 실행하세요.
 
@@ -616,7 +618,9 @@ bash scripts/install-to-project.sh /your/project
 ```
 
 Existing project files are kept; only the plugin's files are added or refreshed.
-The installer never follows symbolic links (it stops if it finds one) and writes nothing to the final locations until every file has been staged (under `.claude/.km-install-staging.<pid>/`) and checked — if the check fails the project is unchanged, and if the final swap fails the previous files are put back (anything it could not put back is kept beside the new files and listed). If the install is interrupted (Ctrl-C or a stop signal), the previous files are put back the same way.
+The installer never follows symbolic links (it stops if it finds one) and writes nothing to the final locations until every file has been staged (under `.claude/.km-install-staging.<pid>/`) and checked — if the check fails the project is unchanged, and if the final swap fails the previous files are put back (anything it could not put back is kept beside the new files and listed). HUP, INT (Ctrl-C), and TERM signals trigger the same rollback.
+
+SIGKILL and power loss cannot run cleanup. If `.claude/.km-install-staging.*` remains, the next install refuses to change any files. Inspect the named staging directory and `.old-*` copies, recover the files you need, then retry; do not delete those copies before recovery. Signal-injection tests do not verify physical power loss or disk-write durability.
 
 After installing, run `/knowledge-manager-setup` to start the setup wizard.
 
