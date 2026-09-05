@@ -13,7 +13,7 @@ set -u
 
 HERE=$(cd "$(dirname "$0")" && pwd)
 GATE="$HERE/../km_link_gate.py"
-FIXTURE="${KM_LINK_GATE_FIXTURE:-/tmp/km13-fixture/vault}"
+FIXTURE="${KM_LINK_GATE_FIXTURE:-$HERE/fixtures/km-link-gate-vault}"
 [ -f "$GATE" ] || { echo "게이트 없음: $GATE" >&2; exit 2; }
 [ -d "$FIXTURE" ] || { echo "픽스처 없음: $FIXTURE" >&2; exit 2; }
 

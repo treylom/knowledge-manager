@@ -32,7 +32,7 @@ triggers:
 
 봇 탐지 있는 사이트 (소셜미디어, CloudFlare 등)
   → scrapling-crawl.py --mode stealth (1순위, 내장 안티봇)
-  → 이 스킬의 TS 스텔스 스크립트 (폴백)
+  → playwright-cli (폴백)
 
 복잡한 클라우드 자동화 (API 키 필요)
   → Hyperbrowser MCP
@@ -44,45 +44,16 @@ triggers:
 
 ## 사용법
 
-### 방법 1: 콘텐츠 추출 (원샷)
+> **이 스킬의 TS 스크립트(`stealth-browser.ts` · `stealth-actions.ts` · `stealth-navigate-and-extract.ts`)는 이 플러그인에 포함되어 있지 않습니다.** 플러그인 설치(`scripts/install-to-project.sh`)로는 이 스킬의 `scripts/` 디렉터리가 만들어지지 않으므로, 이 문서는 도구 선택 기준과 기법 참조만 제공합니다.
+
+봇 탐지가 있는 사이트는 `km-content-extraction` 스킬의 Scrapling stealth 모드를 사용합니다. 아래 `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않습니다 — 별도로 준비한 경우에만 쓰고, 없으면 `playwright-cli` 로 갑니다:
 
 ```bash
-npx tsx .claude/skills/stealth-browsing/scripts/stealth-navigate-and-extract.ts \
-  "https://example.com" \
-  --output markdown \
-  --wait 3000
-
-# JSON 형식으로 출력 (프로그래밍용)
-npx tsx .claude/skills/stealth-browsing/scripts/stealth-navigate-and-extract.ts \
-  "https://example.com" \
-  --output markdown \
-  --json
-
-# 동적 콘텐츠 (무한 스크롤)
-npx tsx .claude/skills/stealth-browsing/scripts/stealth-navigate-and-extract.ts \
-  "https://threads.net/@user" \
-  --scroll-to-bottom \
-  --scroll-count 5 \
-  --output text
-
-# 특정 요소만 추출
-npx tsx .claude/skills/stealth-browsing/scripts/stealth-navigate-and-extract.ts \
-  "https://example.com" \
-  --selector "article.main-content" \
-  --output markdown
+# scripts/scrapling-crawl.py 는 플러그인 미포함 — 별도 준비한 경우에만
+python3 scripts/scrapling-crawl.py fetch "https://example.com" --mode stealth --output markdown
 ```
 
-### 방법 2: 봇 탐지 테스트
-
-```bash
-npx tsx .claude/skills/stealth-browsing/scripts/stealth-browser.ts --test
-```
-
-### 방법 3: 수동 브라우저 열기
-
-```bash
-npx tsx .claude/skills/stealth-browsing/scripts/stealth-browser.ts --url "https://example.com"
-```
+직접 만든 스텔스 스크립트가 있다면 아래 「안티-디텍션 기능」 6가지를 그 스크립트에 구현하는 것을 권장합니다.
 
 ## 안티-디텍션 기능 (6가지)
 
@@ -95,19 +66,9 @@ npx tsx .claude/skills/stealth-browsing/scripts/stealth-browser.ts --url "https:
 | 5 | 랜덤 딜레이 | 액션 간 500-2000ms 자연스러운 대기 |
 | 6 | 타이핑 노이즈 | 75±50ms 가변 속도 + 5% 사고 정지 |
 
-상세 기술 정보: `references/anti-detection-techniques.md`
-
 ## 스크립트 파일 구조
 
-```
-.claude/skills/stealth-browsing/
-  scripts/
-    stealth-browser.ts           # 스텔스 브라우저 런처
-    stealth-actions.ts           # 6가지 안티-디텍션 액션 라이브러리
-    stealth-navigate-and-extract.ts  # CLI 진입점 (URL → 콘텐츠)
-  references/
-    anti-detection-techniques.md # 기법 상세 참조
-```
+이 스킬은 문서 한 장(`skills/stealth-browsing.md` — 프로젝트 설치에서는 `.claude/skills/stealth-browsing.md`)으로만 제공됩니다. 스크립트·참조 파일은 플러그인에 포함되지 않습니다.
 
 ## npm 의존성
 
@@ -148,19 +109,15 @@ stealth-browsing은 knowledge-manager의 브라우징 스택에서 Tier 4로 작
 1. scrapling-crawl.py --mode dynamic (Python, JS 렌더링, 3x 빠름)
 2. scrapling-crawl.py --mode stealth (Python, 안티봇 우회)
 3. playwright-cli (Bash, 폴백 + 스크린샷)
-4. 스텔스 스크립트 (이 스킬) ← Scrapling stealth도 실패 시 사용
+4. 직접 준비한 스텔스 스크립트 (플러그인 미포함 — 이 스킬은 기법 참조만 제공)
 5. Playwright MCP
 6. Hyperbrowser (클라우드, 유료)
 ```
 
 knowledge-manager에서 사용 시:
 ```bash
-# 소셜미디어 콘텐츠 추출
-npx tsx .claude/skills/stealth-browsing/scripts/stealth-navigate-and-extract.ts \
-  "https://threads.net/@user/post/abc" \
-  --output markdown \
-  --json \
-  --scroll-to-bottom
+# 소셜미디어 콘텐츠 추출 (Scrapling stealth 모드 — scripts/scrapling-crawl.py 는 플러그인 미포함, 별도 준비한 경우에만; 없으면 playwright-cli)
+python3 scripts/scrapling-crawl.py fetch "https://threads.net/@user/post/abc" --mode stealth --output markdown
 ```
 
 ## 한계점

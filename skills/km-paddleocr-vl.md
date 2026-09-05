@@ -63,10 +63,12 @@ Marker(Tier 2)가 실패하거나 부족한 경우 PaddleOCR-VL-1.5로 폴백:
 
 ### 설치 전 환경 진단 (MANDATORY)
 
-PaddleOCR-VL-1.5 설치 전 **반드시** 환경 진단 스크립트를 실행합니다:
+> 자동 진단 스크립트(`paddleocr-env-check.py`)는 이 플러그인에 포함되어 있지 않습니다. 아래 항목을 직접 확인합니다.
 
 ```bash
-python .claude/scripts/paddleocr-env-check.py --check
+python --version                                        # 3.10~3.13
+nvidia-smi --query-gpu=name,memory.total --format=csv   # GPU·VRAM (없으면 CPU 전용 = NOT_RECOMMENDED)
+df -h .                                                 # 디스크 여유 8GB+
 ```
 
 **진단 항목:**
@@ -87,39 +89,21 @@ python .claude/scripts/paddleocr-env-check.py --check
 | `POSSIBLE` | 일부 제한 있음 (경고 참고) | 사용자에게 경고 표시 후 설치 여부 확인 |
 | `NOT_RECOMMENDED` | 필수 요건 미충족 | 설치 미권장 안내, Tier 3로 운영 |
 
-### 자동 설치
+### 설치
 
-환경 진단 통과 후 설치:
+환경 진단 통과 후 venv 를 만들고 의존성을 설치합니다:
 
 ```bash
-python .claude/scripts/paddleocr-env-check.py --install
+python -m venv .venvs/paddleocr-vl
+.venvs/paddleocr-vl/bin/pip install --upgrade pip
+.venvs/paddleocr-vl/bin/pip install torch          # NVIDIA GPU 면 pytorch.org 「Get Started」의 CUDA 휠 인덱스를 지정
+.venvs/paddleocr-vl/bin/pip install transformers accelerate pillow huggingface_hub
+.venvs/paddleocr-vl/bin/python -c "import torch, transformers; print('OK')"
 ```
 
-**자동으로 수행되는 작업:**
-1. Python venv 생성: `.venvs/paddleocr-vl/`
-2. PyTorch 설치 (GPU 감지 시 CUDA 버전, 미감지 시 CPU 버전)
-3. Transformers + accelerate + Pillow + huggingface_hub 설치
-4. 설치 검증 (import 테스트)
+(Windows 는 `.venvs\paddleocr-vl\Scripts\` 아래의 `pip.exe`·`python.exe`)
 
 **NOTE:** 모델 가중치(~2GB)는 첫 OCR 실행 시 HuggingFace에서 자동 다운로드됩니다.
-
-### JSON 모드 (머신 파싱용)
-
-```bash
-python .claude/scripts/paddleocr-env-check.py --json
-```
-
-Claude Code에서 프로그래밍적으로 환경 확인 시 사용:
-
-```python
-import json, subprocess
-result = subprocess.run(
-    ["python", ".claude/scripts/paddleocr-env-check.py", "--json"],
-    capture_output=True, text=True
-)
-env = json.loads(result.stdout)
-can_install = env["evaluation"]["overall"] != "NOT_RECOMMENDED"
-```
 
 ---
 
@@ -137,11 +121,10 @@ if exist ".venvs\paddleocr-vl\Scripts\python.exe" (echo AVAILABLE) else (echo NO
 test -f .venvs/paddleocr-vl/bin/python && echo AVAILABLE || echo NOT_AVAILABLE
 ```
 
-### 방법 2: JSON 진단으로 확인
+### 방법 2: import 테스트로 확인
 
 ```bash
-python .claude/scripts/paddleocr-env-check.py --json
-# → existing_venv.functional == true 이면 사용 가능
+.venvs/paddleocr-vl/bin/python -c "import torch, transformers; print('AVAILABLE')" 2>/dev/null || echo NOT_AVAILABLE
 ```
 
 ### 방법 3: vLLM 서버 체크 (서버 모드 사용 시)
@@ -347,8 +330,8 @@ Tier 1: Claude Read → Tier 2: Marker → Tier 3: PaddleOCR-VL → Tier 4: Gemi
 
 ### 사용자가 설치를 원할 때
 
-1. 환경 진단: `python .claude/scripts/paddleocr-env-check.py --check`
-2. 결과 확인 후 설치: `python .claude/scripts/paddleocr-env-check.py --install`
+1. 환경 진단: 위 「설치 전 환경 진단」의 3항목을 직접 확인
+2. 설치: 위 「설치」 명령으로 venv 생성 + 의존성 설치
 3. 첫 실행 시 모델 자동 다운로드 (~2GB, HuggingFace)
 
 ### 설치 제거
@@ -451,8 +434,6 @@ docker run --rm --gpus all --network host \
 
 ```
 .claude/
-  scripts/
-    paddleocr-env-check.py    ← 환경 진단 + 자동 설치 스크립트
   skills/
     km-paddleocr-vl.md        ← 이 파일 (스킬 문서)
 .venvs/
