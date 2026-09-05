@@ -16,6 +16,8 @@ jobs:
         run: bash scripts/tests/test_km_link_gate.sh
       - name: project-root save contract
         run: bash scripts/tests/verify-project-root-save-contract.sh
+      - name: configure-vault-paths contract
+        run: bash scripts/tests/test_configure_vault_paths.sh
       - name: km-tools pytest
         run: |
           python3 -m pip install --quiet pytest pyyaml
