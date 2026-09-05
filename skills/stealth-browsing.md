@@ -32,7 +32,7 @@ triggers:
 
 봇 탐지 있는 사이트 (소셜미디어, CloudFlare 등)
   → scrapling-crawl.py --mode stealth (1순위, 내장 안티봇)
-  → 이 스킬의 TS 스텔스 스크립트 (폴백)
+  → playwright-cli (폴백)
 
 복잡한 클라우드 자동화 (API 키 필요)
   → Hyperbrowser MCP
@@ -46,9 +46,10 @@ triggers:
 
 > **이 스킬의 TS 스크립트(`stealth-browser.ts` · `stealth-actions.ts` · `stealth-navigate-and-extract.ts`)는 이 플러그인에 포함되어 있지 않습니다.** 플러그인 설치(`scripts/install-to-project.sh`)로는 이 스킬의 `scripts/` 디렉터리가 만들어지지 않으므로, 이 문서는 도구 선택 기준과 기법 참조만 제공합니다.
 
-봇 탐지가 있는 사이트는 `km-content-extraction` 스킬의 Scrapling stealth 모드를 사용합니다:
+봇 탐지가 있는 사이트는 `km-content-extraction` 스킬의 Scrapling stealth 모드를 사용합니다. 아래 `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않습니다 — 별도로 준비한 경우에만 쓰고, 없으면 `playwright-cli` 로 갑니다:
 
 ```bash
+# scripts/scrapling-crawl.py 는 플러그인 미포함 — 별도 준비한 경우에만
 python3 scripts/scrapling-crawl.py fetch "https://example.com" --mode stealth --output markdown
 ```
 
@@ -115,7 +116,7 @@ stealth-browsing은 knowledge-manager의 브라우징 스택에서 Tier 4로 작
 
 knowledge-manager에서 사용 시:
 ```bash
-# 소셜미디어 콘텐츠 추출 (Scrapling stealth 모드)
+# 소셜미디어 콘텐츠 추출 (Scrapling stealth 모드 — scripts/scrapling-crawl.py 는 플러그인 미포함, 별도 준비한 경우에만; 없으면 playwright-cli)
 python3 scripts/scrapling-crawl.py fetch "https://threads.net/@user/post/abc" --mode stealth --output markdown
 ```
 
