@@ -291,7 +291,7 @@ keep/discard 1회 이상 판정
 | km-link-strengthening.md | 연결 강화 | Phase 5 |
 | km-link-audit.md | 연결 감사 | Phase 5 |
 | km-archive-reorganization.md | Mode R | Phase 0 분기 |
-| km-graphrag-workflow.md | Mode G | Phase 0 분기 |
+| km-graphrag-ops.md | Mode G | Phase 0 분기 |
 
 ---
 

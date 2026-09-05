@@ -4,7 +4,7 @@ description: Knowledge Manager Agent Teams - 풀스케일 병렬 처리 (Categor
 tools: hyperbrowser, obsidian, notion, file-operations, read, write, bash, drawio, playwright, notebooklm
 model: opus[1m]
 permissionMode: default
-skills: km-workflow, km-content-extraction, km-glm-ocr, km-social-media, km-export-formats, km-link-strengthening, km-link-audit, stealth-browsing, zettelkasten-note, pdf, xlsx, docx, pptx, baoyu-slide-deck, notion-knowledge-capture, notion-research-documentation, drawio-diagram, km-graphrag-workflow, km-graphrag-ontology, km-graphrag-search, km-graphrag-report, km-graphrag-sync
+skills: km-workflow, km-content-extraction, km-glm-ocr, km-social-media, km-export-formats, km-link-strengthening, km-link-audit, stealth-browsing, zettelkasten-note, pdf, xlsx, docx, pptx, baoyu-slide-deck, notion-knowledge-capture, notion-research-documentation, drawio-diagram, km-graphrag-ops, km-graphrag-ontology, km-graphrag-search, km-graphrag-report, km-graphrag-sync
 ---
 
 # Knowledge Manager - Agent Teams Version
@@ -151,8 +151,8 @@ Main Lead <-> DA (교차 검증)
 |------|------|
 | `agents/knowledge-manager.md` | 공유 사양 (입출력, PDF, 소셜 미디어, 경로 규칙) |
 | `commands/knowledge-manager-at.md` | AT 오케스트레이션 워크플로우 |
-| `.team-os/spawn-prompts/*.md` | 팀원 스폰 프롬프트 |
-| `.team-os/registry.yaml` | 팀 구성 레지스트리 |
+| `.team-os/spawn-prompts/*.md` | 팀원 스폰 프롬프트 (Team OS 하네스 설치 시에만 존재 — 이 플러그인에는 포함되지 않음) |
+| `.team-os/registry.yaml` | 팀 구성 레지스트리 (Team OS 하네스 설치 시에만 존재 — 이 플러그인에는 포함되지 않음) |
 | `skills/km-*.md` | KM 스킬 파일 (공유) — 프로젝트 설치에서는 `.claude/skills/km-*.md`, install-to-project.sh 가 복사 |
 | `agent-office/server.js` | Agent Office 서버 (API 엔드포인트) |
 | `agent-office/lib/team-os-parser.js` | 파서 계약 (컬럼 순서, Checkpoints 포맷) |

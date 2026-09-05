@@ -404,8 +404,8 @@ km-graphrag-ontology.md 관계 타입 변경
 
 | 단계 | 참조 스킬 |
 |------|----------|
-| G0 delta 감지 | `km-graphrag-workflow.md` Phase G0 |
-| G6 그래프 구축 완료 | `km-graphrag-workflow.md` Phase G6 |
+| G0 delta 감지 | `km-graphrag-ops.md` Phase G0 |
+| G6 그래프 구축 완료 | `km-graphrag-ops.md` Phase G6 |
 | 배치 실행 프로토콜 | `km-batch-python.md` |
 | Graph DB 온톨로지 | `km-graphrag-ontology.md` |
 | 메타엣지 탐색 | `km-graphrag-search.md` (`meta_edge_search` 도구) |

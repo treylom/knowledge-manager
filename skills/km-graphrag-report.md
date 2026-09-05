@@ -496,5 +496,5 @@ Tier 3: Write 도구
 
 - **km-graphrag-search.md**: Global/Local 이분법 + L0~L3 분류기 + hop 하드가딩
 - **km-graphrag-sync.md**: 보고서 생성 후 frontmatter 동기화
-- **km-graphrag-workflow/SKILL.md**: GraphRAG Mode G 전체 워크플로우
+- **km-graphrag-ops.md**: GraphRAG Mode G 전체 워크플로우
 - **zettelkasten-note.md**: Obsidian 노트 형식 (일반 노트)

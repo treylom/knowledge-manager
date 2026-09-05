@@ -483,6 +483,6 @@ L1 빠른 탐색 (로컬→확장):
 ## 스킬 참조
 
 - **km-graphrag-report.md**: 검색 결과 기반 ReAct 보고서 생성
-- **km-graphrag-workflow/SKILL.md**: GraphRAG Mode G 전체 워크플로우
+- **km-graphrag-ops.md**: GraphRAG Mode G 전체 워크플로우
 - **km-graphrag-sync.md**: 검색 결과 → frontmatter 동기화
 - **km-graphrag-ontology.md**: 관계 타입 온톨로지 정의

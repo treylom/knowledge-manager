@@ -175,7 +175,7 @@ Lead (Opus 1M)
 
 ```
 Mode G 선택 시:
-→ km-graphrag-workflow.md 스킬의 Phase G0-G6 실행
+→ km-graphrag-ops.md 스킬의 Phase G0-G6 실행
 → 아래 STEP 1-6 (Mode I) 대신 Mode G 워크플로우
 → 팀 구성: graph-build-lead + graph-query-lead + DA
 
@@ -452,7 +452,7 @@ ELSE:
 
 **반드시 하나의 메시지에서 모든 Task를 병렬로 호출하세요!**
 
-> Spawn Prompt 로드: `.team-os/spawn-prompts/{role}.md`를 Read로 읽어서 프롬프트에 포함.
+> Spawn Prompt 로드: `.team-os/spawn-prompts/{role}.md`를 Read로 읽어서 프롬프트에 포함. 이 파일들은 이 플러그인에 포함되지 않습니다(Team OS 하네스가 설치된 프로젝트에만 있음) — 없으면 아래 각 역할 블록의 설명만으로 프롬프트를 구성합니다.
 > `{{TOPIC}}`, `{{REPORT_TO}}`, `{{PREFERENCES}}` 등 변수를 실제 값으로 치환.
 
 ### 3-0. progress_update_rule 주입 확인 (CRITICAL)
@@ -478,7 +478,7 @@ Task(@vault-intel-lead):
   name: "vault-intel-lead"
   run_in_background: true
   prompt: |
-    [.team-os/spawn-prompts/vault-intel-lead.md 내용]
+    [.team-os/spawn-prompts/vault-intel-lead.md 내용 — 파일이 없으면 이 줄은 생략]
     ({{REPORT_TO}} = 'Lead', {{TOPIC}} = '{주제}', {{TOPIC_KEYWORD}} = '{키워드}')
 
 # === Category Lead: Content Processing ===
@@ -489,7 +489,7 @@ Task(@content-proc-lead):
   name: "content-proc-lead"
   run_in_background: true
   prompt: |
-    [.team-os/spawn-prompts/content-proc-lead.md 내용]
+    [.team-os/spawn-prompts/content-proc-lead.md 내용 — 파일이 없으면 이 줄은 생략]
     ({{REPORT_TO}} = 'Lead', {{TOPIC}} = '{주제}', {{SOURCE_URL}} = '{URL}', {{PREFERENCES}} = '{선호도}')
 
 # === Vault Intelligence Workers ===
@@ -500,7 +500,7 @@ Task(@graph-navigator):
   name: "graph-navigator"
   run_in_background: true
   prompt: |
-    [.team-os/spawn-prompts/graph-navigator.md 내용]
+    [.team-os/spawn-prompts/graph-navigator.md 내용 — 파일이 없으면 이 줄은 생략]
     ({{REPORT_TO}} = 'vault-intel-lead', {{TOPIC}} = '{주제}', {{TOPIC_KEYWORD}} = '{키워드}')
 
 Task(@retrieval-specialist):
@@ -510,7 +510,7 @@ Task(@retrieval-specialist):
   name: "retrieval-specialist"
   run_in_background: true
   prompt: |
-    [.team-os/spawn-prompts/retrieval-specialist.md 내용]
+    [.team-os/spawn-prompts/retrieval-specialist.md 내용 — 파일이 없으면 이 줄은 생략]
     ({{REPORT_TO}} = 'vault-intel-lead', {{TOPIC}} = '{주제}')
 
 Task(@link-curator):
@@ -520,7 +520,7 @@ Task(@link-curator):
   name: "link-curator"
   run_in_background: true
   prompt: |
-    [.team-os/spawn-prompts/link-curator.md 내용]
+    [.team-os/spawn-prompts/link-curator.md 내용 — 파일이 없으면 이 줄은 생략]
     ({{REPORT_TO}} = 'vault-intel-lead', {{TOPIC}} = '{주제}', {{NEW_NOTES}} = '생성 예정 노트 목록')
 
 # === Content Processing Workers ===
@@ -531,7 +531,7 @@ Task(@content-extractor):
   name: "content-extractor"
   run_in_background: true
   prompt: |
-    [.team-os/spawn-prompts/content-extractor.md 내용]
+    [.team-os/spawn-prompts/content-extractor.md 내용 — 파일이 없으면 이 줄은 생략]
     ({{REPORT_TO}} = 'content-proc-lead', {{SOURCE_URL}} = '{URL}', {{SOURCE_TYPE}} = '{type}', {{TOPIC}} = '{주제}')
 
 Task(@deep-reader):
@@ -541,7 +541,7 @@ Task(@deep-reader):
   name: "deep-reader"
   run_in_background: true
   prompt: |
-    [.team-os/spawn-prompts/deep-reader.md 내용]
+    [.team-os/spawn-prompts/deep-reader.md 내용 — 파일이 없으면 이 줄은 생략]
     ({{REPORT_TO}} = 'content-proc-lead', {{TOPIC}} = '{주제}', {{HUB_NOTES}} = 'graph-navigator가 식별 예정')
 
 Task(@content-analyzer):
@@ -551,7 +551,7 @@ Task(@content-analyzer):
   name: "content-analyzer"
   run_in_background: true
   prompt: |
-    [.team-os/spawn-prompts/content-analyzer.md 내용]
+    [.team-os/spawn-prompts/content-analyzer.md 내용 — 파일이 없으면 이 줄은 생략]
     ({{REPORT_TO}} = 'content-proc-lead', {{TOPIC}} = '{주제}', {{PREFERENCES}} = '{사용자선호}')
 
 # === Devil's Advocate ===
@@ -642,7 +642,7 @@ INDEX_DIR=".team-os/graphrag/index"
 
 IF DB 존재:
   1. 하이브리드 검색 (Dense Embedding + FTS5 Sparse + Reranker):
-     Bash("python3 .team-os/graphrag/scripts/graph_search.py hybrid '{키워드}' --top-k 20 2>/dev/null || echo '[]'")
+     Bash("curl -s -m 30 \"${GRAPHRAG_API_URL:-http://127.0.0.1:8400}/api/search?q={키워드}&mode=hybrid&top_k=20\" 2>/dev/null || echo '[]'")
      → JSON 결과 파싱: results[].entity, results[].source_note, results[].score, results[].source
      → 실패 시 기존 LIKE 폴백:
        Bash("python3 -c \"import sqlite3; c=sqlite3.connect('{DB_PATH}').cursor(); [print(r) for r in c.execute(\\\"SELECT name, type, description, source_note FROM entities WHERE name LIKE '%{키워드}%' OR name_ko LIKE '%{키워드}%' LIMIT 20\\\")]\"")
@@ -1176,7 +1176,7 @@ PRECONDITION (셧다운 전제 조건 — DA 활성화):
 | **Mode R: 아카이브 재편** | `km-archive-reorganization.md` |
 | **Mode R: 규칙 엔진** | `km-rules-engine.md` |
 | **Mode R: 배치 실행** | `km-batch-python.md` |
-| **Mode G: GraphRAG 워크플로우** | `km-graphrag-workflow.md` |
+| **Mode G: GraphRAG 워크플로우** | `km-graphrag-ops.md` |
 | **Mode G: 온톨로지 설계** | `km-graphrag-ontology.md` |
 | **Mode G: 그래프 검색** | `km-graphrag-search.md` |
 | **Mode G: 인사이트 리포트** | `km-graphrag-report.md` |

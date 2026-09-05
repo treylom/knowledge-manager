@@ -76,13 +76,31 @@ fi
 
 # Staging area on the same filesystem as .claude/ so the final step is a rename, not a copy.
 STAGE_ROOT="${CLAUDE_DIR}/.km-install-staging.$$"
+SWAP_STARTED=0
 cleanup_on_failure() {
+  # A second Ctrl-C (or another stop signal) while the previous files are being put back would leave
+  # the project half-restored: ignore further signals until cleanup is done.
+  trap '' HUP INT TERM
+  if [ "${SWAP_STARTED}" -eq 1 ]; then
+    # The install was interrupted while the previous files were moved aside: put them back first.
+    undo_swap
+    if [ -n "${NOT_RESTORED}" ]; then
+      echo "Error: the install was interrupted, and the previous files could not all be put back." >&2
+      echo "Left for you to sort out by hand:${NOT_RESTORED}" >&2
+      echo "The staged copy is kept at ${STAGE_ROOT} so nothing is lost." >&2
+      return 0
+    fi
+    echo "The install was interrupted; the previous files were put back." >&2
+  fi
   rm -rf "${STAGE_ROOT}"
   if [ "${CREATED_CLAUDE_DIR}" -eq 1 ]; then
     rmdir "${CLAUDE_DIR}" 2>/dev/null || true
   fi
 }
 trap cleanup_on_failure EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
 mkdir "${STAGE_ROOT}"
 echo "Staging in ${STAGE_ROOT}; the project is changed only after every expected file is verified."
 
@@ -175,6 +193,7 @@ reverse_words() {
 
 undo_swap() {
   # Newest change first: take back what phase 2 placed, then return what phase 1 moved aside.
+  # Safe to call twice: the bookkeeping is cleared at the end, so a second call does nothing.
   local d
   if [ "${CONFIG_PLACED}" -eq 1 ]; then
     rm -f "${PROJECT_DIR}/km-config.example.json" || NOT_RESTORED="${NOT_RESTORED} ${PROJECT_DIR}/km-config.example.json (new file left in place)"
@@ -183,8 +202,18 @@ undo_swap() {
     mv "${CLAUDE_DIR}/${d}" "${STAGE_ROOT}/${d}" || NOT_RESTORED="${NOT_RESTORED} ${CLAUDE_DIR}/${d} (new copy left in place)"
   done
   for d in $(reverse_words ${ASIDE}); do
+    if [ -e "${CLAUDE_DIR}/${d}" ]; then
+      # A new copy is still in the way: either the take-back above failed, or the install was
+      # interrupted right after the move and before it was recorded. Try once more to take it back;
+      # if that fails too, leave both copies side by side and say where the previous one is.
+      if ! mv "${CLAUDE_DIR}/${d}" "${STAGE_ROOT}/${d}"; then
+        NOT_RESTORED="${NOT_RESTORED} ${STAGE_ROOT}.old-${d} (previous copy of ${d}; the new copy is still at ${CLAUDE_DIR}/${d})"
+        continue
+      fi
+    fi
     mv "${STAGE_ROOT}.old-${d}" "${CLAUDE_DIR}/${d}" || NOT_RESTORED="${NOT_RESTORED} ${STAGE_ROOT}.old-${d} (previous copy of ${d})"
   done
+  PLACED=""; ASIDE=""; CONFIG_PLACED=0; SWAP_STARTED=0
 }
 
 swap_failed() {
@@ -202,6 +231,7 @@ swap_failed() {
 }
 
 # Phase 1
+SWAP_STARTED=1
 for DIR_NAME in ${SWAP_DIRS}; do
   DEST="${CLAUDE_DIR}/${DIR_NAME}"
   if [ -d "${DEST}" ]; then

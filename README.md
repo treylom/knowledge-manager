@@ -112,7 +112,7 @@ bash scripts/install-to-project.sh /your/project
 ```
 
 기존 프로젝트 파일은 그대로 두고 플러그인 파일만 추가·갱신합니다.
-설치기는 심볼릭 링크를 따라가지 않고(링크가 있으면 멈춤), 검사가 끝나기 전에는 최종 위치에 쓰지 않습니다(작업 파일은 `.claude/.km-install-staging.<pid>/` 에 모았다가 실패하면 제거) — 검사 단계에서 실패하면 프로젝트는 그대로이고, 교체 단계에서 실패하면 이전 파일을 되돌립니다(되돌리지 못한 경우 그 위치를 알려 줍니다).
+설치기는 심볼릭 링크를 따라가지 않고(링크가 있으면 멈춤), 검사가 끝나기 전에는 최종 위치에 쓰지 않습니다(작업 파일은 `.claude/.km-install-staging.<pid>/` 에 모았다가 실패하면 제거하되, 되돌리지 못한 경우에는 보관하고 그 위치를 알려 줍니다) — 검사 단계에서 실패하면 프로젝트는 그대로이고, 교체 단계에서 실패하면 이전 파일을 되돌립니다(되돌리지 못한 경우 그 위치를 알려 줍니다).
 
 설치 후 `/knowledge-manager-setup`으로 셋업 위저드를 실행하세요.
 
@@ -616,7 +616,7 @@ bash scripts/install-to-project.sh /your/project
 ```
 
 Existing project files are kept; only the plugin's files are added or refreshed.
-The installer never follows symbolic links (it stops if it finds one) and writes nothing to the final locations until every file has been staged (under `.claude/.km-install-staging.<pid>/`) and checked — if the check fails the project is unchanged, and if the final swap fails the previous files are put back (the script says so if it could not).
+The installer never follows symbolic links (it stops if it finds one) and writes nothing to the final locations until every file has been staged (under `.claude/.km-install-staging.<pid>/`) and checked — if the check fails the project is unchanged, and if the final swap fails the previous files are put back (and it lists anything it could not put back).
 
 After installing, run `/knowledge-manager-setup` to start the setup wizard.
 

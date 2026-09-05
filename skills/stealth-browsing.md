@@ -25,6 +25,8 @@ triggers:
 
 ## 빠른 판단: 어떤 도구를 사용할까?
 
+> `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 `playwright-cli`.
+
 ```
 단순 스크래핑 (봇 탐지 없음)
   → scrapling-crawl.py --mode dynamic (1순위, 가장 빠름)

@@ -14,6 +14,7 @@
 
 ```bash
 # 1순위: Scrapling (Python, JS 렌더링, 3x 빠름)
+# scripts/scrapling-crawl.py 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 playwright-cli
 python3 scripts/scrapling-crawl.py fetch "[URL]" --mode dynamic --output markdown
 
 # 2순위: Scrapling Stealth (안티봇 우회 필요 시)
