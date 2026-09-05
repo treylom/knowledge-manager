@@ -83,6 +83,8 @@ df -h .                                                 # 디스크 여유 8GB+
 
 **진단 결과별 분기:**
 
+위 진단 명령 3개를 직접 실행해 확인한 뒤 아래 기준으로 판정합니다.
+
 | 결과 | 의미 | 행동 |
 |------|------|------|
 | `RECOMMENDED` | 모든 요건 충족 | 설치 진행 |
@@ -433,7 +435,7 @@ docker run --rm --gpus all --network host \
 ## 파일 구조
 
 ```
-.claude/
+.claude/                       ← 프로젝트 설치 후 위치 (플러그인 원본 = 최상위 skills/km-paddleocr-vl.md)
   skills/
     km-paddleocr-vl.md        ← 이 파일 (스킬 문서)
 .venvs/

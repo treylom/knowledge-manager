@@ -157,6 +157,7 @@ def get_video_metadata(video_id):
 
 ```bash
 # Step 1: Scrapling으로 YouTube 페이지 크롤링 (빠름)
+# scripts/scrapling-crawl.py 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 playwright-cli
 python3 scripts/scrapling-crawl.py fetch "https://www.youtube.com/watch?v={video_id}" --mode dynamic --output markdown
 ```
 

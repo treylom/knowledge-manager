@@ -15,6 +15,7 @@ usage() {
   echo "Usage: bash scripts/install-to-project.sh <project-dir>" >&2
   echo "  Copies commands/, skills/, and agents/ into <project-dir>/.claude/," >&2
   echo "  plus scripts/send_kakao.py and km-config.example.json." >&2
+  echo "  Not copied (available only in a repo clone or the plugin install): scripts/configure-vault-paths.sh, scripts/_lib-config.sh, scripts/km-update.sh, scripts/km_link_gate.py, templates/start-here/." >&2
   echo "  Existing files in the project's .claude/ are overwritten only when they have the same path; other files are left as they are." >&2
   echo "  Files are staged and checked first. If anything fails before the final swap the project is left unchanged; if the swap itself fails the previous files are put back, and the script says so if it could not." >&2
   echo "  Symbolic links at .claude/, its commands/skills/agents/scripts directories, or any path this script writes are refused." >&2
@@ -57,7 +58,7 @@ for DIR_NAME in commands skills agents; do
     exit 1
   fi
   while IFS= read -r -d '' ENTRY; do
-    REL="${ENTRY#${EXPECTED_SRC}/}"
+    REL="${ENTRY#"${EXPECTED_SRC}"/}"
     refuse_symlink "${CLAUDE_DIR}/${DIR_NAME}/${REL}"
   done < <(find "${EXPECTED_SRC}" -mindepth 1 -print0)
 done
@@ -110,7 +111,7 @@ for DIR_NAME in commands skills agents; do
   EXPECTED=0
   PRESENT=0
   while IFS= read -r -d '' FILE_PATH; do
-    REL="${FILE_PATH#${EXPECTED_SRC}/}"
+    REL="${FILE_PATH#"${EXPECTED_SRC}"/}"
     EXPECTED=$(( EXPECTED + 1 ))
     if [ -f "${STAGE}/${REL}" ]; then
       PRESENT=$(( PRESENT + 1 ))
@@ -235,5 +236,5 @@ for DIR_NAME in ${ASIDE}; do
 done
 rm -rf "${STAGE_ROOT}"
 
-echo "Next: run /knowledge-manager setup inside your project."
+echo "Next: run /knowledge-manager-setup inside your project."
 echo "Installed: ${SUMMARY} — all expected files present (existing files in ${CLAUDE_DIR} are kept)"

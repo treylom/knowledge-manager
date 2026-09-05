@@ -379,7 +379,7 @@ rm -rf .venvs/glm-ocr
 ## 파일 구조
 
 ```
-.claude/
+.claude/                       ← 프로젝트 설치 후 위치 (플러그인 원본 = 최상위 skills/km-glm-ocr.md)
   skills/
     km-glm-ocr.md             ← 이 파일 (스킬 문서)
 .venvs/

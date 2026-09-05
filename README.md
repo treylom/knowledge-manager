@@ -58,7 +58,7 @@ Claude Code용 종합 지식 관리 에이전트. 다양한 소스에서 콘텐�
 ① GraphRAG 서버(설치돼 있으면) → ② Obsidian CLI → ③ Obsidian MCP → ④ 텍스트 검색
 ```
 
-앞 단계가 없거나 실패하면 자동으로 다음 단계로 넘어가기 때문에, **GraphRAG 없이도 바로 쓸 수 있고**, 나중에 GraphRAG 스택을 얹으면 같은 명령이 자동으로 의미 기반 검색으로 올라섭니다 (스택 구축은 같은 플러그인의 `/tofugraph` 명령 — 상세: `skills/km-graphrag-ops.md`). 스택을 올린 뒤 **검색이 실제로 잘 찾는지 스스로 재보고 싶다면** `/tofugraph bench init` 으로 시험지(질문 + 정답 노트)를 만들고 `/tofugraph bench run` 으로 채점합니다 — AI 채점이 아니라 정해진 규칙으로 매기므로 **외부 API 키가 필요 없고**, 같은 시험지로 다시 돌리면 같은 결과가 나옵니다.
+앞 단계가 없거나 실패하면 자동으로 다음 단계로 넘어가기 때문에, **GraphRAG 없이도 바로 쓸 수 있고**, 나중에 GraphRAG 스택을 얹으면 같은 명령이 자동으로 의미 기반 검색으로 올라섭니다 (스택 구축은 같은 플러그인의 `/tofugraph` 명령 — 상세: `skills/km-graphrag-ops.md`).
 
 ```bash
 /km:search MCP란?                      # 즉답 (quick)
@@ -114,7 +114,7 @@ bash scripts/install-to-project.sh /your/project
 기존 프로젝트 파일은 그대로 두고 플러그인 파일만 추가·갱신합니다.
 설치기는 심볼릭 링크를 따라가지 않고(링크가 있으면 멈춤), 검사가 끝나기 전에는 최종 위치에 쓰지 않습니다(작업 파일은 `.claude/.km-install-staging.<pid>/` 에 모았다가 실패하면 제거) — 검사 단계에서 실패하면 프로젝트는 그대로이고, 교체 단계에서 실패하면 이전 파일을 되돌립니다(되돌리지 못한 경우 그 위치를 알려 줍니다).
 
-복사 후 `/knowledge-manager setup`으로 셋업 위저드를 실행하세요.
+설치 후 `/knowledge-manager-setup`으로 셋업 위저드를 실행하세요.
 
 ### 방법 3: Antigravity 설정
 
@@ -132,11 +132,11 @@ git clone https://github.com/treylom/knowledge-manager.git
 # .agent 폴더를 프로젝트에 복사 (Antigravity 스킬)
 cp -r knowledge-manager/.agent /your/antigravity/project/
 
-# 에이전트·명령어는 설치 스크립트로 (프로젝트 .claude/ 에 복사)
+# 커맨드·스킬·에이전트는 설치 스크립트로 (프로젝트 .claude/ 에 복사)
 bash knowledge-manager/scripts/install-to-project.sh /your/antigravity/project
 ```
 
-> **참고**: `.agent/skills/` 폴더는 Antigravity, Gemini CLI, Claude Code, OpenCode 등 Agent Skills 표준을 지원하는 모든 도구에서 호환됩니다.
+> **참고**: `.agent/skills/` 폴더는 Antigravity, Gemini CLI, OpenCode 등 Agent Skills 표준을 지원하는 도구에서 호환됩니다. Claude Code 는 `.agent/skills/` 를 읽지 않고 `.claude/skills/` 를 쓰므로 위 설치 스크립트로 복사된 사본을 사용합니다.
 
 #### Step 2: 자동 설정 (권장)
 
@@ -259,7 +259,7 @@ codex plugin add km@knowledge-manager
 - **vault 검색도 동일하게 동작합니다** (Codex 스킬명은 `km-search`): 위 `/km:search`와 같은 4단계 자동 폴백을 수행합니다 — GraphRAG 서버가 없어도 Obsidian CLI·텍스트 검색이 받아줍니다. (③ Obsidian MCP 티어는 MCP를 연결한 경우에만 사용됩니다.)
 - Codex 환경은 이미 떠 있는 GraphRAG 서버(`GRAPHRAG_API_URL` 환경변수 또는 기본 `http://127.0.0.1:8400`)에 자동으로 연결합니다.
 - ⚠️ **Codex sandbox 주의**: Codex 기본 sandbox 는 외부 바이너리 실행·네트워크를 제한합니다 — Obsidian CLI 검색 티어를 쓰려면 승인 응답 또는 `~/.codex/config.toml` 의 `sandbox_mode` 상향이 필요합니다(막히면 텍스트 검색으로 자동 폴백은 됩니다). Obsidian 데스크톱 앱이 실행 중이어야 CLI 티어가 동작합니다.
-- **지원 범위**: Codex 플러그인은 현재 핵심 스킬 세트(km-workflow · km-setup · km-search · export · storage · social · zettelkasten 등 9종)를 제공합니다. PDF/YouTube/이미지 파이프라인·GraphRAG 구축·품질 재기(`/tofugraph`, bench 포함) 등 세부 스킬은 아직 Claude Code 전용입니다. `km-setup` 의 자동 환경분기도 Codex 미지원 — vault 경로는 첫 실행 때 직접 입력하면 됩니다. 1.3.0 에서 신설된 `/km:interview`·`/km:reform` 도 아직 Claude Code 전용입니다.
+- **지원 범위**: Codex 플러그인은 현재 핵심 스킬 세트(km-workflow · km-setup · km-search · export · storage · social · zettelkasten 등 9종)를 제공합니다. PDF/YouTube/이미지 파이프라인·GraphRAG 운영(`/tofugraph`) 등 세부 스킬은 아직 Claude Code 전용입니다. `km-setup` 의 자동 환경분기도 Codex 미지원 — vault 경로는 첫 실행 때 직접 입력하면 됩니다. 1.3.0 에서 신설된 `/km:interview`·`/km:reform` 도 아직 Claude Code 전용입니다.
 
 ---
 
@@ -313,7 +313,7 @@ Claude Code 환경에서 웹 콘텐츠를 추출하려면 **Playwright MCP 서�
 
 ```bash
 # Playwright MCP 자동 설치 (권장)
-claude mcp add playwright -- npx -y @anthropic-ai/mcp-playwright
+claude mcp add playwright -- npx -y @modelcontextprotocol/server-playwright
 
 # 설치 확인
 claude mcp list
@@ -370,7 +370,7 @@ claude mcp list
 
 ```
 # 셋업 위저드 (최초 1회)
-/knowledge-manager setup
+/knowledge-manager-setup
 
 # 웹 아티클 정리
 /knowledge-manager https://example.com/article
@@ -505,7 +505,7 @@ claude mcp list
 
 | 환경 | 설정 파일 |
 |------|----------|
-| Claude Code CLI | 프로젝트 폴더의 `.mcp.json` |
+| Claude Code CLI | `claude mcp list` 로 확인(user 스코프 `~/.claude.json`) — 프로젝트 `.mcp.json` 은 직접 등록한 경우만 |
 | Claude Desktop | `%APPDATA%\Claude\claude_desktop_config.json` |
 | Antigravity | `C:\Users\<사용자명>\.gemini\antigravity\mcp_config.json` |
 
@@ -570,8 +570,6 @@ MIT License - 자유롭게 사용, 수정, 배포하세요.
 # 🇺🇸 English Documentation
 
 > **Role boundary**: Knowledge Manager is a standalone, general-purpose knowledge tool — it does not depend on any private infrastructure (e.g., a GraphRAG search server); such integrations ship only as optional adapters.
->
-> Optional: if you run the GraphRAG stack (`/tofugraph`), you can self-score search quality with `/tofugraph bench init` → `bench run` — deterministic scoring, no external API key.
 
 ## What is Knowledge Manager?
 
@@ -620,7 +618,7 @@ bash scripts/install-to-project.sh /your/project
 Existing project files are kept; only the plugin's files are added or refreshed.
 The installer never follows symbolic links (it stops if it finds one) and writes nothing to the final locations until every file has been staged (under `.claude/.km-install-staging.<pid>/`) and checked — if the check fails the project is unchanged, and if the final swap fails the previous files are put back (the script says so if it could not).
 
-After copying, run `/knowledge-manager setup` to start the setup wizard.
+After installing, run `/knowledge-manager-setup` to start the setup wizard.
 
 ### Option 3: Antigravity Setup
 
@@ -638,11 +636,11 @@ git clone https://github.com/treylom/knowledge-manager.git
 # Copy .agent folder (Antigravity skills)
 cp -r knowledge-manager/.agent /your/antigravity/project/
 
-# Agents and commands go in via the install script (copied into the project's .claude/)
+# Commands, skills, and agents go in via the install script (copied into the project's .claude/)
 bash knowledge-manager/scripts/install-to-project.sh /your/antigravity/project
 ```
 
-> **Note**: The `.agent/skills/` folder is compatible with all tools supporting the Agent Skills standard, including Antigravity, Gemini CLI, Claude Code, and OpenCode.
+> **Note**: The `.agent/skills/` folder is compatible with tools supporting the Agent Skills standard, such as Antigravity, Gemini CLI, and OpenCode. Claude Code does not read `.agent/skills/`; it uses `.claude/skills/`, which the install script above populates.
 
 #### Step 2: Automatic Setup (Recommended)
 
@@ -802,7 +800,7 @@ To extract web content in Claude Code, you need the **Playwright MCP server**.
 
 ```bash
 # Auto-install Playwright MCP (recommended)
-claude mcp add playwright -- npx -y @anthropic-ai/mcp-playwright
+claude mcp add playwright -- npx -y @modelcontextprotocol/server-playwright
 
 # Verify installation
 claude mcp list
@@ -931,7 +929,7 @@ If you edit a skill file yourself and need it to stay portable, write the placeh
 
 ```
 # Setup wizard (first time only)
-/knowledge-manager setup
+/knowledge-manager-setup
 
 # Process web article
 /knowledge-manager https://example.com/article
@@ -1007,7 +1005,7 @@ claude mcp list
 
 | Environment | Config File |
 |-------------|-------------|
-| Claude Code CLI | `.mcp.json` in project folder |
+| Claude Code CLI | check with `claude mcp list` (user scope, `~/.claude.json`) — a project `.mcp.json` applies only if you registered it there yourself |
 | Claude Desktop | `%APPDATA%\Claude\claude_desktop_config.json` |
 | Antigravity | `C:\Users\<username>\.gemini\antigravity\mcp_config.json` |
 

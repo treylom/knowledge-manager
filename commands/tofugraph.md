@@ -24,7 +24,7 @@ knowledge-manager로 그린 그래프(frontmatter + 위키링크) 위에 GraphRA
 1. 인자를 파싱한다. 없으면 `doctor`.
 2. `auto`는 `install-daemon`으로, 나머지는 동사 그대로 매핑:
    ```bash
-   bash scripts/graphrag-ops/tofugraph.sh <verb> [args]
+   bash "${CLAUDE_PLUGIN_ROOT:-.}/scripts/graphrag-ops/tofugraph.sh" <verb> [args]
    ```
 3. 출력을 **사용자 눈높이로 요약**한다 — doctor의 [FAIL]/[WARN] 항목은 처방(fix: 줄)을 그대로 전달하고, 전부 [OK]면 "검색 시스템 정상" 한 줄이면 충분.
 4. `build`가 엔진 미설치를 보고하면 설치 명령을 사용자에게 보여주고 **실행 여부를 물어본다** (외부 레포 clone은 사용자 결정).

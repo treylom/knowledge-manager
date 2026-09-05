@@ -92,7 +92,7 @@ Run these three checks and confirm the expected output before every commit that 
    ```bash
    grep -rE "/home/[^/]+/|/Users/[^/]+/|C:\\\\Users\\\\|/mnt/c/Users/[^/]+/" skills/ agents/ commands/
    ```
-   Expected: 0 matching lines (exit 1 from grep is the success case).
+   Expected: 0 lines that name a real account or machine. Generic sample paths in usage examples (`YourName`, `이름`, `사용자이름`, `{USER}`, `user`, `/Users/...`, `/mnt/c/Users/*`) are allowed and will still match — read the hits, do not just count them.
 
 2. **Substitution engine still runs cleanly** against a sample config:
    ```bash
@@ -104,7 +104,7 @@ Run these three checks and confirm the expected output before every commit that 
    ```bash
    grep -rhoE "\{\{[A-Z_]+\}\}" skills/ agents/ commands/ | sort -u
    ```
-   Expected: exactly these 5 tokens (no more, no fewer):
+   Expected: the five substitution tokens below are present (they are the only ones `scripts/configure-vault-paths.sh` rewrites); any other `{{…}}` in the output — {{TOPIC}}, {{TOPIC_KEYWORD}}, {{SOURCE_URL}}, {{SOURCE_TYPE}}, {{HUB_NOTES}}, {{NEW_NOTES}}, {{PREFERENCES}}, {{REPORT_TO}} — are prompt-template variables and are expected. {{OBSIDIAN_CLI}} is currently unused in skills/agents/commands and may be missing from the output:
    ```
    {{OBSIDIAN_CLI}}
    {{RESEARCH_ROOT}}

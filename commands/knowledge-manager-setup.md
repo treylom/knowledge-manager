@@ -601,6 +601,7 @@ console.log(`
 (skills/, agents/, commands/ 아래의 모든 .md 파일 업데이트)
 `)
 
+// 이 단계는 이 저장소를 클론해 그 루트(위 :590 이 km-config.json 을 쓰는 현재 폴더)에서 실행할 때만 동작해요 — configure-vault-paths.sh 는 자기 위치 기준 저장소 루트로 cd 해 그곳의 km-config.json 을 읽습니다. 플러그인 설치·프로젝트 설치에서는 이 단계를 건너뛰세요(스크립트가 프로젝트에 복사되지 않음).
 const substResult = Bash(`bash scripts/configure-vault-paths.sh 2>&1`)
 console.log(substResult)
 
@@ -640,7 +641,7 @@ Bash(`claude mcp list`)
 
 ```bash
 # VAULT_PATH = Phase 2 경로(vaultPath|localPath) · PLUGIN_ROOT = 이 플러그인 루트(templates/start-here/ 가 있는 곳)
-SH_DIR="${VAULT_PATH}/000-START-HERE"; TPL="${PLUGIN_ROOT}/templates/start-here"; mkdir -p "$SH_DIR"
+SH_DIR="${VAULT_PATH}/000-START-HERE"; TPL="${PLUGIN_ROOT:-.claude}/templates/start-here"; [ -d "$TPL" ] || echo "templates/start-here 가 없어요: $TPL — 클론/플러그인 루트를 PLUGIN_ROOT 로 지정해 주세요"; mkdir -p "$SH_DIR"
 VAULT_NAME="$(basename "$VAULT_PATH")"; DATE="$(date +%F)"
 PROFILE="${VAULT_PATH}/_meta/USER-PROFILE.md"
 NORTH_STAR="$( [ -f "$PROFILE" ] && sed -n 's/^north_star: *"\{0,1\}\([^"]*\)"\{0,1\}.*/\1/p' "$PROFILE" | head -1 )"
@@ -806,7 +807,7 @@ MCP 도구를 설치하려면 Node.js가 필요해요.
   3. 설치 후 터미널/명령프롬프트 재시작
 
 설치 후 다시 시도해주세요:
-  /knowledge-manager setup
+  /knowledge-manager-setup
 ```
 
 ### 경로 오류

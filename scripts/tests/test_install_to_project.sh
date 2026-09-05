@@ -37,7 +37,7 @@ missing_expected() {
   local dir_name rel file_path
   for dir_name in commands skills agents; do
     while IFS= read -r -d '' file_path; do
-      rel="${file_path#${REPO_ROOT}/${dir_name}/}"
+      rel="${file_path#"${REPO_ROOT}/${dir_name}"/}"
       if [ ! -f "${proj}/.claude/${dir_name}/${rel}" ]; then
         missing=$(( missing + 1 ))
       fi

@@ -8,6 +8,8 @@
 
 다음 Phase에서는 반드시 도구를 실제로 호출해야 합니다:
 
+> `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 `playwright-cli`.
+
 | Phase | 필수 행동 | 절대 금지 |
 |-------|----------|----------|
 | **Phase 2: 콘텐츠 추출** | `scrapling-crawl.py` 또는 `playwright` 도구 호출하여 실제 크롤링 | 도구 없이 추측 |

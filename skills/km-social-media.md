@@ -31,6 +31,7 @@ Run: playwright-cli snapshot           # Add more content
 Run: playwright-cli close              # Close browser
 
 # 2. Use Scrapling only if CLI fails (may return first post only)
+# scripts/scrapling-crawl.py 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 playwright-cli
 Run: python3 scripts/scrapling-crawl.py fetch "[URL]" --mode dynamic --output markdown
 Run: python3 scripts/scrapling-crawl.py fetch "[URL]" --mode stealth --output markdown
 ```

@@ -70,7 +70,7 @@ python3 scripts/scrapling-crawl.py fetch "https://example.com" --mode stealth --
 
 이 스킬은 문서 한 장(`skills/stealth-browsing.md` — 프로젝트 설치에서는 `.claude/skills/stealth-browsing.md`)으로만 제공됩니다. 스크립트·참조 파일은 플러그인에 포함되지 않습니다.
 
-## npm 의존성
+## 직접 스텔스 스크립트를 만들 때의 npm 의존성(참고)
 
 ```bash
 # 프로젝트 루트에서 설치 필요
@@ -116,7 +116,7 @@ stealth-browsing은 knowledge-manager의 브라우징 스택에서 Tier 4로 작
 
 knowledge-manager에서 사용 시:
 ```bash
-# 소셜미디어 콘텐츠 추출 (Scrapling stealth 모드 — scripts/scrapling-crawl.py 는 플러그인 미포함, 별도 준비한 경우에만; 없으면 playwright-cli)
+# Scrapling stealth 모드 (scrapling-crawl.py 는 플러그인 미포함)
 python3 scripts/scrapling-crawl.py fetch "https://threads.net/@user/post/abc" --mode stealth --output markdown
 ```
 
