@@ -411,14 +411,7 @@ WebFetch({ url: "[URL]", prompt: "전체 내용을 추출해줘" })
 
 ### 레거시 스텔스 스크립트 폴백 (Scrapling stealth 모드로 대체)
 
-```bash
-# Scrapling stealth가 실패하고 TS 스텔스 스크립트도 필요한 경우에만:
-npx tsx .claude/skills/stealth-browsing/scripts/stealth-navigate-and-extract.ts \
-  "[URL]" \
-  --output markdown \
-  --json \
-  --wait 3000
-```
+예전 문서가 가리키던 TS 스텔스 스크립트는 이 플러그인에 포함되어 있지 않습니다. Scrapling stealth 모드가 실패하면 `playwright-cli` 폴백으로 넘어갑니다.
 
 상세 참조: → stealth-browsing.md 스킬
 
