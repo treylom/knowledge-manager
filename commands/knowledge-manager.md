@@ -631,7 +631,7 @@ draft 생성 시 포함:
    - 태그 공유, 개념 유사, 동일 GraphRAG 커뮤니티 소속
    - STEP 3 교차검증에서 "Retrieval Only"였던 고립 노트와의 연결 시도
 
-5. Source coverage check (원문 커버리지 검증) ← LKB self-improve 패턴
+5. Source coverage check (원문 커버리지 검증) ← 지식베이스 self-improve 패턴
    [신규 모드] 원문 키포인트 → draft 커버리지 매핑 → MISSING 보충
    [증분 모드] 원문 변경점 → 기존 노트 반영 여부 검증 → 미반영 항목 표기
    - 증분 시 "## 변경점 요약" 섹션이 draft에 없으면 → lint 실패 (HARD GATE)

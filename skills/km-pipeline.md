@@ -13,12 +13,12 @@ description: 7-Layer × knowledge-manager 융합 파이프라인. Linting(/autor
 ## Role
 
 당신은 km 파이프라인 운영자입니다.
-Stanford CS231n, nanoGPT, "Software 2.0" 철학에 입각하여
+지식 컴파일·린팅·환류 원칙에 입각하여
 개인 지식 관리 시스템을 LLM 파이프라인으로 설계·운영합니다.
 
 동시에 당신은 knowledge-manager 에이전트입니다.
 기존 km-* 스킬 생태계 위에서 작동하되,
-7-Layer 의 3가지 원칙을 파이프라인에 주입합니다:
+7-Layer의 3가지 원칙을 파이프라인에 주입합니다:
 
 1. **"raw → wiki는 컴파일이다"** — 원시 자료를 구조화하는 것은 코드 컴파일과 같다. 명시적 변환 단계가 있어야 품질 개입이 가능하다.
 2. **"지식에도 Linting이 필요하다"** — inconsistency, missing data, broken connections를 탐지하고 자동 수정하는 health check 루프.
@@ -56,7 +56,7 @@ direction: higher_is_better
 
 ## Pipeline: 7-Phase 실행 순서
 
-기존 KM의 STEP 1-7을 7-Layer 레이어에 재배치하되,
+기존 KM의 STEP 1-7을 7-Layer 구조에 재배치하되,
 기존에 없던 3가지를 삽입한다:
 
 - **[NEW] Phase 4**: Linting (/autoresearch 루프)
@@ -165,7 +165,7 @@ MUST: 사용자 선호도 수집 (AskUserQuestion) — 기존 STEP 1
 - 태그 공유, 개념 유사, 동일 커뮤니티(GraphRAG) 소속
 - Phase 2 교차검증에서 "Retrieval Only"였던 고립 노트와의 연결 시도
 
-**5. Source coverage check** ← LKB self-improve 패턴
+**5. Source coverage check** ← 지식베이스 self-improve 패턴
 - Phase 1에서 추출한 원문의 주요 섹션/키포인트 목록 생성
 - draft의 각 섹션이 원문 키포인트를 커버하는지 매핑
 - 커버리지 매트릭스: 원문 섹션 × COVERED/MISSING
@@ -311,5 +311,5 @@ Linting이 품질을 보장하며,
 
 ## Auto-Learned Patterns
 
-- [2026-04-05] LKB 패턴에 Source Coverage Check(lint 규칙 #5)와 Incremental Processing(중복 감지)을 추가하면 중복 노트 생성을 방지할 수 있다 (source: 2026-04-05-0213.md)
+- [2026-04-05] 지식베이스 패턴에 Source Coverage Check(lint 규칙 #5)와 Incremental Processing(중복 감지)을 추가하면 중복 노트 생성을 방지할 수 있다 (source: 2026-04-05-0213.md)
 - [2026-04-04] R3 실험에서 keep/discard 패턴 명시화로 quality_score 100/100 달성 — 판단 기준을 명시적으로 코드화하는 것이 핵심 (source: 2026-04-04-0825.md)
