@@ -61,8 +61,8 @@ def main():
                            help="score >= this -> inline (default 0.6)")
     sl_parser.add_argument("--related-threshold", type=float, default=None,
                            help="score >= this -> related section (default 0.4)")
-    sl_parser.add_argument("--scheme", choices=["v1", "v2"], default="v1",
-                           help="scoring rubric: v1 = 0~1 weighted sum (default) | v2 = 0~100 axes")
+    sl_parser.add_argument("--scheme", choices=["v1", "v2"], default="v2",
+                           help="scoring rubric: v2 = 0~100 axes (default) | v1 = 0~1 weighted sum")
     sl_parser.add_argument("--moc-gate", choices=["auto", "confirm"], default="auto",
                            help="v2 only: auto = register the closest MOC (default) | confirm = propose one candidate")
 

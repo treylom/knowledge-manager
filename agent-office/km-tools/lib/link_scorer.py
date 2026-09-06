@@ -211,7 +211,7 @@ def score_links(
     adapter=None,
     max_inline=MAX_INLINE,
     max_related=MAX_RELATED,
-    scheme="v1",
+    scheme="v2",
     moc_gate="auto",
     graph_edges=None,
 ):

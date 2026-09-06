@@ -513,7 +513,7 @@ claude mcp list
 
 ---
 
-**링크 가중치·MOC 게이트 (1.3.0)**: `km-config.json` 의 `linking.scheme` = `"v1"`(기본 — 기존 배점) 또는 `"v2"`(구조 40 · 내용 45 · 의미 25, `agent-office/km-tools/km-tools.py print-weights --scheme v2` 로 표 확인) · `linking.mocGate` = `"auto"`(가장 가까운 MOC 에 자동 등록, 기본) 또는 `"confirm"`(후보 1개를 제안한 뒤 확인). 예시는 `km-config.example.json` 의 `linking` 절에 있습니다.
+**링크 가중치·MOC 게이트 (1.3.0)**: `km-config.json` 의 `linking.scheme` = `"v1"`(기존 배점) 또는 `"v2"`(기본 — 구조 40 · 내용 45 · 의미 25, `agent-office/km-tools/km-tools.py print-weights --scheme v2` 로 표 확인) · `linking.mocGate` = `"auto"`(가장 가까운 MOC 에 자동 등록, 기본) 또는 `"confirm"`(후보 1개를 제안한 뒤 확인). 예시는 `km-config.example.json` 의 `linking` 절에 있습니다.
 
 ## 고급 옵션
 
