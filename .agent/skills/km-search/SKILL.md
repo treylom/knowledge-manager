@@ -36,6 +36,7 @@ description: vault 통합 검색 — GraphRAG(있으면) → Obsidian CLI → (O
      이 파일이나 `"open": true` 항목을 못 찾았을 때만 사용자에게 묻는다.
    - 사용자가 준 경로도 한 번 검증한다 — `.obsidian` 폴더 존재, 최근 수정된 md 유무. 둘 다 아니면 그 경로를 쓰기 전에 다시 확인한다.
 3. `obsidianCli.path` → `OBSIDIAN_CLI` (비어 있으면 아래 Tier 2의 자동 감지 사용).
+   `obsidianCli.vault` → `OBSIDIAN_VAULT` (비어 있으면 `storage.obsidian.vaultPath` 의 basename)
 4. `SEARCH_ENDPOINT` = `linking.semantic_adapter.endpoint` → 환경변수 `GRAPHRAG_API_URL` → 기본값 `http://127.0.0.1:8400` 순. **미설정이어도 기본값을 탐침한다** — 로컬에 서버가 없으면 즉시 연결 거부로 끝나 지연이 거의 없고(`--connect-timeout 3`은 상한일 뿐), 덕분에 나중에 `/tofugraph build`로 스택을 얹으면 설정 변경 없이 같은 절차가 자동으로 Tier 1을 쓰기 시작한다.
 
    ```bash
@@ -208,14 +209,19 @@ done
 - 출력이 0 B 인데 rc 가 0 이면 「도구가 순간 빈손」이므로 1회 재시도한다. 무결과 문구(≠0 B)일 때만 「없음」으로 판정한다.
 - 미히트여도 위 `구조 문서: 참조함(…)` 줄은 반드시 표기한다 — 참조 «했음»의 증명이다.
 
-### Tier 2 — Obsidian CLI (전문 full-text 검색)
-```bash
-# km-config의 obsidianCli.path 우선, 비어 있으면 자동 감지:
-#   mac:     /Applications/Obsidian.app/Contents/MacOS/obsidian-cli
-#   wsl:     /mnt/c/Program Files/Obsidian/Obsidian.com
-#   windows: C:\Program Files\Obsidian\Obsidian.com
-"$OBSIDIAN_CLI" search query="${QUERY}" format=json limit=1000
-```
+### Tier 2 — Obsidian CLI (전문 검색 + 링크·속성 축 · v1.6.0)
+vault 이름 = km-config `obsidianCli.vault`(비면 `storage.obsidian.vaultPath` 의 basename) → `OBSIDIAN_VAULT`. **모든 CLI 호출에 `vault="${OBSIDIAN_VAULT}"` 를 붙인다**(기본 vault 가 테스트 vault 일 수 있음 — 실측 `schift-test-vault`).
+**질의 유형 라우팅(위에서 첫 매치 1개 + 항상 ④):**
+| 질의 신호 | 서브커맨드 | 출력 |
+|---|---|---|
+| ① `[[이름]]` 포함 또는 「역링크·백링크·어디서 참조·누가 링크」 + 노트명 | `"$OBSIDIAN_CLI" backlinks file="<노트명>" vault="${OBSIDIAN_VAULT}" format=json` | JSON `[{"file":…}]` |
+| ② 「이 노트가 링크하는·아웃링크·참조 목록」 + 노트명 | `"$OBSIDIAN_CLI" links file="<노트명>" vault="${OBSIDIAN_VAULT}"` | 평문 경로 줄(format 무시) |
+| ③ 「속성·frontmatter·메타·created/updated/aliases 값」 + 노트명 | `"$OBSIDIAN_CLI" properties file="<노트명>" vault="${OBSIDIAN_VAULT}" format=json` | JSON 객체 |
+| ④ 그 외(전문) | `"$OBSIDIAN_CLI" search query="${QUERY}" vault="${OBSIDIAN_VAULT}" format=json limit=1000` | 파일 배열 |
+| ④-b DEEP 모드 또는 ④ 결과 ≤3건 | `"$OBSIDIAN_CLI" search:context query="${QUERY}" vault="${OBSIDIAN_VAULT}" format=json limit=20` | 파일:줄:문맥 |
+- 노트명 = `file=` 는 wikilink 처럼 «이름»으로 해석(경로 ❌). 질의에서 `[[…]]` 안 또는 따옴표 안 문자열을 그대로.
+- **0 B·rc 0 ≠ 무결과** — 무결과 = `No matches found.`. 0 B 는 도구 순간 빈손 → 같은 명령 1회 재시도, 재현 시 Tier 3.
+- tags·base:query 서브커맨드는 쓰지 않는다(미확정 문법 — 태그 질의는 ④ `search query="#태그"` 로).
 - 전제: Obsidian 데스크톱 앱 설치 + 실행 중 (setup 위저드가 감지·안내).
 - **질의는 핵심 키워드 1~2개로 축약해 넣는다** — CLI 는 전문 일치(full-text) 검색이라 문장형 통짜 질의는 0히트가 정상이다(실측: 문장형 "No matches" vs 키워드 2개 다수 히트). **0건이면 키워드 변형(동의어·영/한 표기) 1회 재질의**, 그래도 0건일 때만 다음 티어로.
 - CLI는 관련도 순위가 약하므로 흔한 단어는 limit을 크게 잡고 결과에서 추린다.
@@ -268,6 +274,7 @@ top 1~2 노트에 대해 **backlink(그 노트를 가리키는 노트)** 와 **o
 ```bash
 # 집행 계약: DEEP 모드에서 top 1~2 노트에 반드시 실행. backlinks = 전 플랫폼 grep 근사 —
 # Obsidian CLI 의 backlinks 서브커맨드가 있으면(맥 데스크톱) 그걸 우선, 부재·오류 시 아래가 항상 동작한다.
+"$OBSIDIAN_CLI" backlinks file="<top노트 basename(.md 제거)>" vault="${OBSIDIAN_VAULT}" format=json
 # 변수 규약: NOTE_PATH = VAULT_PATH 기준 상대경로. (절대경로가 들어와도 아래 NOTE_FILE 라인이 흡수한다.)
 NOTE_FILE="${VAULT_PATH}/${NOTE_PATH}"; [ -f "$NOTE_FILE" ] || NOTE_FILE="${NOTE_PATH}"
 STEM="$(basename "${NOTE_PATH}" .md)"

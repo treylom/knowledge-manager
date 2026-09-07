@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.6.0 (2026-09-07)
+
+- /km:search Tier 2: Obsidian CLI 축 4개 추가(backlinks·links·properties·search:context) + 질의 유형 라우팅 표 + obsidianCli.vault 설정 키(vault= 항상 명시) + 0B/No-matches 구별. 근거 = vault fable51 99 §4 · graphrag-search-quality 31.
+
 ## 1.5.1 (2026-09-07)
 
 - /km:search Tier 1-S 신선도 보강: /health finished_at 나이 > KM_SEARCH_STALE_MIN(40분) 또는 최근지향 질의면 Obsidian CLI 결과를 [fresh:cli] 로 보강(Tier 1 결과 불변). 근거 = vault 25-p2.
