@@ -3,7 +3,7 @@
 # routing (backlinks/links/properties/search:context) + obsidianCli.vault config key.
 # Static checks always run. Live smoke checks only run when a real obsidian-cli
 # executable is found (SKIP + rc 0 otherwise).
-# Spec: CHANGELOG.md 1.6.0 (Tier 2 rule-driven 5-axis expansion + obsidianCli.vault)
+# Spec: CHANGELOG.md 1.7.0 (query decompose → reassemble → execute; 1.6.0 Tier 2 rule pipeline retained)
 
 set -uo pipefail
 
@@ -29,7 +29,7 @@ check_count() {
   # check_count <label> <file> <pattern> <expected>
   local label="$1" file="$2" pattern="$3" expected="$4"
   local actual
-  actual=$("$GREP" -c "$pattern" "$file")
+  actual=$("$GREP" -c -e "$pattern" "$file")
   if [ "$actual" -eq "$expected" ]; then
     pass "${label} (${file} '${pattern}' = ${actual})"
   else
@@ -41,7 +41,7 @@ check_min_count() {
   # check_min_count <label> <file> <pattern> <min>
   local label="$1" file="$2" pattern="$3" min="$4"
   local actual
-  actual=$("$GREP" -c "$pattern" "$file")
+  actual=$("$GREP" -c -e "$pattern" "$file")
   if [ "$actual" -ge "$min" ]; then
     pass "${label} (${file} '${pattern}' = ${actual} >= ${min})"
   else
@@ -58,25 +58,36 @@ E=".claude-plugin/plugin.json"
 #          블록이 backlinks/properties/search:context/query="tag:/[tag:# 패턴을
 #          각 1회씩 재사용해 재출현하는 «필연적 파생» — 31 §7 자체 문구 그대로 삽입한 결과) ──
 for F in "$A" "$B"; do
-  check_count "backlinks-count" "$F" 'backlinks file=' 3
+  # 37 §1-2 (P4 · 1.7.0) 신규: 0-α/0-β/0-γ 삽입 블록이 backlinks file=/properties file=/
+  # search:context/OBSIDIAN_VAULT/query="tag:/1단 규칙 확장 패턴을 각 1회씩 재사용해
+  # 재출현하는 «필연적 파생» — 31 §7 v1.3 때와 같은 이유로 기대값 갱신(카운트만, 신규 계약 아님).
+  check_count "backlinks-count" "$F" 'backlinks file=' 4
   check_count "links-count" "$F" '" links file=' 1
-  check_count "properties-count" "$F" 'properties file=' 2
-  check_count "search-context-count" "$F" 'search:context' 2
-  check_count "obsidian-vault-count" "$F" 'OBSIDIAN_VAULT' 11
+  check_count "properties-count" "$F" 'properties file=' 3
+  check_count "search-context-count" "$F" 'search:context' 3
+  check_count "obsidian-vault-count" "$F" 'OBSIDIAN_VAULT' 12
   check_count "no-matches-count" "$F" 'No matches found\.' 1
   check_count "tags-vault-count" "$F" '" tags vault=' 1
-  check_count "query-tag-count" "$F" 'query="tag:' 2
+  check_count "query-tag-count" "$F" 'query="tag:' 3
   check_count "tag-label-count" "$F" '\[tag:#' 2
   # ── 31 §7 v1.3 신규: 규칙 기반 5축 파이프라인 정적 검사 ──
-  check_count "rule-expansion-count" "$F" '1단 규칙 확장' 1
+  check_count "rule-expansion-count" "$F" '1단 규칙 확장' 2
   check_min_count "topn-count" "$F" 'TOPN' 2
   check_count "prop-label-count" "$F" '\[prop\]' 1
   check_count "bl-label-count" "$F" '\[bl\]' 1
   check_count "ln-label-count" "$F" '\[ln\]' 1
   check_count "ctx-label-count" "$F" '\[ctx\]' 1
+  # ── 37 §1-5 (P4 · 1.7.0) 신규: 질문 분해 → 재조립 → 실행 정적 검사 ──
+  check_count "decomp-beta-count" "$F" '0-β 질문 분해' 1
+  check_count "decomp-gamma-count" "$F" '0-γ 재조립' 1
+  check_count "vault-info-path-count" "$F" 'vault info=path' 1
+  check_count "intent-enum-count" "$F" '"intent":"nav|content|relation|meta|tag|temporal|mixed"' 1
+  check_min_count "decomp-sub-flag-count" "$F" '--decomp=sub' 2
+  check_count "fallback-pipeline-count" "$F" '1.6.0 규칙 파이프라인 그대로' 1
+  check_count "decoy-ZZQXDECOMP" "$F" 'ZZQXDECOMP' 0
 done
 check_count "config-vault-key" "$C" '"vault"' 1
-check_count "plugin-version" "$E" '1.6.0' 1
+check_count "plugin-version" "$E" '1.7.0' 1
 
 # ── 정적: 음성 — 미끼 ZZQXTIER2 (같은 명령 안, 0 기대) ──────
 for F in "$A" "$B" "$C"; do
