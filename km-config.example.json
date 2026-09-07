@@ -42,6 +42,8 @@
   "obsidianCli": {
     "path": "",
     "_path_help": "Obsidian CLI (v1.12.4) 실행 파일 경로. /km:setup 실행 시 자동 감지됩니다.",
+    "vault": "",
+    "_vault_help": "Obsidian CLI vault= 인자에 쓸 vault 이름. 비어 있으면 storage.obsidian.vaultPath 의 basename 을 사용합니다.",
     "_path_examples": {
       "windows": "C:\\Program Files\\Obsidian\\Obsidian.com",
       "wsl": "/mnt/c/Program Files/Obsidian/Obsidian.com",
