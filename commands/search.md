@@ -167,6 +167,31 @@ echo "ENDPOINT_SWITCHED=${ENDPOINT_SWITCHED:-none}"
 - 서버 미기동/미설치 → 조용히 Tier 2로. (같은 플러그인의 `/tofugraph` 명령으로 GraphRAG 스택을 구축하면 이 티어가 자동으로 살아난다.)
 - **질의 형식(참고)**: 의미 기반 검색이라 문장을 통째로 넣어도 받지만, **3~7단어 키워드형**이 무난하다. 빈손이어도 **같은 질의를 그대로 다시 던지지 말 것** — 결과가 바뀌지 않는다. 표현을 한 번 바꿔 보고(별칭·영/한 표기 변형 포함), 그래도 안 나오면 다음 티어로 넘어가는 편이 빠르다.
 
+#### Tier 1-S — 신선도 보강 (v1.5.1 · P2 · 서버 무변경 · Tier 1 결과 불변)
+Tier 1 이 `GRAPHRAG_STATE=ok` 로 끝난 «직후» 1회 실행한다. 색인 세대 밖(최근 생성·수정) 노트를 «부재»로 읽지 않기 위한 완충 — Tier 1 결과에 없는 최근 노트를 Tier 2 명령으로 «보강»한다(폴백 아님).
+```bash
+STALE_MIN="${KM_SEARCH_STALE_MIN:-40}"   # 증분 색인 주기(30분)+빌드 여유. 운영 우회 키와 공유 ❌
+FIN=$(curl -s --connect-timeout 3 --max-time 3 "${SEARCH_ENDPOINT}/health" | python3 -c 'import sys,json
+try: print(json.load(sys.stdin)["index_update"].get("finished_at") or "")
+except Exception: print("")')
+AGE_MIN=$(python3 -c 'import sys,datetime
+f=sys.argv[1]
+if not f: print(99999); sys.exit()
+t=datetime.datetime.fromisoformat(f); print(int((datetime.datetime.now(t.tzinfo)-t).total_seconds()//60))' "$FIN")
+RECENT=0; printf '%s' "${QUERY}" | grep -qE "오늘|어제|최근|이번 주|방금|$(date +%Y-%m-%d)|$(date -v-1d +%Y-%m-%d 2>/dev/null || date -d yesterday +%Y-%m-%d)" && RECENT=1
+FRESH_CLI="${OBSIDIAN_CLI:-/Applications/Obsidian.app/Contents/MacOS/obsidian-cli}"
+if [ "$GRAPHRAG_STATE" = "ok" ] && [ "$AGE_MIN" -gt "$STALE_MIN" ]; then
+  echo "⚠ 색인 나이 ${AGE_MIN}분(finished_at ${FIN:-없음}) — 그 이후 생성·수정된 노트는 Tier 1 결과에 없음"
+fi
+if [ "$GRAPHRAG_STATE" = "ok" ] && { [ "$AGE_MIN" -gt "$STALE_MIN" ] || [ "$RECENT" = 1 ]; } && [ -x "$FRESH_CLI" ]; then
+  FRESH_JSON="$("$FRESH_CLI" search query="${QUERY}" format=json limit=20 2>/dev/null)"
+fi
+echo "FRESH: age=${AGE_MIN}m recent=${RECENT} supplement=$([ -n "${FRESH_JSON:-}" ] && echo yes || echo no)"
+```
+- `FRESH_JSON` 이 있으면 Tier 1 결과에 «없는» 경로만 골라 상위 5개를 `[fresh:cli]` 라벨로 Tier 1 결과 **아래**에 덧붙인다(Tier 1 순위 재배열 ❌). 두 조건 다 거짓이면 출력은 `FRESH:` 1줄뿐 = 현행과 동일.
+- Tier 1 top5 중 `source_note` 결손 3+ → `⚠ source_note 결손 N/5` 1줄 병기.
+- 근거: vault `100-project/2026-09-01-graphrag-search-quality/25-p2-km-freshness-design-v0.md` §2 · 선례 `080-Bug-Reports/2026-09-01-graphrag-recent-doc-search-failure.md` §5 P2.
+
 #### Tier 2·3 공통 — 구조 문서 선실행 (본 검색 전에 1회)
 
 ```bash
