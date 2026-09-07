@@ -213,7 +213,7 @@ done
 - 미히트여도 위 `구조 문서: 참조함(…)` 줄은 반드시 표기한다 — 참조 «했음»의 증명이다.
 
 ### Tier 2 — Obsidian CLI (전문 검색 + 링크·속성 축 · v1.6.0)
-vault 이름 = km-config `obsidianCli.vault`(비면 `storage.obsidian.vaultPath` 의 basename) → `OBSIDIAN_VAULT`. **모든 CLI 호출에 `vault="${OBSIDIAN_VAULT}"` 를 붙인다**(기본 vault 가 테스트 vault 일 수 있음 — 실측 `schift-test-vault`).
+vault 이름 = km-config `obsidianCli.vault`(비면 `storage.obsidian.vaultPath` 의 basename) → `OBSIDIAN_VAULT`. **모든 CLI 호출에 `vault="${OBSIDIAN_VAULT}"` 를 붙인다**(기본 vault 가 테스트용 vault 일 수 있음).
 **질의 유형 라우팅(위에서 첫 매치 1개 + 항상 ④):**
 | 질의 신호 | 서브커맨드 | 출력 |
 |---|---|---|
@@ -224,7 +224,7 @@ vault 이름 = km-config `obsidianCli.vault`(비면 `storage.obsidian.vaultPath`
 | ⑤-b ⑤ 후보마다(후보 0 → ④ 폴백) | `"$OBSIDIAN_CLI" search query="tag:<태그(앞 # 제거)>" vault="${OBSIDIAN_VAULT}" format=json limit=50` → 후보별 결과 합집합, 각 경로에 `[tag:#…]` 라벨(리터럴 `#태그` 검색은 쓰지 않음) | 경로 배열, `[tag:#…]` 라벨 |
 | ④ 그 외(전문) | `"$OBSIDIAN_CLI" search query="${QUERY}" vault="${OBSIDIAN_VAULT}" format=json limit=1000` | 파일 배열 |
 | ④-b DEEP 모드 또는 ④ 결과 ≤3건 | `"$OBSIDIAN_CLI" search:context query="${QUERY}" vault="${OBSIDIAN_VAULT}" format=json limit=20` | 파일:줄:문맥 |
-- 노트명 = `file=` 는 wikilink 처럼 «이름»으로 해석(경로 ❌). 질의에서 `[[…]]` 안 또는 따옴표 안 문자열을 그대로.
+- 노트명 = `file=` 는 wikilink 처럼 «이름»으로 해석(경로 ❌), 추출 우선순위: ① `[[…]]` 안 ② 따옴표(`" "` · `' '` · 「」) 안 ③ 둘 다 없으면 질의에서 조사(이/가/을/를/의/에/은/는/과/와) 직전 토큰 중 vault 노트 이름과 일치하는 것 — 확인 명령 `"$OBSIDIAN_CLI" search query="<토큰>" vault="${OBSIDIAN_VAULT}" path= total`(total ≥1). 일치 0 이면 ④ 전문 검색으로 폴백. 예: 「MOC-Map 이 링크하는 노트는?」 → ③ 「MOC-Map」.
 - **0 B·rc 0 ≠ 무결과** — 무결과 = `No matches found.`. 0 B 는 도구 순간 빈손 → 같은 명령 1회 재시도, 재현 시 Tier 3.
 - `base:query` 는 쓰지 않는다(문법 미확정).
 - 전제: Obsidian 데스크톱 앱 설치 + 실행 중 (setup 위저드가 감지·안내).

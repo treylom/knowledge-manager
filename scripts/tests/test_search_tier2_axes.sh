@@ -48,7 +48,7 @@ for F in "$A" "$B"; do
   check_count "links-count" "$F" '" links file=' 1
   check_count "properties-count" "$F" 'properties file=' 1
   check_count "search-context-count" "$F" 'search:context' 1
-  check_count "obsidian-vault-count" "$F" 'OBSIDIAN_VAULT' 10
+  check_count "obsidian-vault-count" "$F" 'OBSIDIAN_VAULT' 11
   check_count "no-matches-count" "$F" 'No matches found\.' 1
   check_count "tags-vault-count" "$F" '" tags vault=' 1
   check_count "query-tag-count" "$F" 'query="tag:' 1
@@ -102,10 +102,10 @@ else
   echo "SKIP tier1-unchanged — origin/master not resolvable in this checkout"
 fi
 
-# ── 라이브 스모크 (31 §3) — OBSIDIAN_CLI 있을 때만 ─────────
+# ── 라이브 스모크 (31 §3) — OBSIDIAN_CLI 있음 + KM_TEST_VAULT 지정 시만 ─
 CLI="/Applications/Obsidian.app/Contents/MacOS/obsidian-cli"
-VAULT="Tofu_Wiki"
-if [ -x "$CLI" ]; then
+VAULT="${KM_TEST_VAULT:-}"
+if [ -x "$CLI" ] && [ -n "$VAULT" ]; then
   OUT1=$("$CLI" search query="GraphRAG" vault="$VAULT" format=json limit=3); RC1=$?
   [ "$RC1" -eq 0 ] && [ -n "$OUT1" ] && pass "smoke-1-search" || fail "smoke-1-search" "rc=$RC1 bytes=${#OUT1}"
 
@@ -123,7 +123,7 @@ if [ -x "$CLI" ]; then
   OUT5=$("$CLI" search:context query="GraphRAG" vault="$VAULT" limit=3); RC5=$?
   [ "$RC5" -eq 0 ] && [ -n "$OUT5" ] && pass "smoke-5-search-context" || fail "smoke-5-search-context" "rc=$RC5 bytes=${#OUT5}"
 
-  DECOY6="ZZQX$(date +%s)R${RANDOM}"  # 런타임 무작위 — 고정 리터럴은 발주 문서에 실려 vault 에 존재하게 됨(2026-09-07 자기오염)
+  DECOY6="ZZQX$(date +%s)R${RANDOM}"  # 런타임 무작위 — 고정 리터럴은 spec note 에 실려 vault 에 존재하게 됨(2026-09-07 자기오염)
   OUT6=$("$CLI" search query="$DECOY6" vault="$VAULT" format=json); RC6=$?
   if [ "$RC6" -eq 0 ] && [ "$OUT6" = "No matches found." ]; then
     pass "smoke-6-decoy-no-matches"
@@ -143,7 +143,7 @@ except Exception:
     print(0)' 2>/dev/null)
   [ "$RC8" -eq 0 ] && [ -n "$TOTAL8" ] && [ "$TOTAL8" -ge 1 ] && pass "smoke-8-tag-search-total" || fail "smoke-8-tag-search-total" "rc=$RC8 total=${TOTAL8}"
 else
-  echo "SKIP live-smoke — OBSIDIAN_CLI not found/executable at ${CLI}"
+  echo "SKIP live-smoke — OBSIDIAN_CLI not found/executable at ${CLI}, or KM_TEST_VAULT not set (run: KM_TEST_VAULT=<vault name> bash $0)"
 fi
 
 echo "----"

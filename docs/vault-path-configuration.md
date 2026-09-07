@@ -42,7 +42,7 @@ The design has five moving parts:
 | `{{VAULT_PATH}}` | `storage.obsidian.vaultPath` | *(required, no default)* | `/home/alice/Documents/MyVault` | Absolute filesystem path to the Obsidian vault root |
 | `{{VAULT_NAME}}` | *derived from `basename(vaultPath)`* | *(derived)* | `MyVault` | Vault folder name — the string Obsidian CLI expects for `--vault` |
 | `{{OBSIDIAN_CLI}}` | `obsidianCli.path` | `""` | `/mnt/c/Program Files/Obsidian/Obsidian.com` | Absolute path to the Obsidian CLI executable; empty string is allowed (means Obsidian CLI is unavailable) |
-| *(not a `{{...}}` placeholder — read directly via `config_get` in Tier 2 search)* | `obsidianCli.vault` | `""` | `Tofu_Wiki` | Vault name string that Obsidian CLI's `vault=` argument expects; empty → basename of `storage.obsidian.vaultPath` |
+| *(not a `{{...}}` placeholder — read directly via `config_get` in Tier 2 search)* | `obsidianCli.vault` | `""` | `MyVault` | Vault name string that Obsidian CLI's `vault=` argument expects; empty → basename of `storage.obsidian.vaultPath` |
 | `{{ZETTELKASTEN_ROOT}}` | `storage.obsidian.zettelkastenRoot` | `Zettelkasten` | `Library/Zettelkasten` | Vault-relative path to the Zettelkasten root folder |
 | `{{RESEARCH_ROOT}}` | `storage.obsidian.researchRoot` | `Research` | `Library/Research` | Vault-relative path to the research/MOC root folder |
 
