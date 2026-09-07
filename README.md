@@ -78,12 +78,12 @@ Claude Code용 종합 지식 관리 에이전트. 다양한 소스에서 콘텐�
 
 ### 실제 사례 (2026-09-08 · 노트 약 15,000개 vault · GraphRAG 서버 + Obsidian CLI)
 
-> 아래는 2026-09-08 아침에 실제 vault(노트 약 15,000개)에서 1.7.0 절차를 그대로 돌린 기록입니다. vault 이름·경로는 `<vault>` 로 가렸고, 나머지 노트 이름·수치는 실측 그대로입니다. 측정 당시 이 맥은 메모리 압박(스왑) 상태라 GraphRAG 서버 첫 응답이 20초를 넘긴 경우가 있었습니다 — 그 경우에도 검색이 멈추지 않고 다음 단계로 넘어가는 모습까지 그대로 실었습니다(평상시 GraphRAG 응답은 0.2초 안팎).
+> 아래는 2026-09-08 아침에 실제 vault(노트 약 15,000개)에서 1.7.0 절차를 그대로 돌린 기록입니다. vault 이름·경로는 `<vault>` 로 가렸고, 나머지 노트 이름·수치는 측정한 그대로입니다. 6건 중 2건은 GraphRAG 서버가 첫 호출에 20초 안에 답하지 않았습니다 — 사례 기록 자체는 원인을 조사하지 않았고, 직후(07:29) 별도로 잰 값은 스왑 8.3GB/9.2GB·서버 상주 메모리 18MB 로 서버가 스왑에 밀려 있었습니다(추정 원인). 그 경우에도 검색이 멈추지 않고 다음 단계로 넘어가는 모습을 그대로 실었습니다. 참고로 같은 서버의 검색 API 는 별도 24문항 벤치마크(같은 날 05:20, 3회 반복)에서 중앙값 0.23초였고, 이번 6사례의 정상 응답 4건은 5~8초였습니다.
 
 **1. `GraphRAG 이론 MOC 어디 있어` — 위치 찾기(nav)**
 - 분해: `intent=nav · targets=[GraphRAG-Theory-MOC, GraphRAG 이론 MOC] · keywords=[GraphRAG, 이론, MOC]`
 - 실행: GraphRAG 서버 20초 무응답 → **Obsidian CLI 로 자동 전환** → 파일명 축 `search query="GraphRAG-Theory-MOC"` → 상위 노트 속성·역링크·아웃링크 확장
-- 답: `GraphRAG-Theory-MOC.md` 가 **두 곳**(vault 루트 · `020-Library/Research/_MOC/`)에 같은 이름으로 있음을 짚어 주고, 역링크 45건과 함께 표시. 파일명 축이 없던 1.6.0 에서는 「언급한 문서」가 1위로 올라오던 질문입니다.
+- 답: `GraphRAG-Theory-MOC.md` 가 **두 곳**(vault 루트 · `020-Library/Research/_MOC/`)에 같은 이름으로 있음을 짚어 주고, 역링크 45건과 함께 표시. 같은 결함 패턴(파일명 축이 없으면 「언급만 한 문서」가 상위로 올라옴)은 1.7.0 개발 중 다른 질문(「fable51 회의록 어디 있어」)에서 실제로 확인돼 파일명 축을 넣게 됐습니다.
 
 **2. `누가 GraphRAG-Theory-MOC 를 참조하나` — 역링크(relation)**
 - 분해: `intent=relation · targets=[GraphRAG-Theory-MOC]`
@@ -92,7 +92,7 @@ Claude Code용 종합 지식 관리 에이전트. 다양한 소스에서 콘텐�
 
 **3. `#graphrag 태그 붙은 최근 문서` — 태그 + 최근(mixed)**
 - 분해: `intent=mixed · tags=[graphrag] · keywords=[graphrag, 최근, 문서]`
-- 실행: GraphRAG 서버 5초 응답 → 「최근」이 있어 **신선도 보강 발화** `FRESH: age=15m recent=1 supplement=yes` → `tags counts` 에서 부분 일치 후보(`#topic/graphrag` 88 · `#graphrag-theory` 33 · `#GraphRAG` 23) → 후보별 `search query="tag:…"` → `search query="[created:2026-09]"`
+- 실행: GraphRAG 서버 5초 응답 → 「최근」이 있어 **신선도 보강이 켜짐** `FRESH: age=15m recent=1 supplement=yes` → `tags counts` 에서 부분 일치 후보(`#topic/graphrag` 88 · `#graphrag-theory` 33 · `#GraphRAG` 23) → 후보별 `search query="tag:…"` → `search query="[created:2026-09]"`
 - 답: 세 태그 합계 **106건** + 색인 밖 최신 노트 1건을 `[fresh:cli]` 로 덧붙임. 서버 상위 5 중 3건은 출처 노트가 비어 있어 `⚠ source_note 결손 3/5` 를 함께 표기.
 
 **4. `MCP란?` — 즉답(content · quick)**
@@ -107,15 +107,15 @@ Claude Code용 종합 지식 관리 에이전트. 다양한 소스에서 콘텐�
 
 **6. `오늘 만든 에이전트 팀 관련 문서` — 최근(temporal)**
 - 분해: `intent=temporal · targets=[에이전트 팀] · time.recent=true`
-- 실행: GraphRAG 서버 5초 응답 → 「오늘」 → **신선도 보강 발화** `FRESH: age=17m recent=1 supplement=yes` → CLI 결과 중 서버 결과에 없는 상위 5건을 `[fresh:cli]` 로 병기
-- 답: 서버 상위 5(허브 MOC 위주)는 「오늘 만든 문서」를 직접 가리키지 못한다고 **솔직히 표기**하고, `[fresh:cli]` 5건을 그 아래 붙임. 상위 1건이 본문 없는 스텁 노트임도 명시.
+- 실행: GraphRAG 서버 5초 응답 → 「오늘」 → **신선도 보강이 켜짐** `FRESH: age=17m recent=1 supplement=yes` → CLI 결과 중 서버 결과에 없는 상위 5건을 `[fresh:cli]` 로 병기
+- 답: 서버 상위 5(허브 MOC 위주)는 「오늘 만든 문서」를 직접 가리키지 못한다고 **솔직히 표기**하고, `[fresh:cli]` 5건을 그 아래 붙임. 1위는 출처 노트가 비어 있어 원문을 열지 못했고, 원문을 연 2위(`AI-에이전트`)는 머리말만 있는 빈 노트(스텁)임도 명시.
 
 6건 중 GraphRAG 서버가 첫 시도에 응답한 것은 4건, 파일명 축이 실제로 쓰인 것은 1번, 신선도 보강이 켜진 것은 3·6번입니다.
 
 ### 설정·선택 사항
 
 - `km-config.json` → `obsidianCli.vault`: CLI 가 붙을 vault 이름(비우면 `storage.obsidian.vaultPath` 의 폴더명). 기본 vault 가 테스트용일 수 있어 **모든 CLI 호출에 명시**됩니다.
-- 환경변수 `KM_SEARCH_STALE_MIN`(기본 40): 신선도 보강이 발화하는 색인 나이(분). `SEARCH_ENDPOINT`: GraphRAG 서버 주소(기본 `http://127.0.0.1:8400`).
+- 환경변수 `KM_SEARCH_STALE_MIN`(기본 40): 신선도 보강이 켜지는 색인 나이(분). GraphRAG 서버 주소는 환경변수 `GRAPHRAG_API_URL` 또는 `km-config.json` 의 `linking.semantic_adapter.endpoint`(기본 `http://127.0.0.1:8400`).
 - **Codex CLI 설치(방법 4)에서도 같은 검색이 `km-search` 스킬로 동작합니다.**
 - 검색 전에 `000-START-HERE/` 구조 문서 3종을 먼저 참조하고, 답변 마지막 줄에 `구조 문서(<D>/3 참조 · 허브 <k>)` 로 참조 사실을 표기합니다.
 
@@ -1032,7 +1032,7 @@ Each stage falls through to the next when it is missing or fails, so it **works 
 
 | Step | What it does | Why |
 |---|---|---|
-| **Decompose → reassemble** (1.7.0) | Before searching, the question is split into `{intent, target notes, keywords, tags, properties, folder hint, time}` and a fixed per-intent rule table turns that into Obsidian CLI calls. Seven intents: `nav` · `content` · `relation` · `meta` · `tag` · `temporal` · `mixed` | "Where is X?" and "What does X say?" are different searches. This is where the filename axis (with Korean↔English synonyms) and the "no backlinks → body-mention fallback" live |
+| **Decompose → reassemble** (1.7.0) | Before searching, the question is split into `{intent, target notes, keywords, tags, properties, folder hint, time}` and a fixed per-intent rule table turns that into Obsidian CLI calls. Seven intents: `nav` · `content` · `relation` · `meta` · `tag` · `temporal` · `mixed` | "Where is X?" and "What does X say?" are different searches. This is where the filename axis (with Korean↔English synonyms such as 회의록 ↔ meeting / minutes) and the "no backlinks → body-mention fallback" live |
 | **Rule-driven 5-axis expansion** (1.6.0) | For the top notes (quick 2 · deep 5) it **always** runs five axes — properties, backlinks, outlinks, context lines, tags — and labels every line (`[prop] [bl] [ln] [ctx] [tag:#…]`) | You see the neighbourhood of a note, not just one hit |
 | **Freshness supplement** (1.5.1) | If the GraphRAG index is older than 40 minutes, or the question says "today / yesterday / recent", Obsidian CLI results are **appended** with a `[fresh:cli]` label (GraphRAG ranking untouched) | Notes you wrote a minute ago no longer come back as "not found" |
 
@@ -1040,12 +1040,12 @@ If decomposition fails, the 1.6.0 rule pipeline runs unchanged. Every answer is 
 
 ### Real examples (2026-09-08 · ~15,000-note vault · GraphRAG server + Obsidian CLI)
 
-> Recorded on the morning of 2026-09-08 against a real vault (~15,000 notes) by running the 1.7.0 procedure step by step. Vault names and paths are masked as `<vault>`; note names and numbers are as measured. The machine was under memory pressure (swapping) at the time, so the GraphRAG server sometimes took more than 20 s to answer — those cases are kept as-is, because they show the search falling through to the next stage instead of stopping (normal GraphRAG latency is ~0.2 s).
+> Recorded on the morning of 2026-09-08 against a real vault (~15,000 notes) by running the 1.7.0 procedure step by step. Vault names and paths are masked as `<vault>`; note names and numbers are as measured. In 2 of the 6 cases the GraphRAG server did not answer the first call within 20 s — the case logs themselves did not investigate why; a separate reading taken right after (07:29) showed swap at 8.3 GB of 9.2 GB and the server's resident memory down to 18 MB, i.e. the server had been paged out (probable cause). Those cases are kept as-is because they show the search falling through to the next stage instead of stopping. For scale: the same server's search API had a median of 0.23 s in a separate 24-question benchmark that day (05:20, 3 runs), while the 4 normal answers in these 6 cases took 5–8 s.
 
 **1. `Where is the GraphRAG theory MOC?` — locate (nav)**
 - Decomposed: `intent=nav · targets=[GraphRAG-Theory-MOC, GraphRAG 이론 MOC] · keywords=[GraphRAG, 이론, MOC]`
 - Ran: GraphRAG server silent for 20 s → **automatic switch to Obsidian CLI** → filename axis `search query="GraphRAG-Theory-MOC"` → properties / backlinks / outlinks of the top notes
-- Answer: points out that `GraphRAG-Theory-MOC.md` exists in **two places** (vault root and `020-Library/Research/_MOC/`) and lists its 45 backlinks. Without the filename axis (1.6.0) a note that merely *mentioned* the MOC came first.
+- Answer: points out that `GraphRAG-Theory-MOC.md` exists in **two places** (vault root and `020-Library/Research/_MOC/`) and lists its 45 backlinks. The same failure pattern (without a filename axis, a note that merely *mentions* the target ranks first) was observed on a different question while 1.7.0 was being built — that is why the filename axis exists.
 
 **2. `Who references GraphRAG-Theory-MOC?` — backlinks (relation)**
 - Decomposed: `intent=relation · targets=[GraphRAG-Theory-MOC]`
@@ -1055,7 +1055,7 @@ If decomposition fails, the 1.6.0 rule pipeline runs unchanged. Every answer is 
 **3. `Recent notes tagged #graphrag` — tag + recency (mixed)**
 - Decomposed: `intent=mixed · tags=[graphrag] · keywords=[graphrag, recent, notes]`
 - Ran: server answered in 5 s → the word "recent" **triggers the freshness supplement** `FRESH: age=15m recent=1 supplement=yes` → `tags counts` partial matches (`#topic/graphrag` 88 · `#graphrag-theory` 33 · `#GraphRAG` 23) → `search query="tag:…"` per candidate → `search query="[created:2026-09]"`
-- Answer: **106 notes** across the three tags, plus one note newer than the index appended as `[fresh:cli]`. Three of the server's top-5 lacked a source note, flagged as `⚠ source_note missing 3/5`.
+- Answer: **106 notes** across the three tags, plus one note newer than the index appended as `[fresh:cli]`. Three of the server's top-5 lacked a source note, flagged with the `⚠ source_note 결손 3/5` line (“source note missing 3/5” — the label is printed in Korean).
 
 **4. `What is MCP?` — quick answer (content)**
 - Decomposed: `intent=content · keywords=[MCP]`
@@ -1070,15 +1070,16 @@ If decomposition fails, the 1.6.0 rule pipeline runs unchanged. Every answer is 
 **6. `Agent-team notes created today` — recency (temporal)**
 - Decomposed: `intent=temporal · targets=[agent team] · time.recent=true`
 - Ran: server answered in 5 s → "today" **triggers the freshness supplement** `FRESH: age=17m recent=1 supplement=yes` → the top 5 CLI results absent from the server list are appended as `[fresh:cli]`
-- Answer: says plainly that the server's top 5 (mostly hub MOCs) do not point at anything created today, then appends the 5 `[fresh:cli]` notes; also notes that the #1 server hit is a body-less stub.
+- Answer: says plainly that the server's top 5 (mostly hub MOCs) do not point at anything created today, then appends the 5 `[fresh:cli]` notes; also notes that the #1 hit had no source note to open, and the #2 hit (`AI-에이전트`), the only one actually opened, is a front-matter-only stub.
 
 Across the six: the GraphRAG server answered on the first try in 4, the filename axis actually fired in #1, and the freshness supplement fired in #3 and #6.
 
 ### Configuration
 
 - `km-config.json` → `obsidianCli.vault`: the vault name passed to every CLI call (falls back to the folder name of `storage.obsidian.vaultPath`).
-- `KM_SEARCH_STALE_MIN` (default 40): index age in minutes that triggers the freshness supplement. `SEARCH_ENDPOINT`: GraphRAG server URL (default `http://127.0.0.1:8400`).
+- `KM_SEARCH_STALE_MIN` (default 40): index age in minutes that triggers the freshness supplement. The GraphRAG server URL comes from the `GRAPHRAG_API_URL` environment variable or `linking.semantic_adapter.endpoint` in `km-config.json` (default `http://127.0.0.1:8400`).
 - The same search runs as the `km-search` skill under Codex CLI (Option 4).
+- Before searching, the three structure notes under `000-START-HERE/` are consulted first, and the last line of every answer records it as `구조 문서(<D>/3 참조 · 허브 <k>)` (“structure docs consulted <D>/3 · hubs <k>”).
 
 ## Storage
 
