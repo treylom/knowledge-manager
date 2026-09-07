@@ -217,11 +217,13 @@ vault 이름 = km-config `obsidianCli.vault`(비면 `storage.obsidian.vaultPath`
 | ① `[[이름]]` 포함 또는 「역링크·백링크·어디서 참조·누가 링크」 + 노트명 | `"$OBSIDIAN_CLI" backlinks file="<노트명>" vault="${OBSIDIAN_VAULT}" format=json` | JSON `[{"file":…}]` |
 | ② 「이 노트가 링크하는·아웃링크·참조 목록」 + 노트명 | `"$OBSIDIAN_CLI" links file="<노트명>" vault="${OBSIDIAN_VAULT}"` | 평문 경로 줄(format 무시) |
 | ③ 「속성·frontmatter·메타·created/updated/aliases 값」 + 노트명 | `"$OBSIDIAN_CLI" properties file="<노트명>" vault="${OBSIDIAN_VAULT}" format=json` | JSON 객체 |
+| ⑤ `#태그` 토큰 또는 「태그·tag·태그가 붙은·태그로」 + 태그명 | `"$OBSIDIAN_CLI" tags vault="${OBSIDIAN_VAULT}" counts format=json` 에서 태그명 대소문자 무시 부분 일치로 후보 ≤5(count 내림차순) | 태그 후보 배열(각 `{tag,count}`) |
+| ⑤-b ⑤ 후보마다(후보 0 → ④ 폴백) | `"$OBSIDIAN_CLI" search query="tag:<태그(앞 # 제거)>" vault="${OBSIDIAN_VAULT}" format=json limit=50` → 후보별 결과 합집합, 각 경로에 `[tag:#…]` 라벨(리터럴 `#태그` 검색은 쓰지 않음) | 경로 배열, `[tag:#…]` 라벨 |
 | ④ 그 외(전문) | `"$OBSIDIAN_CLI" search query="${QUERY}" vault="${OBSIDIAN_VAULT}" format=json limit=1000` | 파일 배열 |
 | ④-b DEEP 모드 또는 ④ 결과 ≤3건 | `"$OBSIDIAN_CLI" search:context query="${QUERY}" vault="${OBSIDIAN_VAULT}" format=json limit=20` | 파일:줄:문맥 |
 - 노트명 = `file=` 는 wikilink 처럼 «이름»으로 해석(경로 ❌). 질의에서 `[[…]]` 안 또는 따옴표 안 문자열을 그대로.
 - **0 B·rc 0 ≠ 무결과** — 무결과 = `No matches found.`. 0 B 는 도구 순간 빈손 → 같은 명령 1회 재시도, 재현 시 Tier 3.
-- tags·base:query 서브커맨드는 쓰지 않는다(미확정 문법 — 태그 질의는 ④ `search query="#태그"` 로).
+- `base:query` 는 쓰지 않는다(문법 미확정).
 - 전제: Obsidian 데스크톱 앱 설치 + 실행 중 (setup 위저드가 감지·안내).
 - **질의는 핵심 키워드 1~2개로 축약해 넣는다** — CLI 는 전문 일치(full-text) 검색이라 문장형 통짜 질의는 0히트가 정상이다(실측: 문장형 "No matches" vs 키워드 2개 다수 히트). **0건이면 키워드 변형(동의어·영/한 표기) 1회 재질의**, 그래도 0건일 때만 다음 티어로.
 - CLI는 관련도 순위가 약하므로 흔한 단어는 limit을 크게 잡고 결과에서 추린다.

@@ -48,8 +48,11 @@ for F in "$A" "$B"; do
   check_count "links-count" "$F" '" links file=' 1
   check_count "properties-count" "$F" 'properties file=' 1
   check_count "search-context-count" "$F" 'search:context' 1
-  check_count "obsidian-vault-count" "$F" 'OBSIDIAN_VAULT' 8
+  check_count "obsidian-vault-count" "$F" 'OBSIDIAN_VAULT' 10
   check_count "no-matches-count" "$F" 'No matches found\.' 1
+  check_count "tags-vault-count" "$F" '" tags vault=' 1
+  check_count "query-tag-count" "$F" 'query="tag:' 1
+  check_count "tag-label-count" "$F" '\[tag:#' 1
 done
 check_count "config-vault-key" "$C" '"vault"' 1
 check_count "plugin-version" "$E" '1.6.0' 1
@@ -127,6 +130,18 @@ if [ -x "$CLI" ]; then
   else
     fail "smoke-6-decoy-no-matches" "rc=$RC6 out='${OUT6}'"
   fi
+
+  OUT7=$("$CLI" tags vault="$VAULT" counts format=json); RC7=$?
+  FIRST7="${OUT7:0:1}"
+  [ "$RC7" -eq 0 ] && [ "$FIRST7" = "[" ] && pass "smoke-7-tags-counts" || fail "smoke-7-tags-counts" "rc=$RC7 first='${FIRST7}'"
+
+  OUT8=$("$CLI" search query="tag:graphrag" vault="$VAULT" format=json limit=50); RC8=$?
+  TOTAL8=$(printf '%s' "$OUT8" | python3 -c 'import json,sys
+try:
+    print(len(json.load(sys.stdin)))
+except Exception:
+    print(0)' 2>/dev/null)
+  [ "$RC8" -eq 0 ] && [ -n "$TOTAL8" ] && [ "$TOTAL8" -ge 1 ] && pass "smoke-8-tag-search-total" || fail "smoke-8-tag-search-total" "rc=$RC8 total=${TOTAL8}"
 else
   echo "SKIP live-smoke — OBSIDIAN_CLI not found/executable at ${CLI}"
 fi
