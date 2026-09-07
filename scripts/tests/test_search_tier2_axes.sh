@@ -89,6 +89,9 @@ for F in "$A" "$B"; do
   check_min_count "name-label-count" "$F" '\[name\]' 1
   check_min_count "mention-label-count" "$F" '\[mention\]' 1
   check_count "decoy-ZZQXFIX2" "$F" 'ZZQXFIX2' 0
+  # ── 41 §1 (P4 · fix3) 신규: nav 파일명 축 한↔영 동의어표 정적 검사 ──
+  check_count "nav-synonym-count" "$F" 'meeting|minutes' 1
+  check_count "decoy-ZZQXSYN" "$F" 'ZZQXSYN' 0
 done
 check_count "config-vault-key" "$C" '"vault"' 1
 check_count "plugin-version" "$E" '1.7.0' 1
