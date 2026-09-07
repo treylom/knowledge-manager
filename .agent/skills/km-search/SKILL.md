@@ -211,7 +211,7 @@ done
 
 ### Tier 2 — Obsidian CLI (전문 검색 + 링크·속성 축 · v1.6.0)
 vault 이름 = km-config `obsidianCli.vault`(비면 `storage.obsidian.vaultPath` 의 basename) → `OBSIDIAN_VAULT`. **모든 CLI 호출에 `vault="${OBSIDIAN_VAULT}"` 를 붙인다**(기본 vault 가 테스트용 vault 일 수 있음).
-**질의 유형 라우팅(위에서 첫 매치 1개 + 항상 ④):**
+**0단 진입(신호어가 있으면 그 축을 먼저) — 없으면 ④ 전문 검색부터:**
 | 질의 신호 | 서브커맨드 | 출력 |
 |---|---|---|
 | ① `[[이름]]` 포함 또는 「역링크·백링크·어디서 참조·누가 링크」 + 노트명 | `"$OBSIDIAN_CLI" backlinks file="<노트명>" vault="${OBSIDIAN_VAULT}" format=json` | JSON `[{"file":…}]` |
@@ -221,6 +221,18 @@ vault 이름 = km-config `obsidianCli.vault`(비면 `storage.obsidian.vaultPath`
 | ⑤-b ⑤ 후보마다(후보 0 → ④ 폴백) | `"$OBSIDIAN_CLI" search query="tag:<태그(앞 # 제거)>" vault="${OBSIDIAN_VAULT}" format=json limit=50` → 후보별 결과 합집합, 각 경로에 `[tag:#…]` 라벨(리터럴 `#태그` 검색은 쓰지 않음) | 경로 배열, `[tag:#…]` 라벨 |
 | ④ 그 외(전문) | `"$OBSIDIAN_CLI" search query="${QUERY}" vault="${OBSIDIAN_VAULT}" format=json limit=1000` | 파일 배열 |
 | ④-b DEEP 모드 또는 ④ 결과 ≤3건 | `"$OBSIDIAN_CLI" search:context query="${QUERY}" vault="${OBSIDIAN_VAULT}" format=json limit=20` | 파일:줄:문맥 |
+**1단 규칙 확장(항상):**
+```
+TOPN = QUICK 2 / DEEP 5 (Tier 1 결과 ∪ 0단 결과에서 상위 TOPN 노트 · 노트명 = 경로 basename(.md 제거))
+각 노트 F 에 대해 순서 고정:
+ ① properties file="F" → created/updated/tags/aliases 요약 1줄 [prop]
+ ② backlinks file="F" format=json (≤5) [bl] · ③ links file="F" (≤5) [ln]
+ ④ search:context query="${QUERY}" path="<F 의 폴더>" limit=3 → F 의 매치 줄 ≤3 [ctx]
+ ⑤ ① 의 tags 중 상위 2개 → search query="tag:<t>" format=json limit=20 → 기존 결과에 없는 경로 ≤3 [tag:#t]
+중복 경로 제거 · 각 줄에 축 라벨 · CLI 오류·0B 는 그 축만 건너뛰고 계속(전체 중단 ❌) · 호출 상한 = TOPN×5 + 2
+```
+- 출력 규약: Tier 1/2 본 결과 «아래»에 `## 확장(규칙 5축)` 블록 — 노트별 5줄 이내. 본 결과 순위 재배열 ❌.
+- 기존 Phase 2.5-B(그래프 확장)와의 관계: Phase 2.5-B 의 backlinks 호출은 이 1단 ② 로 «대체»(중복 호출 ❌).
 - 노트명 = `file=` 는 wikilink 처럼 «이름»으로 해석(경로 ❌), 추출 우선순위: ① `[[…]]` 안 ② 따옴표(`" "` · `' '` · 「」) 안 ③ 둘 다 없으면 질의에서 조사(이/가/을/를/의/에/은/는/과/와) 직전 토큰 중 vault 노트 이름과 일치하는 것 — 확인 명령 `"$OBSIDIAN_CLI" search query="<토큰>" vault="${OBSIDIAN_VAULT}" path= total`(total ≥1). 일치 0 이면 ④ 전문 검색으로 폴백. 예: 「MOC-Map 이 링크하는 노트는?」 → ③ 「MOC-Map」.
 - **0 B·rc 0 ≠ 무결과** — 무결과 = `No matches found.`. 0 B 는 도구 순간 빈손 → 같은 명령 1회 재시도, 재현 시 Tier 3.
 - `base:query` 는 쓰지 않는다(문법 미확정).
@@ -276,6 +288,7 @@ top 1~2 노트에 대해 **backlink(그 노트를 가리키는 노트)** 와 **o
 ```bash
 # 집행 계약: DEEP 모드에서 top 1~2 노트에 반드시 실행. backlinks = 전 플랫폼 grep 근사 —
 # Obsidian CLI 의 backlinks 서브커맨드가 있으면(맥 데스크톱) 그걸 우선, 부재·오류 시 아래가 항상 동작한다.
+# Tier 2 1단 ②가 이미 돌았으면 재호출 없이 그 결과 사용(중복 호출 ❌).
 "$OBSIDIAN_CLI" backlinks file="<top노트 basename(.md 제거)>" vault="${OBSIDIAN_VAULT}" format=json
 # 변수 규약: NOTE_PATH = VAULT_PATH 기준 상대경로. (절대경로가 들어와도 아래 NOTE_FILE 라인이 흡수한다.)
 NOTE_FILE="${VAULT_PATH}/${NOTE_PATH}"; [ -f "$NOTE_FILE" ] || NOTE_FILE="${NOTE_PATH}"

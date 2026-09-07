@@ -2,8 +2,7 @@
 
 ## 1.6.0 (2026-09-07)
 
-- /km:search Tier 2: Obsidian CLI 축 4개 추가(backlinks·links·properties·search:context) + 질의 유형 라우팅 표 + obsidianCli.vault 설정 키(vault= 항상 명시) + 0B/No-matches 구별. 근거 = vault fable51 99 §4 · graphrag-search-quality 31.
-- Tier 2 ⑤ 태그 라우팅: tags counts 로 후보 ≤5 → search query="tag:<x>" 합집합
+- /km:search Tier 2: Obsidian CLI 5축(backlinks·links·properties·search:context·tags)을 규칙으로 «항상» 실행(상위 QUICK 2/DEEP 5 노트 · 축 라벨) + 신호어는 진입 순서만 + obsidianCli.vault 키 + 0B/No-matches 구별.
 
 ## 1.5.1 (2026-09-07)
 

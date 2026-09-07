@@ -37,22 +37,43 @@ check_count() {
   fi
 }
 
+check_min_count() {
+  # check_min_count <label> <file> <pattern> <min>
+  local label="$1" file="$2" pattern="$3" min="$4"
+  local actual
+  actual=$("$GREP" -c "$pattern" "$file")
+  if [ "$actual" -ge "$min" ]; then
+    pass "${label} (${file} '${pattern}' = ${actual} >= ${min})"
+  else
+    fail "${label}" "${file} '${pattern}' expected >= ${min}, got ${actual}"
+  fi
+}
+
 A="commands/search.md"
 B=".agent/skills/km-search/SKILL.md"
 C="km-config.example.json"
 E=".claude-plugin/plugin.json"
 
-# ── 정적: 양성 계수 (31 §3) ─────────────────────────────
+# ── 정적: 양성 계수 (31 §3, §7 v1.3 로 일부 기대값 갱신 — 1단 규칙 확장
+#          블록이 backlinks/properties/search:context/query="tag:/[tag:# 패턴을
+#          각 1회씩 재사용해 재출현하는 «필연적 파생» — 31 §7 자체 문구 그대로 삽입한 결과) ──
 for F in "$A" "$B"; do
-  check_count "backlinks-count" "$F" 'backlinks file=' 2
+  check_count "backlinks-count" "$F" 'backlinks file=' 3
   check_count "links-count" "$F" '" links file=' 1
-  check_count "properties-count" "$F" 'properties file=' 1
-  check_count "search-context-count" "$F" 'search:context' 1
+  check_count "properties-count" "$F" 'properties file=' 2
+  check_count "search-context-count" "$F" 'search:context' 2
   check_count "obsidian-vault-count" "$F" 'OBSIDIAN_VAULT' 11
   check_count "no-matches-count" "$F" 'No matches found\.' 1
   check_count "tags-vault-count" "$F" '" tags vault=' 1
-  check_count "query-tag-count" "$F" 'query="tag:' 1
-  check_count "tag-label-count" "$F" '\[tag:#' 1
+  check_count "query-tag-count" "$F" 'query="tag:' 2
+  check_count "tag-label-count" "$F" '\[tag:#' 2
+  # ── 31 §7 v1.3 신규: 규칙 기반 5축 파이프라인 정적 검사 ──
+  check_count "rule-expansion-count" "$F" '1단 규칙 확장' 1
+  check_min_count "topn-count" "$F" 'TOPN' 2
+  check_count "prop-label-count" "$F" '\[prop\]' 1
+  check_count "bl-label-count" "$F" '\[bl\]' 1
+  check_count "ln-label-count" "$F" '\[ln\]' 1
+  check_count "ctx-label-count" "$F" '\[ctx\]' 1
 done
 check_count "config-vault-key" "$C" '"vault"' 1
 check_count "plugin-version" "$E" '1.6.0' 1
@@ -142,6 +163,33 @@ try:
 except Exception:
     print(0)' 2>/dev/null)
   [ "$RC8" -eq 0 ] && [ -n "$TOTAL8" ] && [ "$TOTAL8" -ge 1 ] && pass "smoke-8-tag-search-total" || fail "smoke-8-tag-search-total" "rc=$RC8 total=${TOTAL8}"
+
+  # ── 31 §7 v1.3: 1단 규칙 확장 파이프라인 스모크 — 노트 1건(MOC-Map) ①~⑤ ──
+  P1=$("$CLI" properties file="MOC-Map" vault="$VAULT" format=json); RCP1=$?
+  [ "$RCP1" -eq 0 ] && [ -n "$P1" ] && pass "smoke-9-rule-prop" || fail "smoke-9-rule-prop" "rc=$RCP1 bytes=${#P1}"
+
+  P2=$("$CLI" backlinks file="MOC-Map" vault="$VAULT" format=json); RCP2=$?
+  [ "$RCP2" -eq 0 ] && [ -n "$P2" ] && pass "smoke-10-rule-backlinks" || fail "smoke-10-rule-backlinks" "rc=$RCP2 bytes=${#P2}"
+
+  P3=$("$CLI" links file="MOC-Map" vault="$VAULT"); RCP3=$?
+  [ "$RCP3" -eq 0 ] && [ -n "$P3" ] && pass "smoke-11-rule-links" || fail "smoke-11-rule-links" "rc=$RCP3 bytes=${#P3}"
+
+  P4=$("$CLI" search:context query="MOC" vault="$VAULT" format=json limit=3); RCP4=$?
+  [ "$RCP4" -eq 0 ] && [ -n "$P4" ] && pass "smoke-12-rule-ctx" || fail "smoke-12-rule-ctx" "rc=$RCP4 bytes=${#P4}"
+
+  P1_TAG=$(printf '%s' "$P1" | python3 -c 'import json,sys
+try:
+    d = json.load(sys.stdin)
+    tags = d.get("tags") if isinstance(d, dict) else None
+    print(tags[0] if tags else "")
+except Exception:
+    print("")' 2>/dev/null)
+  if [ -n "$P1_TAG" ]; then
+    P5=$("$CLI" search query="tag:${P1_TAG}" vault="$VAULT" format=json limit=20); RCP5=$?
+    [ "$RCP5" -eq 0 ] && [ -n "$P5" ] && pass "smoke-13-rule-tag" || fail "smoke-13-rule-tag" "rc=$RCP5 bytes=${#P5}"
+  else
+    echo "SKIP smoke-13-rule-tag — MOC-Map properties.tags empty"
+  fi
 else
   echo "SKIP live-smoke — OBSIDIAN_CLI not found/executable at ${CLI}, or KM_TEST_VAULT not set (run: KM_TEST_VAULT=<vault name> bash $0)"
 fi
