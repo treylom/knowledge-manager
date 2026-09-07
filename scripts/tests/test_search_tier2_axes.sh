@@ -120,7 +120,8 @@ if [ -x "$CLI" ]; then
   OUT5=$("$CLI" search:context query="GraphRAG" vault="$VAULT" limit=3); RC5=$?
   [ "$RC5" -eq 0 ] && [ -n "$OUT5" ] && pass "smoke-5-search-context" || fail "smoke-5-search-context" "rc=$RC5 bytes=${#OUT5}"
 
-  OUT6=$("$CLI" search query="ZZQXNOSUCHTERM" vault="$VAULT" format=json); RC6=$?
+  DECOY6="ZZQX$(date +%s)R${RANDOM}"  # 런타임 무작위 — 고정 리터럴은 발주 문서에 실려 vault 에 존재하게 됨(2026-09-07 자기오염)
+  OUT6=$("$CLI" search query="$DECOY6" vault="$VAULT" format=json); RC6=$?
   if [ "$RC6" -eq 0 ] && [ "$OUT6" = "No matches found." ]; then
     pass "smoke-6-decoy-no-matches"
   else
