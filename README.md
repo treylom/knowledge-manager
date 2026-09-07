@@ -61,12 +61,61 @@ Claude Code용 종합 지식 관리 에이전트. 다양한 소스에서 콘텐�
 앞 단계가 없거나 실패하면 자동으로 다음 단계로 넘어가기 때문에, **GraphRAG 없이도 바로 쓸 수 있고**, 나중에 GraphRAG 스택을 얹으면 같은 명령이 자동으로 의미 기반 검색으로 올라섭니다 (스택 구축은 같은 플러그인의 `/tofugraph` 명령 — 상세: `skills/km-graphrag-ops.md`).
 
 ```bash
-/km:search MCP란?                      # 즉답 (quick)
-/km:search --deep A와 B의 관계는?       # 상세 분석 (deep)
+/km:search MCP란?                          # 즉답 (quick)
+/km:search --deep A와 B의 관계는?           # 상세 분석 (deep)
+/km:search --deep --decomp=sub 질문…        # deep + 질문 분해를 별도 소형 모델에 맡김(선택)
 ```
 
-- 질문 형태에 따라 quick/deep 자동 선택, MOC(지도 노트) 우선 표시
-- 답변은 항상 실제 노트 내용 기반 + 출처 경로 표기
+### 검색이 실제로 하는 일 (1.5 → 1.7)
+
+| 단계 | 하는 일 | 왜 필요한가 |
+|---|---|---|
+| **질문 분해 → 재조립** (1.7.0) | 검색 전에 질문을 `{의도, 대상 노트, 핵심어, 태그, 속성, 폴더 힌트, 시간}` 으로 한 번 분해하고, 의도별 고정 규칙표로 Obsidian CLI 호출을 짜 맞춥니다. 의도 7종: `nav`(어디 있나) · `content`(내용·비교) · `relation`(누가 참조하나) · `meta`(속성) · `tag` · `temporal`(최근·날짜) · `mixed` | 「어디 있어」와 「무슨 내용이야」는 다른 검색입니다. 파일명 축(한↔영 동의어: 회의록↔meeting/minutes 등)과 「역링크 0 → 본문 언급 폴백」이 여기서 붙습니다 |
+| **5축 규칙 확장** (1.6.0) | 상위 노트(quick 2 · deep 5)마다 속성·역링크·아웃링크·문맥·태그 5축을 **항상** 실행하고 결과마다 축 라벨(`[prop] [bl] [ln] [ctx] [tag:#…]`)을 붙입니다 | 검색 결과 한 줄이 아니라 그 노트의 «주변»까지 한 번에 보입니다 |
+| **신선도 보강** (1.5.1) | GraphRAG 색인이 40분 이상 오래됐거나 질문에 「오늘·어제·최근」이 있으면 Obsidian CLI 결과를 `[fresh:cli]` 라벨로 **덧붙입니다** (GraphRAG 순위는 그대로) | 방금 만든 노트가 「없다」로 나오는 일을 막습니다 |
+
+분해에 실패하면 1.6.0 방식(규칙 파이프라인)으로 그대로 진행하고, 어느 단계든 답변은 실제 노트 내용 기반 + 출처 경로를 표기합니다.
+
+### 실제 사례 (2026-09-08 · 노트 약 15,000개 vault · GraphRAG 서버 + Obsidian CLI)
+
+> 아래는 2026-09-08 아침에 실제 vault(노트 약 15,000개)에서 1.7.0 절차를 그대로 돌린 기록입니다. vault 이름·경로는 `<vault>` 로 가렸고, 나머지 노트 이름·수치는 측정한 그대로입니다. 6건 중 2건은 GraphRAG 서버가 첫 호출에 20초 안에 답하지 않았습니다 — 사례 기록 자체는 원인을 조사하지 않았고, 직후(07:29) 별도로 잰 값은 스왑 8.3GB/9.2GB·서버 상주 메모리 18MB 로 서버가 스왑에 밀려 있었습니다(추정 원인). 그 경우에도 검색이 멈추지 않고 다음 단계로 넘어가는 모습을 그대로 실었습니다. 참고로 같은 서버의 검색 API 는 별도 24문항 벤치마크(같은 날 05:20, 3회 반복)에서 중앙값 0.23초였고, 이번 6사례의 정상 응답 4건은 5~8초였습니다.
+
+**1. `GraphRAG 이론 MOC 어디 있어` — 위치 찾기(nav)**
+- 분해: `intent=nav · targets=[GraphRAG-Theory-MOC, GraphRAG 이론 MOC] · keywords=[GraphRAG, 이론, MOC]`
+- 실행: GraphRAG 서버 20초 무응답 → **Obsidian CLI 로 자동 전환** → 파일명 축 `search query="GraphRAG-Theory-MOC"` → 상위 노트 속성·역링크·아웃링크 확장
+- 답: `GraphRAG-Theory-MOC.md` 가 **두 곳**(vault 루트 · `020-Library/Research/_MOC/`)에 같은 이름으로 있음을 짚어 주고, 역링크 45건과 함께 표시. 같은 결함 패턴(파일명 축이 없으면 「언급만 한 문서」가 상위로 올라옴)은 1.7.0 개발 중 다른 질문(「fable51 회의록 어디 있어」)에서 실제로 확인돼 파일명 축을 넣게 됐습니다.
+
+**2. `누가 GraphRAG-Theory-MOC 를 참조하나` — 역링크(relation)**
+- 분해: `intent=relation · targets=[GraphRAG-Theory-MOC]`
+- 실행: GraphRAG 서버 8초 응답(상위 1위 = 같은 노트, 점수 0.048) → 신선도 확인 `FRESH: age=12m recent=0 supplement=no` → `backlinks file="GraphRAG-Theory-MOC"` → `links` · `properties` · `search:context`
+- 답: 역링크 **45건** 목록, 아웃링크 0건(`No links found`). 서버 결과와 CLI 역링크가 같은 노트를 가리켜 교차 확인.
+
+**3. `#graphrag 태그 붙은 최근 문서` — 태그 + 최근(mixed)**
+- 분해: `intent=mixed · tags=[graphrag] · keywords=[graphrag, 최근, 문서]`
+- 실행: GraphRAG 서버 5초 응답 → 「최근」이 있어 **신선도 보강이 켜짐** `FRESH: age=15m recent=1 supplement=yes` → `tags counts` 에서 부분 일치 후보(`#topic/graphrag` 88 · `#graphrag-theory` 33 · `#GraphRAG` 23) → 후보별 `search query="tag:…"` → `search query="[created:2026-09]"`
+- 답: 세 태그 합계 **106건** + 색인 밖 최신 노트 1건을 `[fresh:cli]` 로 덧붙임. 서버 상위 5 중 3건은 출처 노트가 비어 있어 `⚠ source_note 결손 3/5` 를 함께 표기.
+
+**4. `MCP란?` — 즉답(content · quick)**
+- 분해: `intent=content · keywords=[MCP]`
+- 실행: GraphRAG 서버 20초 무응답 → Obsidian CLI `search query="MCP" limit=1000`(1,000건 상한 도달) → `search:context query="MCP"` → 상위 노트 원문 읽기
+- 답: 「Model Context Protocol — AI 모델을 도구·데이터·앱과 연결하는 개방형 표준, 공개 MCP 서버 1만 개 이상」 요약 + 출처 노트 경로. 서버 없이 CLI 만으로 즉답이 나오는 경로입니다.
+
+**5. `--deep reranker 와 tier boost 의 차이` — 상세 비교(content · deep)**
+- 분해: `intent=content · targets=[reranker, tier boost]`
+- 실행: GraphRAG 서버 5초 응답(상위: `RAG-검색품질-향상기법-MOC` · `Reranker-검색-재정렬-기법`) → `FRESH: age=14m recent=0 supplement=no` → 원문 2건 읽기 → 상위 2 노트의 역링크·아웃링크 확장
+- 답: 「reranker 는 1차 후보를 다시 줄 세우는 후처리, tier boost 는 노트 구조 등급(T1/T2/T3)에 따른 사전 가산점 — 작동 층과 시점이 다르다」 + 출처 2건. 소요 77초.
+
+**6. `오늘 만든 에이전트 팀 관련 문서` — 최근(temporal)**
+- 분해: `intent=temporal · targets=[에이전트 팀] · time.recent=true`
+- 실행: GraphRAG 서버 5초 응답 → 「오늘」 → **신선도 보강이 켜짐** `FRESH: age=17m recent=1 supplement=yes` → CLI 결과 중 서버 결과에 없는 상위 5건을 `[fresh:cli]` 로 병기
+- 답: 서버 상위 5(허브 MOC 위주)는 「오늘 만든 문서」를 직접 가리키지 못한다고 **솔직히 표기**하고, `[fresh:cli]` 5건을 그 아래 붙임. 1위는 출처 노트가 비어 있어 원문을 열지 못했고, 원문을 연 2위(`AI-에이전트`)는 머리말만 있는 빈 노트(스텁)임도 명시.
+
+6건 중 GraphRAG 서버가 첫 시도에 응답한 것은 4건, 파일명 축이 실제로 쓰인 것은 1번, 신선도 보강이 켜진 것은 3·6번입니다.
+
+### 설정·선택 사항
+
+- `km-config.json` → `obsidianCli.vault`: CLI 가 붙을 vault 이름(비우면 `storage.obsidian.vaultPath` 의 폴더명). 기본 vault 가 테스트용일 수 있어 **모든 CLI 호출에 명시**됩니다.
+- 환경변수 `KM_SEARCH_STALE_MIN`(기본 40): 신선도 보강이 켜지는 색인 나이(분). GraphRAG 서버 주소는 환경변수 `GRAPHRAG_API_URL` 또는 `km-config.json` 의 `linking.semantic_adapter.endpoint`(기본 `http://127.0.0.1:8400`).
 - **Codex CLI 설치(방법 4)에서도 같은 검색이 `km-search` 스킬로 동작합니다.**
 - 검색 전에 `000-START-HERE/` 구조 문서 3종을 먼저 참조하고, 답변 마지막 줄에 `구조 문서(<D>/3 참조 · 허브 <k>)` 로 참조 사실을 표기합니다.
 
@@ -962,6 +1011,75 @@ If you edit a skill file yourself and need it to stay portable, write the placeh
 ```
 
 ---
+
+## 🔍 Searching your vault — `/km:search`
+
+One command searches the vault you have been building. The engine is picked automatically:
+
+```
+① GraphRAG server (if installed) → ② Obsidian CLI → ③ Obsidian MCP → ④ plain-text search
+```
+
+Each stage falls through to the next when it is missing or fails, so it **works without GraphRAG** and upgrades itself to semantic search once you add the stack (`/tofugraph` in the same plugin — see `skills/km-graphrag-ops.md`).
+
+```bash
+/km:search What is MCP?                       # quick answer
+/km:search --deep How do A and B relate?      # detailed analysis
+/km:search --deep --decomp=sub …              # deep + delegate query decomposition to a small model (optional)
+```
+
+### What actually happens (1.5 → 1.7)
+
+| Step | What it does | Why |
+|---|---|---|
+| **Decompose → reassemble** (1.7.0) | Before searching, the question is split into `{intent, target notes, keywords, tags, properties, folder hint, time}` and a fixed per-intent rule table turns that into Obsidian CLI calls. Seven intents: `nav` · `content` · `relation` · `meta` · `tag` · `temporal` · `mixed` | "Where is X?" and "What does X say?" are different searches. This is where the filename axis (with Korean↔English synonyms such as 회의록 ↔ meeting / minutes) and the "no backlinks → body-mention fallback" live |
+| **Rule-driven 5-axis expansion** (1.6.0) | For the top notes (quick 2 · deep 5) it **always** runs five axes — properties, backlinks, outlinks, context lines, tags — and labels every line (`[prop] [bl] [ln] [ctx] [tag:#…]`) | You see the neighbourhood of a note, not just one hit |
+| **Freshness supplement** (1.5.1) | If the GraphRAG index is older than 40 minutes, or the question says "today / yesterday / recent", Obsidian CLI results are **appended** with a `[fresh:cli]` label (GraphRAG ranking untouched) | Notes you wrote a minute ago no longer come back as "not found" |
+
+If decomposition fails, the 1.6.0 rule pipeline runs unchanged. Every answer is grounded in actual note content and cites source paths.
+
+### Real examples (2026-09-08 · ~15,000-note vault · GraphRAG server + Obsidian CLI)
+
+> Recorded on the morning of 2026-09-08 against a real vault (~15,000 notes) by running the 1.7.0 procedure step by step. Vault names and paths are masked as `<vault>`; note names and numbers are as measured. In 2 of the 6 cases the GraphRAG server did not answer the first call within 20 s — the case logs themselves did not investigate why; a separate reading taken right after (07:29) showed swap at 8.3 GB of 9.2 GB and the server's resident memory down to 18 MB, i.e. the server had been paged out (probable cause). Those cases are kept as-is because they show the search falling through to the next stage instead of stopping. For scale: the same server's search API had a median of 0.23 s in a separate 24-question benchmark that day (05:20, 3 runs), while the 4 normal answers in these 6 cases took 5–8 s.
+
+**1. `Where is the GraphRAG theory MOC?` — locate (nav)**
+- Decomposed: `intent=nav · targets=[GraphRAG-Theory-MOC, GraphRAG 이론 MOC] · keywords=[GraphRAG, 이론, MOC]`
+- Ran: GraphRAG server silent for 20 s → **automatic switch to Obsidian CLI** → filename axis `search query="GraphRAG-Theory-MOC"` → properties / backlinks / outlinks of the top notes
+- Answer: points out that `GraphRAG-Theory-MOC.md` exists in **two places** (vault root and `020-Library/Research/_MOC/`) and lists its 45 backlinks. The same failure pattern (without a filename axis, a note that merely *mentions* the target ranks first) was observed on a different question while 1.7.0 was being built — that is why the filename axis exists.
+
+**2. `Who references GraphRAG-Theory-MOC?` — backlinks (relation)**
+- Decomposed: `intent=relation · targets=[GraphRAG-Theory-MOC]`
+- Ran: GraphRAG server answered in 8 s (top hit = the note itself, score 0.048) → freshness check `FRESH: age=12m recent=0 supplement=no` → `backlinks file="GraphRAG-Theory-MOC"` → `links` · `properties` · `search:context`
+- Answer: **45 backlinks**, 0 outlinks (`No links found`). Server ranking and CLI backlinks agree on the same note.
+
+**3. `Recent notes tagged #graphrag` — tag + recency (mixed)**
+- Decomposed: `intent=mixed · tags=[graphrag] · keywords=[graphrag, recent, notes]`
+- Ran: server answered in 5 s → the word "recent" **triggers the freshness supplement** `FRESH: age=15m recent=1 supplement=yes` → `tags counts` partial matches (`#topic/graphrag` 88 · `#graphrag-theory` 33 · `#GraphRAG` 23) → `search query="tag:…"` per candidate → `search query="[created:2026-09]"`
+- Answer: **106 notes** across the three tags, plus one note newer than the index appended as `[fresh:cli]`. Three of the server's top-5 lacked a source note, flagged with the `⚠ source_note 결손 3/5` line (“source note missing 3/5” — the label is printed in Korean).
+
+**4. `What is MCP?` — quick answer (content)**
+- Decomposed: `intent=content · keywords=[MCP]`
+- Ran: server silent for 20 s → Obsidian CLI `search query="MCP" limit=1000` (hit the cap) → `search:context query="MCP"` → read the top note
+- Answer: "Model Context Protocol — an open standard that connects AI models to tools, data and apps; 10,000+ public MCP servers" with the source path. This is the CLI-only path that works with no server at all.
+
+**5. `--deep difference between reranker and tier boost` — detailed comparison (content · deep)**
+- Decomposed: `intent=content · targets=[reranker, tier boost]`
+- Ran: server answered in 5 s (top: `RAG-검색품질-향상기법-MOC`, `Reranker-검색-재정렬-기법`) → `FRESH: age=14m recent=0 supplement=no` → read both notes → backlinks/outlinks of the top 2
+- Answer: "a reranker re-orders first-pass candidates after retrieval; tier boost is a pre-computed bonus from the note's structural tier (T1/T2/T3) — different layer, different moment" with two sources. 77 s end to end.
+
+**6. `Agent-team notes created today` — recency (temporal)**
+- Decomposed: `intent=temporal · targets=[agent team] · time.recent=true`
+- Ran: server answered in 5 s → "today" **triggers the freshness supplement** `FRESH: age=17m recent=1 supplement=yes` → the top 5 CLI results absent from the server list are appended as `[fresh:cli]`
+- Answer: says plainly that the server's top 5 (mostly hub MOCs) do not point at anything created today, then appends the 5 `[fresh:cli]` notes; also notes that the #1 hit had no source note to open, and the #2 hit (`AI-에이전트`), the only one actually opened, is a front-matter-only stub.
+
+Across the six: the GraphRAG server answered on the first try in 4, the filename axis actually fired in #1, and the freshness supplement fired in #3 and #6.
+
+### Configuration
+
+- `km-config.json` → `obsidianCli.vault`: the vault name passed to every CLI call (falls back to the folder name of `storage.obsidian.vaultPath`).
+- `KM_SEARCH_STALE_MIN` (default 40): index age in minutes that triggers the freshness supplement. The GraphRAG server URL comes from the `GRAPHRAG_API_URL` environment variable or `linking.semantic_adapter.endpoint` in `km-config.json` (default `http://127.0.0.1:8400`).
+- The same search runs as the `km-search` skill under Codex CLI (Option 4).
+- Before searching, the three structure notes under `000-START-HERE/` are consulted first, and the last line of every answer records it as `구조 문서(<D>/3 참조 · 허브 <k>)` (“structure docs consulted <D>/3 · hubs <k>”).
 
 ## Storage
 

@@ -212,8 +212,28 @@ done
 - 출력이 0 B 인데 rc 가 0 이면 「도구가 순간 빈손」이므로 1회 재시도한다. 무결과 문구(≠0 B)일 때만 「없음」으로 판정한다.
 - 미히트여도 위 `구조 문서: 참조함(…)` 줄은 반드시 표기한다 — 참조 «했음»의 증명이다.
 
-### Tier 2 — Obsidian CLI (전문 검색 + 링크·속성 축 · v1.6.0)
+### Tier 2 — Obsidian CLI (질문 분해 → 재조립 → 실행 · v1.7.0)
 vault 이름 = km-config `obsidianCli.vault`(비면 `storage.obsidian.vaultPath` 의 basename) → `OBSIDIAN_VAULT`. **모든 CLI 호출에 `vault="${OBSIDIAN_VAULT}"` 를 붙인다**(기본 vault 가 테스트용 vault 일 수 있음).
+**0-α 활성 vault 대조(1회)**: `"$OBSIDIAN_CLI" vault info=path` 실측값 ≠ `OBSIDIAN_VAULT` 의 경로(`"$OBSIDIAN_CLI" vaults verbose` 에서 이름→경로) 이면 `⚠ 활성 vault 불일치: <실측> (설정 <기대>)` 1줄 출력 후 계속 — CLI 의 `vault=` 인자는 search·backlinks·properties·tags 전부에서 무시되고 «앱에서 열린 vault» 로 동작한다(36 §8 ②).
+
+**0-β 질문 분해(1.7.0 · 스폰 ❌ · 이 스킬을 실행하는 모델 자신이 첫 단계로 아래 JSON 1개를 낸다 — 도구 호출 전, 다른 문장 ❌)**:
+```json
+{"intent":"nav|content|relation|meta|tag|temporal|mixed","targets":["노트명 후보 ≤3, 확신순"],"keywords":["핵심어 ≤5"],"tags":["태그 ≤3, # 제거"],"props":{"key":"value"},"path_hint":"폴더 힌트 or null","time":{"recent":false,"date":null},"axes":["bl|ln|prop|ctx|tag|full 실행 순서"],"topn":2}
+```
+intent: nav=위치·정본·목록·구조 / content=내용·설명·비교 / relation=역링크·정방향·누가 참조 / meta=속성·created·aliases / tag=태그 / temporal=최근·오늘·날짜 / mixed=둘 이상. `--decomp=sub`(DEEP 전용) 이면 이 JSON 을 `claude -p --model haiku --strict-mcp-config --mcp-config '{"mcpServers":{}}' --no-session-persistence "<같은 지시+질문>" < /dev/null` 로 받는다(상한 10s · 초과·JSON 파싱 실패 = 0-β 생략 = 1.6.0 규칙 파이프라인 그대로).
+
+**0-γ 재조립(분해 JSON → 호출 목록 · 규칙 고정)**:
+| intent | 먼저 | 그 다음 | 인자 |
+|---|---|---|---|
+| relation | targets 각각 ① `backlinks file=T format=json` + ② `links file=T` | ①이 `No backlinks found`(또는 0건)이면 **본문 언급 폴백**: `search query="T" format=json limit=50` → 경로 목록을 `[mention]` 라벨로(역링크 아님을 라벨로 구분 · «역링크 0·본문 언급 N건» 1줄 병기) · `search query=T total` 로 후보 검증(0 이면 다음 후보) | targets 없으면 keywords `search` 1회 → 상위 1건을 T 로 |
+| meta | ③ `properties file=T format=json` · props 있으면 `search query="[k:v]" format=json limit=20` | `property:read name=k file=T` | `[k:v]` 는 CLI 가 해석(부분일치) |
+| tag | ⑤ `tags counts format=json` 부분일치 후보 ≤3 → ⑤-b `search query="tag:t" limit=50` | 결과 ≤3 이면 ④ | 현행 ⑤/⑤-b |
+| nav | ④-name **파일명 축**: `"$OBSIDIAN_CLI" search query="<targets[0]>" format=json limit=200` 결과 경로 중 «경로 전체(소문자)»에 targets[0] 의 토큰(공백 분리, 2자+)이 «모두» 포함된 경로 — 토큰 비교는 동의어표로 확장: 회의록·회의→meeting|minutes|회의 · 스펙→spec|01-spec · 진행→progress|02-progress · 결과→outcome|03-outcome · 발주→order · 보고→report · 설계→design · 맥락→context|00-context · 정본→canon|sot · 색인→index (토큰 원형 또는 동의어 중 하나라도 경로에 있으면 매치)를 [name] 라벨로 최상위(≤3) · 0건이면 targets[1..] 반복 | ④ `search query=keywords path=path_hint format=json limit=50`(path_hint null 이면 path 생략 + Phase 0.4/0.5 결과 ∪) → 상위 TOPN `properties`·`links` | Tier 1 결과 ∪ · [name] 히트가 있으면 그것이 답의 1순위 |
+| content | ④ `search query=keywords format=json limit=1000` → ④-b `search:context query=keywords path=<상위 1건 폴더> limit=3` | DEEP 이면 상위 TOPN `backlinks` | 현행 ④/④-b |
+| temporal | Tier 1-S 신선도 보강 강제(RECENT=1) + `search query="[created:<time.date 또는 YYYY-MM>]" format=json limit=20` | content 규칙 | 날짜 없으면 이번 달 |
+| mixed | axes 순서대로 위 행을 이어 붙임(중복 호출 제거) | — | 호출 상한 = 현행 유지 |
+분해가 없거나(0-β 생략) intent 를 못 정하면 아래 0단·1단을 «그대로» 실행한다(1.7.0 은 앞머리 추가이지 1.6.0 을 빼지 않는다). **1단 규칙 확장(TOPN 노트의 ①prop ②bl ③ln)은 intent 와 무관하게 항상 실행**(재경님 2026-09-07 1546446498).
+
 **0단 진입(신호어가 있으면 그 축을 먼저 · 신호 축이 돌아도 ④ 전문 검색은 항상 함께 실행 = 1단 TOPN 모집단) — 신호어 없으면 ④ 부터:**
 | 질의 신호 | 서브커맨드 | 출력 |
 |---|---|---|
@@ -361,7 +381,7 @@ grep -rln --include="*.md" -F "[[${KEYWORD}" "${VAULT_PATH}" | head -10
 - **hallucination 금지**: 반드시 실제 노트 내용 기반. 노트에 없는 내용은 "vault에 관련 자료가 없습니다" 명시 (Tier 1 에서는 `/api/note` 의 `body` 와 `source_note` 경로의 원문이 '실제 노트 내용'이다 — 둘 다 그 vault 노트에서 나온다. 로컬 원문 Read 는 경로가 실재할 때의 보강이지, Read 실패가 답변을 막는 게이트가 아니다)
 - **출처 필수**: 실제 읽은 노트 경로 표기
 - **사용 티어 명시 (형식 고정)**: 답변 마지막 줄은 정확히 이 형식으로 쓴다 — `검색: <티어명> + 구조 문서(<D>/3 참조 · 허브 <k>) + 그래프 확장(backlinks N)`. **D = Phase 0.4 의 `STRUCT_DOCS`, k = `ROUTE_HUB_COUNT`(둘 다 실측 정수)** · backlinks N = Phase 2.5-B backlink grep 결과 줄 수(실측 정수, 생략·"1-hop" 같은 서술 대체 ❌). 그래프 확장을 안 한 답변(QUICK 얕은 질의, 또는 Tier 1 `VAULT_MODE=other` 로 Phase 2.5 를 생략한 경우)은 `검색: <티어명> + 구조 문서(<D>/3 참조 · 허브 <k>)` 까지 허용.
-- **질문/스킬/에이전트 스폰 금지**: 직접 검색만 수행
+- **질문/스킬/에이전트 스폰 금지**: 직접 검색만 수행 — 예외 1 = 0-β 분해(`--decomp=sub` 시 헤드리스 haiku 1회, 도구 0·질문 0), 그 외 스폰 ❌
 - 상태 메시지 없이 바로 결과 출력 · Read 실패 시 다음 노트로
 - QUICK: 5줄 이내 + 출처 1-2개 / DEEP: 제한 없음 + 출처 3-5개
 
