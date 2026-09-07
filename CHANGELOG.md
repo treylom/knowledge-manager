@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.1 (2026-09-07)
+
+- /km:search Tier 1-S 신선도 보강: /health finished_at 나이 > KM_SEARCH_STALE_MIN(40분) 또는 최근지향 질의면 Obsidian CLI 결과를 [fresh:cli] 로 보강(Tier 1 결과 불변). 근거 = vault 25-p2.
+
 ## 1.5.0 (2026-09-06)
 
 - 파이프라인 스킬 이름을 `km-pipeline` 으로 바꿨습니다(명령·스킬 문서와 테스트 픽스처의 표기도 함께 맞춤). 동작 변화는 없습니다.
