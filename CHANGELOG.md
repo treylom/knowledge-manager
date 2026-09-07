@@ -3,6 +3,7 @@
 ## 1.7.0 (2026-09-07)
 
 - /km:search Tier 2: 0-α 활성 vault 대조 · 0-β 질문 분해(in-context JSON, --decomp=sub 헤드리스 haiku 옵션) · 0-γ intent→CLI 재조립 규칙표(relation/meta/tag/nav/content/temporal/mixed) · 분해 실패 = 1.6.0 규칙 파이프라인 그대로 · 1단 3축(prop/bl/ln) 항상 유지. 근거 = vault 36-p4 v0.1.
+- 손질(예시 5 실측): nav = 파일명 축 [name] 최상위 · relation = 역링크 0 → 본문 언급 [mention] 폴백.
 
 ## 1.6.0 (2026-09-07)
 

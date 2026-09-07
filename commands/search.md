@@ -225,10 +225,10 @@ intent: nav=위치·정본·목록·구조 / content=내용·설명·비교 / re
 **0-γ 재조립(분해 JSON → 호출 목록 · 규칙 고정)**:
 | intent | 먼저 | 그 다음 | 인자 |
 |---|---|---|---|
-| relation | targets 각각 ① `backlinks file=T format=json` + ② `links file=T` | `search query=T total` 로 후보 검증(0 이면 다음 후보) | targets 없으면 keywords `search` 1회 → 상위 1건을 T 로 |
+| relation | targets 각각 ① `backlinks file=T format=json` + ② `links file=T` | ①이 `No backlinks found`(또는 0건)이면 **본문 언급 폴백**: `search query="T" format=json limit=50` → 경로 목록을 `[mention]` 라벨로(역링크 아님을 라벨로 구분 · «역링크 0·본문 언급 N건» 1줄 병기) · `search query=T total` 로 후보 검증(0 이면 다음 후보) | targets 없으면 keywords `search` 1회 → 상위 1건을 T 로 |
 | meta | ③ `properties file=T format=json` · props 있으면 `search query="[k:v]" format=json limit=20` | `property:read name=k file=T` | `[k:v]` 는 CLI 가 해석(부분일치) |
 | tag | ⑤ `tags counts format=json` 부분일치 후보 ≤3 → ⑤-b `search query="tag:t" limit=50` | 결과 ≤3 이면 ④ | 현행 ⑤/⑤-b |
-| nav | ④ `search query=keywords path=path_hint format=json limit=50`(path_hint null 이면 path 생략 + Phase 0.4/0.5 결과 ∪) | 상위 TOPN `properties`·`links` | Tier 1 결과 ∪ |
+| nav | ④-name **파일명 축**: `"$OBSIDIAN_CLI" search query="<targets[0]>" format=json limit=200` 결과 경로 중 basename(.md 제거)에 targets[0] 의 토큰(공백 분리, 2자+)이 «모두» 포함된 경로를 [name] 라벨로 최상위(≤3) · 0건이면 targets[1..] 반복 | ④ `search query=keywords path=path_hint format=json limit=50`(path_hint null 이면 path 생략 + Phase 0.4/0.5 결과 ∪) → 상위 TOPN `properties`·`links` | Tier 1 결과 ∪ · [name] 히트가 있으면 그것이 답의 1순위 |
 | content | ④ `search query=keywords format=json limit=1000` → ④-b `search:context query=keywords path=<상위 1건 폴더> limit=3` | DEEP 이면 상위 TOPN `backlinks` | 현행 ④/④-b |
 | temporal | Tier 1-S 신선도 보강 강제(RECENT=1) + `search query="[created:<time.date 또는 YYYY-MM>]" format=json limit=20` | content 규칙 | 날짜 없으면 이번 달 |
 | mixed | axes 순서대로 위 행을 이어 붙임(중복 호출 제거) | — | 호출 상한 = 현행 유지 |

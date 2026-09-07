@@ -85,6 +85,10 @@ for F in "$A" "$B"; do
   check_min_count "decomp-sub-flag-count" "$F" '--decomp=sub' 2
   check_count "fallback-pipeline-count" "$F" '1.6.0 규칙 파이프라인 그대로' 1
   check_count "decoy-ZZQXDECOMP" "$F" 'ZZQXDECOMP' 0
+  # ── 39 §1-4 (P4 · fix2) 신규: nav 파일명 축 [name] · relation 본문 언급 폴백 [mention] 정적 검사 ──
+  check_min_count "name-label-count" "$F" '\[name\]' 1
+  check_min_count "mention-label-count" "$F" '\[mention\]' 1
+  check_count "decoy-ZZQXFIX2" "$F" 'ZZQXFIX2' 0
 done
 check_count "config-vault-key" "$C" '"vault"' 1
 check_count "plugin-version" "$E" '1.7.0' 1
