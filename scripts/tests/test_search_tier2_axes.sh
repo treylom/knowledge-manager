@@ -3,7 +3,7 @@
 # routing (backlinks/links/properties/search:context) + obsidianCli.vault config key.
 # Static checks always run. Live smoke checks only run when a real obsidian-cli
 # executable is found (SKIP + rc 0 otherwise).
-# Spec: AI_Second_Brain/100-project/2026-09-01-graphrag-search-quality/31-p3-km-tier2-cli-axes-order.md §3
+# Spec: CHANGELOG.md 1.6.0 (Tier 2 rule-driven 5-axis expansion + obsidianCli.vault)
 
 set -uo pipefail
 

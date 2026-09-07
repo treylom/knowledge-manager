@@ -211,7 +211,7 @@ done
 
 ### Tier 2 — Obsidian CLI (전문 검색 + 링크·속성 축 · v1.6.0)
 vault 이름 = km-config `obsidianCli.vault`(비면 `storage.obsidian.vaultPath` 의 basename) → `OBSIDIAN_VAULT`. **모든 CLI 호출에 `vault="${OBSIDIAN_VAULT}"` 를 붙인다**(기본 vault 가 테스트용 vault 일 수 있음).
-**0단 진입(신호어가 있으면 그 축을 먼저) — 없으면 ④ 전문 검색부터:**
+**0단 진입(신호어가 있으면 그 축을 먼저 · 신호 축이 돌아도 ④ 전문 검색은 항상 함께 실행 = 1단 TOPN 모집단) — 신호어 없으면 ④ 부터:**
 | 질의 신호 | 서브커맨드 | 출력 |
 |---|---|---|
 | ① `[[이름]]` 포함 또는 「역링크·백링크·어디서 참조·누가 링크」 + 노트명 | `"$OBSIDIAN_CLI" backlinks file="<노트명>" vault="${OBSIDIAN_VAULT}" format=json` | JSON `[{"file":…}]` |
@@ -229,7 +229,7 @@ TOPN = QUICK 2 / DEEP 5 (Tier 1 결과 ∪ 0단 결과에서 상위 TOPN 노트 
  ② backlinks file="F" format=json (≤5) [bl] · ③ links file="F" (≤5) [ln]
  ④ search:context query="${QUERY}" path="<F 의 폴더>" limit=3 → F 의 매치 줄 ≤3 [ctx]
  ⑤ ① 의 tags 중 상위 2개 → search query="tag:<t>" format=json limit=20 → 기존 결과에 없는 경로 ≤3 [tag:#t]
-중복 경로 제거 · 각 줄에 축 라벨 · CLI 오류·0B 는 그 축만 건너뛰고 계속(전체 중단 ❌) · 호출 상한 = TOPN×5 + 2
+중복 경로 제거 · 각 줄에 축 라벨 · CLI 오류·0B 는 그 축만 건너뛰고 계속(전체 중단 ❌) · 호출 상한 = 0단 ≤6(④ 1 + ④-b 1 + ⑤ 후보 ≤5 중 실행분) + 1단 TOPN×6(①②③④ 4 + ⑤ 태그 2)
 ```
 - 출력 규약: Tier 1/2 본 결과 «아래»에 `## 확장(규칙 5축)` 블록 — 노트별 5줄 이내. 본 결과 순위 재배열 ❌.
 - 기존 Phase 2.5-B(그래프 확장)와의 관계: Phase 2.5-B 의 backlinks 호출은 이 1단 ② 로 «대체»(중복 호출 ❌).
