@@ -12,41 +12,10 @@ Claude Code용 종합 지식 관리 에이전트. 다양한 소스에서 콘텐�
 
 - **다중 소스 입력**: 웹페이지, PDF, Notion
 - **YouTube 트랜스크립트**: YouTube 영상 자막 자동 추출 + 분석 + 노트 생성 ⭐ NEW
-- **카카오톡 채팅 분석**: 채팅방 메시지 분석 + 노트 생성 (macOS: 자동, Windows: 수동 내보내기) ⭐ NEW
 - **PDF 및 이미지 OCR**: 스캔된 PDF와 이미지에서 텍스트 추출 (Claude Code용)
 - **스마트 추출**: AI 기반 콘텐츠 분석 및 원자적 아이디어 추출
 - **유연한 저장**: Obsidian, Notion, 또는 로컬 Markdown 파일
-- **PPT/슬라이드 생성**: AI 이미지 기반 고퀄리티 프레젠테이션 (15+ 스타일)
 - **간단한 설정**: 셋업 위저드가 모든 것을 안내
-- **카카오톡 전송**: 정리된 노트를 카카오톡으로 자동 전송 (Windows/WSL)
-
----
-
-## 📱 카카오톡 전송 설정
-
-카카오톡 자동 전송은 [kmsg](https://github.com/channprj/kmsg)에서 영감을 받아 제작되었습니다.
-
-| 플랫폼 | 도구 | 설치 |
-|--------|------|------|
-| **macOS** | [kmsg](https://github.com/channprj/kmsg) (원본) | `brew install channprj/tap/kmsg` |
-| **Windows/WSL** | `send_kakao.py` (동봉) | 추가 설치 불필요 |
-
-> **Windows/WSL**: KakaoTalk PC 버전이 실행 중이어야 합니다. `send_kakao.py`는 Win32 SendInput API로 메시지를 전송합니다.
->
-> **macOS**: kmsg는 macOS용 Swift 바이너리입니다. 자세한 사용법은 [kmsg README](https://github.com/channprj/kmsg#readme)를 참고하세요.
-
-#### km-config.json 설정
-
-```json
-{
-  "kakao": {
-    "enabled": true,
-    "selfName": "홍길동"
-  }
-}
-```
-
-- `selfName`: 본인 카카오톡 채팅방 이름 (실명). **"나"가 아닌 본인 이름을 입력하세요!**
 
 ---
 
@@ -385,16 +354,6 @@ claude mcp list
 | youtube-transcript-api | `pip install youtube-transcript-api` | YouTube 자막 추출 (필수) |
 | yt-dlp | `pip install yt-dlp` | 자막 폴백 + 메타데이터 (권장) |
 
-### 카카오톡 채팅 분석 (선택)
-
-> 카카오톡은 메시지 읽기 API를 제공하지 않아, macOS만 자동 수집이 가능합니다.
-
-| 플랫폼 | 도구 | 자동화 | 설치 |
-|--------|------|--------|------|
-| macOS | [kmsg](https://github.com/channprj/kmsg) | 자동 (Accessibility API) | `brew install channprj/tap/kmsg` |
-| Windows/WSL | 수동 "대화 내보내기" → TXT 파싱 | **수동 필요** | 추가 설치 불필요 |
-| (TXT 파서) | kakaotalk_msg_preprocessor | - | `pip install kakaotalk_msg_preprocessor` |
-
 ### 선택 (셋업 위저드가 안내)
 
 | 항목 | 용도 |
@@ -434,9 +393,6 @@ claude mcp list
 
 # YouTube 영상 트랜스크립트 정리
 /knowledge-manager https://youtube.com/watch?v=XXX
-
-# 카카오톡 채팅방 분석 (대화 내보내기 TXT 파일)
-/knowledge-manager 카톡방 "AI 오픈채팅" 이번 주 내용 정리해줘
 ```
 
 ### 플러그인으로 설치한 경우
@@ -453,59 +409,6 @@ claude mcp list
 
 # 대량 변형(계획서만)
 /km:reform
-```
-
----
-
-## 🎨 PPT/슬라이드 생성 (NEW!)
-
-AI 이미지 생성 기반의 고퀄리티 프레젠테이션을 만들 수 있습니다.
-
-> 📦 **Powered by [baoyu-slide-deck](https://github.com/JimLiu/baoyu-skills)** - JimLiu의 baoyu-skills에서 제공하는 슬라이드 생성 스킬입니다.
-
-### 사용법
-
-```bash
-# 콘텐츠에서 PPT 생성
-/knowledge-manager https://example.com/article PPT로 만들어줘
-
-# 스타일 지정
-/knowledge-manager content.md sketch-notes 스타일로 슬라이드 생성
-
-# 직접 슬라이드 생성
-/baoyu-slide-deck content.md --style corporate
-```
-
-### 스타일 가이드
-
-| 스타일 | 용도 | 추천 상황 |
-|--------|------|----------|
-| `sketch-notes` | 교육/튜토리얼 | 강의, 워크샵 |
-| `blueprint` | 기술 문서 | 아키텍처, 시스템 설계 |
-| `corporate` | 비즈니스 | 투자 발표, 경영 보고 |
-| `minimal` | 미니멀 | 심플한 발표 |
-| `chalkboard` | 강의실 | 교육 콘텐츠 |
-| `notion` | SaaS 대시보드 | 제품 데모, B2B |
-
-### 옵션
-
-| 옵션 | 설명 | 예시 |
-|------|------|------|
-| `--style <name>` | 비주얼 스타일 | `--style corporate` |
-| `--audience <type>` | 대상 청중 | `--audience executives` |
-| `--lang <code>` | 출력 언어 | `--lang ko` |
-| `--slides <number>` | 슬라이드 수 | `--slides 15` |
-| `--outline-only` | 아웃라인만 생성 | - |
-
-### 출력물
-
-```
-slide-deck/{topic}/
-├── outline.md           # 아웃라인
-├── 01-slide-cover.png   # 개별 슬라이드 이미지
-├── ...
-├── {topic}.pptx         # PowerPoint 파일
-└── {topic}.pdf          # PDF 파일
 ```
 
 ---
@@ -566,28 +469,6 @@ claude mcp list
 
 ## 고급 옵션
 
-### Hyperbrowser (선택적 대안)
-
-> ⚠️ **권장하지 않음**: 기본적으로 Playwright MCP를 사용하세요. Hyperbrowser는 Playwright가 차단당하는 특수한 경우에만 고려하세요.
-
-Playwright MCP가 특정 사이트에서 지속적으로 차단당하는 경우에만 Hyperbrowser를 고려하세요.
-
-1. [hyperbrowser.ai](https://hyperbrowser.ai)에서 API 키 발급
-2. `km-config.json`에서 `browser.provider`를 `"hyperbrowser"`로 변경
-3. MCP 설정에 hyperbrowser 서버 추가:
-
-```json
-"hyperbrowser": {
-  "command": "npx",
-  "args": ["-y", "hyperbrowser-mcp"],
-  "env": {
-    "HYPERBROWSER_API_KEY": "your-api-key"
-  }
-}
-```
-
-**주의**: Hyperbrowser는 유료 서비스이며, 설정이 복잡해질 수 있습니다. 대부분의 경우 Playwright MCP로 충분합니다.
-
 ### 환경 변수 지원
 
 ```bash
@@ -630,11 +511,9 @@ A comprehensive knowledge management agent for Claude Code. It collects content 
 
 - **Multiple Input Sources**: Web pages, PDFs, Notion
 - **YouTube Transcripts**: Auto-extract YouTube subtitles + analyze + generate notes
-- **KakaoTalk Chat Analysis**: Analyze chat messages + generate notes (macOS: auto, Windows: manual export)
 - **PDF & Image OCR**: Extract text from scanned PDFs and images (Claude Code)
 - **Smart Extraction**: AI-powered content analysis and atomic idea extraction
 - **Flexible Storage**: Obsidian, Notion, or local Markdown files
-- **KakaoTalk Send**: Auto-send notes to KakaoTalk (Windows/WSL)
 - **Easy Setup**: Setup wizard guides you through everything
 
 ---
@@ -874,16 +753,6 @@ claude mcp list
 | youtube-transcript-api | `pip install youtube-transcript-api` | YouTube subtitle extraction (required) |
 | yt-dlp | `pip install yt-dlp` | Subtitle fallback + metadata (recommended) |
 
-### KakaoTalk Chat Analysis (Optional)
-
-> KakaoTalk provides no message reading API. Only macOS supports auto-collection.
-
-| Platform | Tool | Automation | Install |
-|----------|------|------------|---------|
-| macOS | [kmsg](https://github.com/channprj/kmsg) | Auto (Accessibility API) | `brew install channprj/tap/kmsg` |
-| Windows/WSL | Manual "Export Chat" → TXT parsing | **Manual required** | No additional install needed |
-| (TXT parser) | kakaotalk_msg_preprocessor | - | `pip install kakaotalk_msg_preprocessor` |
-
 ### Optional (Setup wizard will guide you)
 
 | Item | Purpose |
@@ -995,9 +864,6 @@ If you edit a skill file yourself and need it to stay portable, write the placeh
 
 # YouTube video transcript
 /knowledge-manager https://youtube.com/watch?v=XXX
-
-# KakaoTalk chat analysis
-/knowledge-manager Analyze "AI Chat Room" messages from this week
 ```
 
 ### If installed as plugin
@@ -1135,28 +1001,6 @@ claude mcp list
 
 ## Advanced Options
 
-### Hyperbrowser (Optional Alternative)
-
-> ⚠️ **Not recommended**: Use Playwright MCP by default. Only consider Hyperbrowser if Playwright is consistently blocked.
-
-Only consider Hyperbrowser if Playwright MCP is consistently blocked on specific sites.
-
-1. Get API key from [hyperbrowser.ai](https://hyperbrowser.ai)
-2. Change `browser.provider` to `"hyperbrowser"` in `km-config.json`
-3. Add hyperbrowser server to MCP config:
-
-```json
-"hyperbrowser": {
-  "command": "npx",
-  "args": ["-y", "hyperbrowser-mcp"],
-  "env": {
-    "HYPERBROWSER_API_KEY": "your-api-key"
-  }
-}
-```
-
-**Note**: Hyperbrowser is a paid service and may add configuration complexity. Playwright MCP is sufficient for most cases.
-
 ### Environment Variable Support
 
 ```bash
@@ -1184,5 +1028,3 @@ MIT License - Free to use, modify, and distribute.
 - [MCP Protocol](https://modelcontextprotocol.io)
 - [Obsidian](https://obsidian.md)
 - [Antigravity MCP Setup Guide](https://composio.dev/blog/howto-mcp-antigravity)
-- [baoyu-skills](https://github.com/JimLiu/baoyu-skills) - PPT/슬라이드 생성 스킬 원본
-- [kmsg](https://github.com/channprj/kmsg) - KakaoTalk 메시지 전송 CLI (macOS)
