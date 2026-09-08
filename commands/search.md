@@ -303,7 +303,7 @@ grep -rn "${QUERY}" "${VAULT_PATH}" --include="*.md" -l | head -20
 노트를 Read 하면 본문 전에 frontmatter 를 먼저 해석한다:
 - `aliases:` → **재질의 사전**: 1차 검색이 0건·빈약하면 별칭(영/한 표기 변형)으로 1회 재검색.
 - `tags:` · `type:` → MOC/허브 판정(Phase 0.5 입력) + 답변의 분류 근거.
-- `related:` · `parent:` · 본문 `[[링크]]` → 추가 Read 후보(질문과 키워드가 겹치는 것 1~2개).
+- `related:` · `parent:` · 본문 `[[링크]]` → 추가 Read 후보. **MOC·허브로 «올라가는» 링크 우선**(주변 노트→정본 허브 도달이 목적 — 2026-07-13 벤치: 에이전트 검색은 주변 노트엔 도달하나 **허브에 못 가는 게 주 실패 모드**. Phase 0.5 입구 라우팅과는 다른 실패층: 0.5 = 처음부터 허브로, 여기 = 주변에 떨어졌을 때 위로 복귀 · v1.7.1). 개수는 아래 «링크 추적 예산» 안에서.
 
 ### B. backlinks 1-hop (DEEP 필수 · QUICK 은 top hit 이 얇을 때)
 top 1~2 노트에 대해 **backlink(그 노트를 가리키는 노트)** 와 **outlink(그 노트가 가리키는 노트)** 를 실측한다:
@@ -319,7 +319,8 @@ grep -rl --include="*.md" -F "[[${STEM}" "${VAULT_PATH}" | head -10
 grep -o '\[\[[^]|#]*' "${NOTE_FILE}" | sed 's/^\[\[//' | sort -u | head -15
 ```
 - backlinks 가 많은 노트 = 허브 → 답변 진입점으로 우선한다.
-- backlinks/outlinks 중 질문과 겹치는 노트 1~2개를 추가 Read → 답변의 "🔗 연결 맥락"에 반영.
+- backlinks/outlinks 중 질문과 겹치는 노트를 추가 Read → 답변의 "🔗 연결 맥락"에 반영 — 여기서도 허브로 올라가는 쪽을 먼저.
+- **링크 추적 예산(v1.7.1)**: A(related/parent/[[링크]]) + B(backlinks/outlinks) 합산 추가 Read = **QUICK ≤1 / DEEP ≤3** · 총 Read = 기본(QUICK 1-2 / DEEP 3-5) + 추가 → **QUICK 총 3 / DEEP 총 8 초과 ❌**(무한 걷기 방지).
 - **backlink grep 결과 줄 수를 센다(`| wc -l`) → 이 정수 N 이 답변 마지막 줄 `그래프 확장(backlinks N)` 에 들어간다** (제약 §"사용 티어 명시" 형식 고정과 1:1).
 
 ### C. 부재 발화 전 3단 재질의 (특히 Codex 등 도구가 얇은 환경)

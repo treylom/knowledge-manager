@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.1 (2026-09-08)
+- /km:search Phase 2.5: 링크 확장에 «허브로 올라가는 링크 우선» 축 역이식(vault 2026-07-13 벤치 근거 — 주변 노트엔 도달하나 허브 미도달이 주 실패 모드) · 링크 추적 예산 명시(A+B 합산 QUICK ≤1 / DEEP ≤3 · 총 Read QUICK 3 / DEEP 8) — fable51 재기획 D-15(2026-09-08).
+- 매니페스트: `.codex-plugin/plugin.json` version 1.5.0→1.7.1 동시 bump(1.5.1~1.7.0 세 판 연속 정지 결손 보수 — 릴리스 절차: 두 매니페스트 동시).
+
 ## 1.7.0 (2026-09-07)
 
 - /km:search Tier 2: 0-α 활성 vault 대조 · 0-β 질문 분해(in-context JSON, --decomp=sub 헤드리스 haiku 옵션) · 0-γ intent→CLI 재조립 규칙표(relation/meta/tag/nav/content/temporal/mixed) · 분해 실패 = 1.6.0 규칙 파이프라인 그대로 · 1단 3축(prop/bl/ln) 항상 유지. 근거 = vault 36-p4 v0.1.
