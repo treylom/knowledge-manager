@@ -102,7 +102,23 @@ echo "ROUTE_HUBS=[${ROUTE_HUBS% }] count=${ROUTE_HUB_COUNT}"
 
 > Why: 노트가 많아질수록 원자 나열은 찾기 어려움 — MOC(지도 노트)가 허브·진입점 역할.
 
-## 검색 엔진 — 4단계 자동 폴백
+## Tier 0 — 메모리뱅크 축 (v1.8.0 · 2026-09-14 · 재경님 1548711800 「우리 판 km:search 는 메모리뱅크도 함께 봐야」)
+
+Tier 1 «앞에» 같은 질의로 과거 대화·결정 경위를 1회 조회한다(memory.md 축⑥: 과거 경위 = 메모리뱅크 / 현재 정본 = vault). 결과는 vault 결과와 **합치지 않고** 별도 절 `🧠 메모리뱅크 (과거 대화)` 에 ≤3건 병기, 각 줄 라벨 `[mb]`. CLI 부재·오류·0건 = 1줄 표기 후 **그대로 계속**(멈춤 ❌ · Tier 1 결과 불변).
+
+```bash
+MB_CLI="$(ls -d "$HOME/.claude/plugins/cache/memory-bank-dev/memory-bank"/*/cli/memory-bank.js 2>/dev/null | sort -V | tail -1)"
+MB_OUT=""; MB_STATE=absent; MB_HITS=0
+if [ -n "$MB_CLI" ]; then
+  MB_OUT="$(node "$MB_CLI" search "${QUERY}" --limit 3 2>/dev/null | grep -vE '^(Loading|Embedding)')" && MB_STATE=ok || MB_STATE=error
+  MB_HITS=$(printf '%s\n' "$MB_OUT" | grep -cE '^[0-9]+\. \[' || true)
+fi
+echo "MB_STATE=${MB_STATE} mb_hits=${MB_HITS}"
+```
+- 출력 규약: `[mb] <프로젝트, 날짜> — <첫 문장 ≤80자> (<jsonl 경로>:<Lines>)` ≤3줄. 메모리뱅크 히트는 «과거 경위»이지 현재 정본이 아니다 — 사실 주장은 vault 결과(Tier 1~4)가 이기고, 「왜 그렇게 결정했나·전에 어떻게 했나」 질문은 [mb] 가 1순위(memory.md 「주입 ≠ 조회 · 조회가 이김」과 동축).
+- 마커: 답변 마지막 티어 줄에 `+ 메모리뱅크(<MB_STATE>·<MB_HITS>건)` 병기. 부재 단정 발화 전엔 [mb] 0건도 함께 적는다(두 코퍼스는 서로 부재를 증명하지 않는다).
+
+## 검색 엔진 — 4단계 자동 폴백 (Tier 0 뒤에 실행)
 
 ### Tier 1 — GraphRAG 서버 (설치된 경우, 의미 기반 하이브리드 검색)
 ```bash
@@ -110,7 +126,7 @@ QUERY_ENCODED=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sy
 
 # --max-time 필수: 서버가 "죽은 게 아니라 막힌" 상태면 연결은 성공하므로
 # --connect-timeout 은 걸리지 않는다(무한 대기). 실측 근거는 아래 주석 참조.
-gr_fetch() { curl -s -w '\n%{http_code}' --connect-timeout 3 --max-time 20 \
+gr_fetch() { curl -s -w '\n%{http_code}' --connect-timeout 3 --max-time 60 \
   "$1/api/search?q=${QUERY_ENCODED}&top_k=${TOP_K}&mode=hybrid"; }
 
 _raw="$(gr_fetch "${SEARCH_ENDPOINT}")"; TIER1_RC=$?
@@ -163,7 +179,7 @@ echo "ENDPOINT_SWITCHED=${ENDPOINT_SWITCHED:-none}"
 - 🚨 **서버를 바꿔 탔으면 반드시 밝힌다.** 두 서버는 **서로 다른 vault 를 색인**하고 있을 수 있다(기계마다 자기 vault 를 색인한다). 조용히 전환하면 *다른 코퍼스에서 그럴듯한 답*이 나오고 사용자는 알아챌 수 없다 — Phase -1 의 "vault 경로 추측 금지"와 **같은 병**이다. `ENDPOINT_SWITCHED` 가 `none` 이 아니면 답변에 한 줄:
   `⚠️ 원래 서버(<원주소>)가 응답하지 않아 <새주소> 로 검색했습니다 — 색인된 vault 가 다를 수 있습니다`
 - 전환했을 때는 결과의 `source_note` 경로를 **한 건 그대로** 함께 보여 준다 — 사용자가 "내 vault 가 맞나"를 눈으로 가릴 수 있게. ⚠️ 경로 앞부분이 vault 이름이라고 가정하지 말 것: 서버 설정에 따라 vault 이름으로 시작하기도 하고(`Tofu_LLM_Wiki/...`) vault 안 상대경로로 시작하기도 한다(`020-Library/...`) — 2026-07-27 두 서버 실측. 접두어는 힌트지 식별자가 아니다.
-- **`--max-time 20` 의 근거(2026-07-27 실측)**: 정상 응답이 7.5초 걸린 경우가 있었고, 같은 서버가 30초를 넘겨 시한 초과한 경우도 있었다. 5초·3초로 잡으면 **멀쩡한 서버를 "없음"으로 만든다**. 환경별로 다르면 이 값을 조정하되, 관측된 정상 응답 시간보다 넉넉히 크게 잡는다.
+- **`--max-time 60` 의 근거(2026-09-13 갱신 — 스왑 냉시작 25~61s 실측 2026-09-13: RAM 16GB 포화로 서버 RSS 0.01GB 까지 밀린 뒤 첫 검색이 20s 를 넘겨 「unreachable」 오라벨 · 구 20s 근거 = 2026-07-27 실측)**: 정상 응답이 7.5초 걸린 경우가 있었고, 같은 서버가 30초를 넘겨 시한 초과한 경우도 있었다. 5초·3초로 잡으면 **멀쩡한 서버를 "없음"으로 만든다**. 환경별로 다르면 이 값을 조정하되, 관측된 정상 응답 시간보다 넉넉히 크게 잡는다.
 - **`/health` 200 을 서버 정상의 근거로 쓰지 말 것** — `/health` 는 200 인데 `/api/search` 만 막히는 형태가 실제로 관측된다. 판정은 위처럼 **검색 경로 자체**로 한다.
 - 서버 미기동/미설치 → 조용히 Tier 2로. (같은 플러그인의 `/tofugraph` 명령으로 GraphRAG 스택을 구축하면 이 티어가 자동으로 살아난다.)
 - **질의 형식(참고)**: 의미 기반 검색이라 문장을 통째로 넣어도 받지만, **3~7단어 키워드형**이 무난하다. 빈손이어도 **같은 질의를 그대로 다시 던지지 말 것** — 결과가 바뀌지 않는다. 표현을 한 번 바꿔 보고(별칭·영/한 표기 변형 포함), 그래도 안 나오면 다음 티어로 넘어가는 편이 빠르다.
