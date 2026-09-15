@@ -402,6 +402,21 @@ grep -rln --include="*.md" -F "[[${KEYWORD}" "${VAULT_PATH}" | head -10
 - 상태 메시지 없이 바로 결과 출력 · Read 실패 시 다음 노트로
 - QUICK: 5줄 이내 + 출처 1-2개 / DEEP: 제한 없음 + 출처 3-5개
 
+## 영수증 — 실행 기록 (v1.8.0 · 착수 게이트 입력 · 재경님 1548711722 「스킬 만든 이유가 없지 않나」)
+
+답변을 출력하기 «직전» 1회 실행한다. 이 영수증이 없으면 착수 게이트(`.claude/hooks/km-onboarding-gate.py`, PreToolUse)가 이 세션의 `100-project/`·`deck-state/` 첫 쓰기와 02-progress 「착수」 기록을 막는다 — 안 쓰면 못 시작한다.
+
+```bash
+RCPT="$HOME/obsidian-ai-vault/.claude/scripts/km-search-receipt.py"
+if [ -f "$RCPT" ]; then
+  python3 "$RCPT" --session-id "${CLAUDE_CODE_SESSION_ID:-${CODEX_COMPANION_SESSION_ID:-unknown}}" \
+    --query "${QUERY}" --tiers-tried "mb:${MB_STATE:-skip},t1:${GRAPHRAG_STATE:-skip}" \
+    --top-hit "<상위 1건 source_note 경로 또는 no-hit>" --n-hits <Tier 1~4 히트 수 정수>
+fi
+```
+- 영수증 = `~/.claude-state/km-search-receipts.jsonl` 1행(ts·session_id·bot·query·tiers_tried·top_hit·n_hits). no-hit 도 영수증이다(검색을 «했다»는 기록이지 «찾았다»는 기록이 아니다).
+- 스킬을 거치지 않고 curl 만 던진 검색은 영수증이 없다 — 그건 게이트가 의도한 대로 막는다.
+
 ### 결과 없음
 ```
 vault에서 "{query}" 관련 자료를 찾지 못했습니다.
