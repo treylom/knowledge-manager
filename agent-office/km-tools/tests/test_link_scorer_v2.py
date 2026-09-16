@@ -6,6 +6,8 @@ import os
 import re
 import sys
 
+import pytest
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from lib.link_scorer import (
     score_candidate_v2,
@@ -56,7 +58,9 @@ class TestAxisCaps:
 
 
 class TestTiersV2:
-    def test_tier_boundaries_60_40_25(self):
+    @pytest.mark.parametrize("scheme_kwargs", [{}, {"scheme": "v2"}],
+                             ids=["default-v2", "explicit-v2"])
+    def test_tier_boundaries_60_40_25(self, scheme_kwargs):
         target = _note(
             "GraphRAG 하이브리드 검색 정리",
             folder="Research/GraphRAG",
@@ -74,7 +78,9 @@ class TestTiersV2:
         weak = _note("고양이 일기", folder="Personal/Diary", tags=["cat"],
                      body="오늘 산책을 했다")
 
-        out = score_links(target, [strong, mid, low, weak], scheme="v2")
+        out = score_links(target, [strong, mid, low, weak], **scheme_kwargs)
+
+        assert out["params"]["scheme"] == "v2"
 
         assert [e["title"] for e in out["inline"]] == ["하이브리드 검색"]
         assert [e["title"] for e in out["related"]] == ["무관한 노트"]

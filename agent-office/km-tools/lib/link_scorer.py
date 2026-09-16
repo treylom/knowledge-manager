@@ -221,8 +221,8 @@ def score_links(
     Each entry carries score + per-signal breakdown. Higher score first within tier.
     Caps drop the weakest over-cap entries down to the log tier so nothing is lost.
 
-    scheme="v2" delegates to the 0~100 rubric (_score_links_v2); the default
-    scheme="v1" path below is unchanged.
+    The default scheme="v2" delegates to the 0~100 rubric (_score_links_v2);
+    the explicit scheme="v1" path below is unchanged.
     """
     if scheme == "v2":
         return _score_links_v2(
