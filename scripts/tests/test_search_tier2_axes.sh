@@ -4,6 +4,7 @@
 # Static checks always run. Live smoke checks only run when a real obsidian-cli
 # executable is found (SKIP + rc 0 otherwise).
 # Spec: CHANGELOG.md 1.7.0 (query decompose → reassemble → execute; 1.6.0 Tier 2 rule pipeline retained)
+# Spec: CHANGELOG.md 1.8.1 (Tier 1 L1-a target binding → tier1-contract)
 
 set -uo pipefail
 
@@ -94,7 +95,8 @@ for F in "$A" "$B"; do
   check_count "decoy-ZZQXSYN" "$F" 'ZZQXSYN' 0
 done
 check_count "config-vault-key" "$C" '"vault"' 1
-check_count "plugin-version" "$E" '1.7.0' 1
+check_count "plugin-version" "$E" '1.8.1' 1
+check_count "plugin-version-codex" ".codex-plugin/plugin.json" '1.8.1' 1
 
 # ── 정적: 음성 — 미끼 ZZQXTIER2 (같은 명령 안, 0 기대) ──────
 for F in "$A" "$B" "$C"; do
@@ -126,20 +128,22 @@ else
   fail "copy-parity-25b-insert" "A='${LINE_A}' B='${LINE_B}'"
 fi
 
-# ── Tier 1 불변: origin/master 대비 ### Tier 1 ~ ### Tier 2 직전 구간 내용 diff 0 ──
+# ── Tier 1 contract anchors(1.8.1): origin/master 대비 diff 는 INFO(FAIL 아님) + 앵커 6개 + 미끼 0 ──
 extract_tier1() {
   awk '/^### Tier 1 — GraphRAG/{flag=1} /^### Tier 2 — Obsidian CLI/{flag=0} flag' "$1"
 }
-if git rev-parse --verify origin/master >/dev/null 2>&1; then
-  TIER1_DIFF=$(diff <(git show origin/master:"$A" | extract_tier1 /dev/stdin) <(extract_tier1 "$A"))
-  if [ -z "$TIER1_DIFF" ]; then
-    pass "tier1-unchanged (origin/master diff = 0)"
-  else
-    fail "tier1-unchanged" "Tier 1 section differs from origin/master: ${TIER1_DIFF}"
-  fi
+TIER1_TXT=$(extract_tier1 "$A")
+if git rev-parse --verify -q origin/master >/dev/null 2>&1; then
+  TIER1_DIFF_LINES=$(diff <(git show origin/master:"$A" | extract_tier1 /dev/stdin) <(printf '%s\n' "$TIER1_TXT") | "$GREP" -c '^[<>]')
+  echo "INFO tier1-diff-vs-origin/master = ${TIER1_DIFF_LINES} lines (1.8.1 L1-a 의도 변경 — FAIL 아님)"
 else
-  echo "SKIP tier1-unchanged — origin/master not resolvable in this checkout"
+  echo "SKIP tier1-diff — origin/master not resolvable in this checkout"
 fi
+for anchor in 'gr_fetch()' 'GRAPHRAG_STATE=' '--max-time 60' 'ENDPOINT_SWITCHED' 'T1_QUERY=' 'tier1-query.txt'; do
+  n=$(printf '%s\n' "$TIER1_TXT" | "$GREP" -c -F -- "$anchor")
+  [ "$n" -ge 1 ] && pass "tier1-contract (${anchor} = ${n})" || fail "tier1-contract" "${anchor} expected ≥1, got ${n}"
+done
+n=$(printf '%s\n' "$TIER1_TXT" | "$GREP" -c 'ZZQXTIER1'); [ "$n" -eq 0 ] && pass "decoy-ZZQXTIER1 (tier1 = 0)" || fail "decoy-ZZQXTIER1" "expected 0, got ${n}"
 
 # ── 라이브 스모크 (31 §3) — OBSIDIAN_CLI 있음 + KM_TEST_VAULT 지정 시만 ─
 CLI="/Applications/Obsidian.app/Contents/MacOS/obsidian-cli"
