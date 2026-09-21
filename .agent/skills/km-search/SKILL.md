@@ -99,13 +99,14 @@ echo "ROUTE_HUBS=[${ROUTE_HUBS% }] count=${ROUTE_HUB_COUNT}"
 
 > Why: 노트가 많아질수록 원자 나열은 찾기 어려움 — MOC(지도 노트)가 허브·진입점 역할.
 
-## Phase 0.6: 대상 결박 (r6 · L1-a · Tier 0/1 «앞»에서 1회)
+## Phase 0.6: 대상 고정(target binding) (1.8.1 · Tier 0/1 «앞»에서 1회)
 
 Tier 2 의 0-β 분해 JSON 을 **여기서 먼저** 산출한다(스폰 ❌ · 이 스킬을 실행하는 모델 자신이 도구 호출 전에 JSON 1개). 스키마 = Tier 2 0-β 와 같고 다음 2키를 더한다:
 - `target_status`: `resolved`(대상 개체 ≥1 을 질문에서 «근거 있게» 뽑음) · `unspecified`(대상 없는 일반·개념·비교 질문 — 개체를 지어내지 않는다) · `ambiguous`(같은 이름이 2+ 노트·허브에 걸림 — 둘 다 유지하고 라벨).
 - `target_provenance`: {대상: `quote|wikilink|tag|proper_noun|alias:<출처 경로>`} — 별칭(한↔영 표기 등)은 **공개 입력에서만** 얻는다: 질문 본문 · 검색 결과 노트의 frontmatter `title`/`aliases` · MOC-Map 허브명. 정답표·문항별 사전 ❌.
 - 대상은 «선택 사항»이다: `unspecified` 면 아래 티어를 원문 질의 그대로 진행한다(중단 ❌).
 - 이 JSON 을 답변 앞머리에 1회 출력한다(`KM_SEARCH_RUN_DIR` 환경변수가 있으면 그 폴더의 `decomp.json` 에도 기록).
+- 셸 변수 매핑: TARGET_STATUS ← target_status · TARGETS ← targets 배열을 공백으로 결합 · KEYWORDS_TOP ← keywords 앞 3개를 공백으로 결합(Tier 1 의 T1_QUERY 가 이 세 값을 쓴다).
 
 ## Tier 0 — 메모리뱅크 축 (v1.8.0 · 2026-09-14 · 재경님 1548711800 「우리 판 km:search 는 메모리뱅크도 함께 봐야」)
 
@@ -127,7 +128,7 @@ echo "MB_STATE=${MB_STATE} mb_hits=${MB_HITS}"
 
 ### Tier 1 — GraphRAG 서버 (설치된 경우, 의미 기반 하이브리드 검색)
 ```bash
-# r6 L1-a: target_status=resolved 이면 질의 = 대상 + 핵심어(≤7단어) · unspecified 면 원문 질의 그대로 · KM_SEARCH_RUN_DIR 가 있으면 tier1-query.txt 에 기록
+# 1.8.1: target_status=resolved 이면 질의 = 대상 + 핵심어(≤7단어) · unspecified 면 원문 질의 그대로 · KM_SEARCH_RUN_DIR 가 있으면 tier1-query.txt 에 기록
 T1_QUERY="${QUERY}"
 [ "${TARGET_STATUS:-unspecified}" = "resolved" ] && [ -n "${TARGETS:-}" ] && T1_QUERY="${TARGETS} ${KEYWORDS_TOP:-}"
 [ -n "${KM_SEARCH_RUN_DIR:-}" ] && printf 'target_status=%s\nquery=%s\n' "${TARGET_STATUS:-unspecified}" "${T1_QUERY}" > "${KM_SEARCH_RUN_DIR}/tier1-query.txt"
@@ -178,7 +179,7 @@ echo "GRAPHRAG_STATE=${GRAPHRAG_STATE} endpoint=${SEARCH_ENDPOINT} rc=${TIER1_RC
 echo "ENDPOINT_SWITCHED=${ENDPOINT_SWITCHED:-none}"
 ```
 - `GRAPHRAG_STATE=ok` → 이 티어 결과를 쓴다. 그 외 → Tier 2로 내려가되 **상태값을 들고 간다**(Tier 4 표시 문구가 이 값으로 갈린다).
-- **r6 L1-a target_hit 라벨**: 결과 각 건에 `target_hit=title|path|body|none`(대상 별칭이 어디서 맞았는지) 을 붙인다. 이것은 **관측 신호**이지 관련성의 정답이 아니다 — 이름만 맞는 문서를 우선 채택하지 않는다.
+- **target_hit 라벨(1.8.1)**: 결과 각 건에 `target_hit=title|path|body|none`(대상 별칭이 어디서 맞았는지) 을 붙인다. 이것은 **관측 신호**이지 관련성의 정답이 아니다 — 이름만 맞는 문서를 우선 채택하지 않는다.
 - **원문 확보 계약 (Tier 1 전용 — 멈춤 금지)**: 검색 응답에 노트 경로 필드는 따로 없다 — 표시명은 `entity`, `source_note` 는 채워져 있을 때만 vault 상대 경로다(`description` 은 비어 있을 수 있으니 근거로 지목하지 말 것). **원문을 읽기 전에 아래 0단 판정을 검색당 1회만 하고, 그 결과(`VAULT_MODE`)를 이후 모든 절이 따른다.** 어느 단계에서도 그 밖의 다른 vault 를 뒤지거나 Obsidian 설정(obsidian.json)과의 대조를 시도하지 말 것 — 무한 "대조 중" 멈춤의 원인이다. (Phase -1 의 obsidian.json vault 판정은 별개 — 그건 VAULT_PATH 가 설정에 없을 때의 설정 단계 1회다.)
   0. **vault 정합 판정 (검색당 1회 — 이 판정 전에는 로컬 노트를 열지 않는다)**: 첫 응답에서 `source_note` 가 있는 결과 하나를 골라 `${VAULT_PATH}/{source_note}` 의 **파일 존재만** 확인한다(`[ -f ... ]` 1회 — Read ❌).
      - 존재 → **`VAULT_MODE=same`** (서버 = 이 vault. 로컬 Read 허용)
@@ -219,8 +220,10 @@ echo "FRESH: age=${AGE_MIN}m recent=${RECENT} supplement=$([ -n "${FRESH_JSON:-}
 - Tier 1 top5 중 `source_note` 결손 3+ → `⚠ source_note 결손 N/5` 1줄 병기.
 - 근거: vault `100-project/2026-09-01-graphrag-search-quality/25-p2-km-freshness-design-v0.md` §2 · 선례 `080-Bug-Reports/2026-09-01-graphrag-recent-doc-search-failure.md` §5 P2.
 
-#### Tier 1-T — 대상 보강 (r6 · L1-b · Tier 1 결과 불변 · 1회)
-`target_status=resolved` 이고 Tier 1 top10 의 target_hit 가 전부 `none` 이면 **보강 질의 1회**: `q = <targets> + <keywords 앞 3>` 로 같은 `/api/search` 를 다시 호출해 Tier 1 결과에 «없는» 경로만 `[target]` 라벨로 Tier 1 결과 **아래**에 덧붙인다(순위 재배열 ❌). 추가로 대상이 (a) MOC-Map `ROUTE_HUBS` 의 허브면 그 허브의 outlink ≤15 (b) vault 폴더명과 일치하면 그 폴더 하위 md ≤15 를 `[target:hub]`/`[target:folder]` 라벨로 덧붙인다. 보강으로 들어온 후보는 «후보» 일 뿐 채택은 본문 근거로 판단한다. 기록: `KM_SEARCH_RUN_DIR` 가 있으면 그 폴더의 `target-boost.json` 에도 기록: {targets, tier1_target_hit_n, requery, added:[{path,label}]}.
+#### Tier 1-T — 대상 보강 (1.8.1 · Tier 1 결과 불변 · 1회)
+  - 조건: `target_status=resolved` 이고 Tier 1 top10 의 target_hit 가 전부 `none` 이면 **보강 질의 1회**
+  - 동작: `q = <targets> + <keywords 앞 3>`(Tier 1 질의와 같은 대상 고정 — 핵심어만 앞 3개로 축소) 로 같은 `/api/search` 를 다시 호출해 Tier 1 결과에 «없는» 경로만 `[target]` 라벨로 Tier 1 결과 **아래**에 덧붙인다(순위 재배열 ❌). 추가로 대상이 (a) MOC-Map `ROUTE_HUBS` 의 허브면 그 허브의 outlink ≤15 (b) vault 폴더명과 일치하면 그 폴더 하위 md ≤15 를 `[target:hub]`/`[target:folder]` 라벨로 덧붙인다. 보강으로 들어온 후보는 «후보» 일 뿐 채택은 본문 근거로 판단한다.
+  - 기록: `KM_SEARCH_RUN_DIR` 가 있으면 그 폴더의 `target-boost.json` 에도 기록: {targets, tier1_target_hit_n, requery, added:[{path,label}]}.
 
 #### Tier 2·3 공통 — 구조 문서 선실행 (본 검색 전에 1회)
 
@@ -388,9 +391,12 @@ grep -rln --include="*.md" -F "[[${KEYWORD}" "${VAULT_PATH}" | head -10
 
 ## DEEP 모드 — 상세 분석
 
-**r6 읽기 중단 규칙(L1-c)** — 선택한 노트를 읽는 동안: ① 선택 노트 중 «미독»이 남았고 (요구 항목 중 근거 없는 항목이 있거나 · 미독 노트의 target_hit ≠ none 이거나 · 미해결 충돌이 있으면) → 「충분」으로 멈추지 않고 남은 링크 추적 예산(DEEP 추가 Read ≤3 · v1.7.1)에서 계속 읽는다 ② 모든 요구 항목이 근거를 얻었고 남은 미독 노트가 중복·비관련이면 사유를 적고 멈출 수 있다(`notes_pending_skipped: [{path, reason}]`) ③ 예산 소진 시 남은 요구 항목·미독 노트를 그대로 기록한다. 코드/모델의 「충분」 판정과 채점자의 판정은 다른 것이다.
+**읽기 중단 규칙(1.8.1)** — 선택한 노트를 읽는 동안:
+  - 조건: ① 선택 노트 중 «미독»이 남았고 (요구 항목 중 근거 없는 항목이 있거나 · 미독 노트의 target_hit ≠ none 이거나 · 미해결 충돌이 있으면)
+  - 동작: → 「충분」으로 멈추지 않고 남은 링크 추적 예산(DEEP 추가 Read ≤3 · v1.7.1)에서 계속 읽는다 ② 모든 요구 항목이 근거를 얻었고 남은 미독 노트가 중복·비관련이면 사유를 적고 멈출 수 있다(`notes_pending_skipped: [{path, reason}]`) · 코드/모델의 「충분」 판정과 채점자의 판정은 다른 것이다.
+  - 기록: ③ 예산 소진 시 남은 요구 항목·미독 노트를 그대로 기록한다.
 
-**r6 요구 항목 커버리지(L1-d)** — 질문에 요구 항목(requirements)이 주어졌으면 답 끝에 표를 붙인다: `| id | 근거(노트 경로 · 조각/줄) | 답의 대응 구간(≤120자) | 충족/부분/미충족 · 사유 |` — 요구 id 전부 · 없는 조각·노트 인용 ❌ · **조건절(「…없이」「…만」「requires no …」 등 진위를 바꾸는 전제·예외·한계)은 생략하지 말고 인용에 포함** · 「찾지 못했다」는 항목은 검색 범위(티어·질의·건수)와 결과를 함께 적는다. 표의 「충족」은 자기 신고이며 채점이 아니다.
+**요구 항목 커버리지(1.8.1)** — 질문에 요구 항목(requirements)이 주어졌으면 답 끝에 표를 붙인다: `| id | 근거(노트 경로 · 조각/줄) | 답의 대응 구간(≤120자) | 충족/부분/미충족 · 사유 |` — 요구 id 전부 · 없는 조각·노트 인용 ❌ · **조건절(「…없이」「…만」「requires no …」 등 진위를 바꾸는 전제·예외·한계)은 생략하지 말고 인용에 포함** · 「찾지 못했다」는 항목은 검색 범위(티어·질의·건수)와 결과를 함께 적는다. 표의 「충족」은 자기 신고이며 채점이 아니다.
 
 
 ```

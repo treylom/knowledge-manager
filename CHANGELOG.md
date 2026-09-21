@@ -1,12 +1,13 @@
 # Changelog
 
 ## 1.8.1 (2026-09-22)
-- /km:search Phase 0.6: 대상 결박(`target_status` resolved/unspecified/ambiguous · 공개 입력에서만 별칭) + Tier 1 질의 결박·`target_hit` 라벨.
+- /km:search Phase 0.6: 대상 고정(target binding · `target_status` resolved/unspecified/ambiguous · 공개 입력에서만 별칭) + Tier 1 질의 고정·`target_hit` 라벨.
 - Tier 1-T: 대상 보강 질의 1회(순위 재배열 없음).
 - DEEP 읽기 중단 규칙(미독·미충족·충돌이 남으면 「충분」으로 멈추지 않음).
 - 요구 항목 커버리지 표(requirements 가 있을 때).
-- 근거: 2026-09-22 · 같은 6문항 3방식 18회 시험에서 절차 수리 뒤 개선을 관측(수리 단독 인과·모델 우열은 미분리).
+- 근거: 2026-09-21 채점(55) · 같은 6문항×3방식 18행 재관측에서 코드+Jev 방식 3문항이 FAIL→PASS(원18행 PASS 합계 5 = 수리 전과 동일 · 대조군 6은 API 제한으로 미실행 · 수리 단독 인과·모델 우열 미분리).
 - 매니페스트: .claude-plugin 1.8.0→1.8.1 · .codex-plugin 1.7.1→1.8.1(동시) · 시험: tier1-unchanged → tier1-contract(앵커 6 + 미끼) · plugin-version 기대값 1.8.1(두 매니페스트).
+- 내부 추적: r6 L1-a~d(절차 수리 4건의 내부 식별자 — 본문에는 노출하지 않음).
 
 ## 1.7.1 (2026-09-08)
 - /km:search Phase 2.5: 링크 확장에 «허브로 올라가는 링크 우선» 축 역이식(vault 2026-07-13 벤치 근거 — 주변 노트엔 도달하나 허브 미도달이 주 실패 모드) · 링크 추적 예산 명시(A+B 합산 QUICK ≤1 / DEEP ≤3 · 총 Read QUICK 3 / DEEP 8) — fable51 재기획 D-15(2026-09-08).
