@@ -165,7 +165,7 @@ Advanced 모드 (Neo4j 사용 가능 시):
 
 ### 2.2 관련성 점수 계산
 
-> 1.3.0 의 **기본 배점은 v1(기존 §2.1·§2.3)** 입니다. 아래 표는 `km-config.json` 의 `linking.scheme: "v2"` 또는 `km-tools.py score-links --scheme v2` 로 켤 때의 v2 배점이며, MOC 게이트는 `linking.mocGate`(`auto` 기본 · `confirm` = 후보 1개 제안 후 확인)로 정합니다.
+> 현행 **기본 배점은 v2(§2.2)** 입니다. 아래 표는 기본 v2 배점이며, 기존 v1 배점(§2.1·§2.3)이 필요하면 실제 CLI 호출에 `km-tools.py score-links --scheme v1`을 명시합니다. 설정 예시도 `linking.scheme: "v2"`를 사용합니다. MOC 게이트는 `linking.mocGate`(`auto` 기본 · `confirm` = 후보 1개 제안 후 확인)로 정합니다.
 
 자동 생성 — 손편집 ❌ · 원본 = link_scorer.py
 

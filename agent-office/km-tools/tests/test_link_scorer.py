@@ -71,6 +71,7 @@ class TestSignals:
 
 
 class TestTiering:
+    """Legacy v1 tiering remains available through an explicit scheme."""
     def _candidates(self):
         return [
             # strong: name in title + shared folder + shared tags
@@ -89,7 +90,7 @@ class TestTiering:
             tags=["graphrag", "search"],
             body="하이브리드 검색은 dense sparse RRF 융합을 쓴다",
         )
-        out = score_links(target, self._candidates())
+        out = score_links(target, self._candidates(), scheme="v1")
         titles_inline = [e["title"] for e in out["inline"]]
         assert "하이브리드 검색" in titles_inline
         assert out["inline"][0]["score"] >= DEFAULT_INLINE_THRESHOLD
@@ -98,7 +99,8 @@ class TestTiering:
 
     def test_self_excluded(self):
         target = _note("동일 노트", folder="X", body="내용")
-        out = score_links(target, [_note("동일 노트", folder="X", body="내용")])
+        out = score_links(target, [_note("동일 노트", folder="X", body="내용")],
+                          scheme="v1")
         assert out["inline"] == [] and out["related"] == [] and out["log"] == []
 
     def test_inline_cap(self):
@@ -110,16 +112,17 @@ class TestTiering:
                   body="alpha beta gamma delta epsilon zeta 허브")
             for i in range(8)
         ]
-        out = score_links(target, cands, max_inline=5)
+        out = score_links(target, cands, max_inline=5, scheme="v1")
         assert len(out["inline"]) == 5
         assert len(out["inline"]) + len(out["related"]) + len(out["log"]) == 8
 
     def test_threshold_configurable(self):
         target = _note("A", folder="R/X", tags=["t"], body="foo bar baz")
         cand = _note("B", folder="R/X", tags=["t"], body="foo bar baz")
-        low = score_links(target, [cand], inline_threshold=0.3)
-        high = score_links(target, [cand], inline_threshold=0.95)
-        assert len(low["inline"]) >= len(high["inline"])
+        low = score_links(target, [cand], inline_threshold=0.3, scheme="v1")
+        high = score_links(target, [cand], inline_threshold=0.95, scheme="v1")
+        assert [e["title"] for e in low["inline"]] == ["B"]
+        assert high["inline"] == []
 
 
 class TestAdapter:
