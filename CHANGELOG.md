@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.8.2 (2026-09-24)
+- /km:knowledge-manager STEP 0: `/using-superpowers` 강제 호출 게이트 제거(아키텍처 Phase 0 요약 · STEP 0 제목 · MANDATORY 배너 · 0-PRE MUST 3줄). superpowers 는 비자명 build/bug 착수 때만 부르는 운영 방침에 맞춤. km-pipeline 오버레이 참조는 그대로 둠.
+- 매니페스트: .claude-plugin 1.8.1→1.8.2 · .codex-plugin 1.8.1→1.8.2(동시) · tier2 시험의 매니페스트 버전 고정 2줄 1.8.2.
+
 ## 1.8.1 (2026-09-22)
 - /km:search Phase 0.6: 대상 고정(target binding · `target_status` resolved/unspecified/ambiguous · 공개 입력에서만 별칭) + Tier 1 질의 고정·`target_hit` 라벨.
 - Tier 1-T: 대상 보강 질의 1회(순위 재배열 없음).

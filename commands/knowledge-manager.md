@@ -16,7 +16,7 @@ allowedTools: Read, Write, Bash, Glob, Grep, mcp__obsidian__*, mcp__notion__*, m
 
 ```
 Main (Opus 1M, 단일 세션) — 7-Layer Fusion
- └── Phase 0: /using-superpowers 게이트 + 환경 감지 + 모드/선호도
+ └── Phase 0: 환경 감지 + 모드/선호도
  └── Phase 1: DATA INGEST — 콘텐츠 추출
  └── Phase 2: EXTRA TOOLS — Vault 탐색 + GraphRAG (Mode I에서도 항상)
  └── Phase 3: COMPILE — raw→wiki 컴파일 + Q&A 양방향 [NEW]
@@ -29,17 +29,11 @@ Main (Opus 1M, 단일 세션) — 7-Layer Fusion
 
 ---
 
-## STEP 0: 스킬 게이트 + 환경 확인
+## STEP 0: 환경 확인
 
-> **⚠️ MANDATORY: 아래 두 스킬을 반드시 호출한 후 진행.**
-
-### 0-PRE. 필수 스킬 활성화 (생략 금지)
+### 0-PRE. 파이프라인 오버레이 참조
 
 ```
-MUST: Skill("/using-superpowers") 호출
-  → 적용 가능 스킬 목록 식별, 작업 순서에 매핑
-  → 이 호출 없이 STEP 1 이후 진행 금지
-
 참조: km-pipeline.md (km 파이프라인 오버레이)
   → STEP 4.5에서 /autoresearch 패턴 적용 (lint 루프)
 ```

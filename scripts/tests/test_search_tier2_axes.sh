@@ -95,8 +95,8 @@ for F in "$A" "$B"; do
   check_count "decoy-ZZQXSYN" "$F" 'ZZQXSYN' 0
 done
 check_count "config-vault-key" "$C" '"vault"' 1
-check_count "plugin-version" "$E" '1.8.1' 1
-check_count "plugin-version-codex" ".codex-plugin/plugin.json" '1.8.1' 1
+check_count "plugin-version" "$E" '1.8.2' 1
+check_count "plugin-version-codex" ".codex-plugin/plugin.json" '1.8.2' 1
 
 # ── 정적: 음성 — 미끼 ZZQXTIER2 (같은 명령 안, 0 기대) ──────
 for F in "$A" "$B" "$C"; do
