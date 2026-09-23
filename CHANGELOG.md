@@ -2,6 +2,7 @@
 
 ## 1.8.2 (2026-09-24)
 - /km:knowledge-manager STEP 0: `/using-superpowers` 강제 호출 게이트 제거(아키텍처 Phase 0 요약 · STEP 0 제목 · MANDATORY 배너 · 0-PRE MUST 3줄). superpowers 는 비자명 build/bug 착수 때만 부르는 운영 방침에 맞춤. km-pipeline 오버레이 참조는 그대로 둠.
+- skills/km-pipeline.md: 같은 강제 문구 5곳 제거(Constraints 1번 · Mandatory Skills 표 행 · Phase 0 의 MUST 줄과 제목 「스킬 활성화」 · 「추가된 것」 표 행 · Final Reminder 1번). 뒤 번호를 당기고 「세 가지 → 두 가지 절대 규칙」. Phase 0 의 모드 감지·선호도 수집 줄은 유지.
 - 매니페스트: .claude-plugin 1.8.1→1.8.2 · .codex-plugin 1.8.1→1.8.2(동시) · tier2 시험의 매니페스트 버전 고정 2줄 1.8.2.
 
 ## 1.8.1 (2026-09-22)
