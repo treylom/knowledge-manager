@@ -28,10 +28,9 @@ description: 7-Layer × knowledge-manager 융합 파이프라인. Linting(/autor
 
 ## Constraints (CRITICAL)
 
-1. 모든 세션은 `/using-superpowers` 스킬 체크로 시작한다. 체크 없이 작업 진입 = 즉시 중단.
-2. Linting 단계에서 `/autoresearch` keep/discard 루프를 실행한다. 루프 없이 노트 확정 = 금지.
-3. 기존 km-* 스킬의 구체적 절차(추출 방법, 저장 프로토콜, 경로 규칙)를 그대로 따른다. 이 스킬은 워크플로우 오버레이이지, 스킬 대체가 아니다.
-4. Knowledge Cutoff 기반 판단 금지 — 프로젝트 파일과 스킬 문서가 항상 우선.
+1. Linting 단계에서 `/autoresearch` keep/discard 루프를 실행한다. 루프 없이 노트 확정 = 금지.
+2. 기존 km-* 스킬의 구체적 절차(추출 방법, 저장 프로토콜, 경로 규칙)를 그대로 따른다. 이 스킬은 워크플로우 오버레이이지, 스킬 대체가 아니다.
+3. Knowledge Cutoff 기반 판단 금지 — 프로젝트 파일과 스킬 문서가 항상 우선.
 
 ---
 
@@ -39,7 +38,6 @@ description: 7-Layer × knowledge-manager 융합 파이프라인. Linting(/autor
 
 | 스킬 | 호출 시점 | 강제 수준 |
 |------|----------|----------|
-| `/using-superpowers` | Phase 0 시작 즉시 | HARD — 미호출 시 Phase 1 진입 불가 |
 | `/autoresearch` | Phase 4 (Linting), Phase 6 (Filed Back QA) | HARD — 미실행 시 노트 확정 불가 |
 
 ### /autoresearch 적용 설정
@@ -65,10 +63,9 @@ direction: higher_is_better
 
 ---
 
-### Phase 0: 스킬 활성화 + 환경 감지
+### Phase 0: 환경 감지
 
 ```
-MUST: Skill("/using-superpowers") 호출
 MUST: 모드 감지 (Mode I / R / G) — 기존 STEP 0.5 로직
 MUST: 사용자 선호도 수집 (AskUserQuestion) — 기존 STEP 1
 ```
@@ -256,7 +253,6 @@ keep/discard 1회 이상 판정
 | Q&A 양방향 | Phase 3 | draft에서 질문 도출 → 답변 탐색 → 환류 |
 | Filed Back | Phase 6 | 산출물 → Wiki 환류 루프 |
 | Open Questions | Phase 6 | 다음 세션 탐색 시드 생성 |
-| /using-superpowers 게이트 | Phase 0 | 모든 세션 필수 |
 
 ### 개선된 것 (기존 약점 보완)
 
@@ -297,11 +293,10 @@ keep/discard 1회 이상 판정
 
 ## Final Reminder (CRITICAL)
 
-세 가지 절대 규칙:
+두 가지 절대 규칙:
 
-1. **/using-superpowers** 없이 작업 시작 = 무효.
-2. **/autoresearch** 없이 Linting 확정 = 무효.
-3. **Filed Back** 없이 세션 종료 = 파이프라인 원칙 위반.
+1. **/autoresearch** 없이 Linting 확정 = 무효.
+2. **Filed Back** 없이 세션 종료 = 파이프라인 원칙 위반.
 
 당신은 km 파이프라인 운영자이자 knowledge-manager입니다.
 raw → wiki 컴파일이 심장이고,

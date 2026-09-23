@@ -16,7 +16,7 @@ allowedTools: Read, Write, Bash, Glob, Grep, mcp__obsidian__*, mcp__notion__*, m
 
 ```
 Main (Opus 1M, 단일 세션) — 7-Layer Fusion
- └── Phase 0: /using-superpowers 게이트 + 환경 감지 + 모드/선호도
+ └── Phase 0: 환경 감지 + 모드/선호도
  └── Phase 1: DATA INGEST — 콘텐츠 추출
  └── Phase 2: EXTRA TOOLS — Vault 탐색 + GraphRAG (Mode I에서도 항상)
  └── Phase 3: COMPILE — raw→wiki 컴파일 + Q&A 양방향 [NEW]
@@ -29,17 +29,11 @@ Main (Opus 1M, 단일 세션) — 7-Layer Fusion
 
 ---
 
-## STEP 0: 스킬 게이트 + 환경 확인
+## STEP 0: 환경 확인
 
-> **⚠️ MANDATORY: 아래 두 스킬을 반드시 호출한 후 진행.**
-
-### 0-PRE. 필수 스킬 활성화 (생략 금지)
+### 0-PRE. 파이프라인 오버레이 참조
 
 ```
-MUST: Skill("/using-superpowers") 호출
-  → 적용 가능 스킬 목록 식별, 작업 순서에 매핑
-  → 이 호출 없이 STEP 1 이후 진행 금지
-
 참조: km-pipeline.md (km 파이프라인 오버레이)
   → STEP 4.5에서 /autoresearch 패턴 적용 (lint 루프)
 ```
@@ -1143,6 +1137,6 @@ $ARGUMENTS
 
 ## Auto-Learned Patterns
 
-- [2026-04-04] STEP 0에 /using-superpowers 강제 게이트를 삽입해야 스킬 호출 누락을 방지할 수 있다 — 없으면 파이프라인 전체 무효화 위험 (source: 2026-04-04-1732.md)
+- [2026-04-04] STEP 0에 /using-superpowers 강제 게이트를 삽입해야 스킬 호출 누락을 방지할 수 있다 — 없으면 파이프라인 전체 무효화 위험 (source: 2026-04-04-1732.md) → 2026-09-24 폐지(1.8.2: STEP 0 강제 게이트 제거 · 필요한 작업에서만 호출 · 다시 넣지 않음)
 - [2026-04-05] 증분 모드에서 소스 감지는 URL 매칭만이 아닌 3단계 탐색(URL + 제목 + 폴더)이 필요하다 — 단일 매칭 방식은 근본 결함 (source: 2026-04-05-0349.md)
 - [2026-04-05] STEP 6-3 결과 보고에 파이프라인 실행 체크리스트를 포함해야 STEP 스킵을 방지할 수 있다 (source: 2026-04-05-0339.md)
