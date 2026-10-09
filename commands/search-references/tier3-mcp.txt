@@ -1,0 +1,8 @@
+# km:search reference — lazy-load module
+
+> **로드 규칙**: 이 파일은 규칙·절차 참조다. **primary read 예산(기본 3)에 포함하지 않는다.**
+> 증거로 쓸 vault 노트 Read 만 primary read 로 센다.
+
+### Tier 3 — Obsidian MCP (연결된 경우)
+연결된 Obsidian MCP의 검색 도구를 사용한다(서버 구현마다 도구명이 다르다 — 예: `simple_search`, `obsidian_simple_search`). MCP 서버 미연결 → Tier 4로.
+

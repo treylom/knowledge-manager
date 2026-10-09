@@ -1,0 +1,63 @@
+# km:search reference — lazy-load module
+
+> **로드 규칙**: 이 파일은 규칙·절차 참조다. **primary read 예산(기본 3)에 포함하지 않는다.**
+> 증거로 쓸 vault 노트 Read 만 primary read 로 센다.
+
+### Tier 2 — Obsidian CLI (질문 분해 → 재조립 → 실행 · v1.7.0)
+vault 이름 = km-config `obsidianCli.vault`(비면 `storage.obsidian.vaultPath` 의 basename) → `OBSIDIAN_VAULT`. **모든 CLI 호출에 `vault="${OBSIDIAN_VAULT}"` 를 붙인다**(기본 vault 가 테스트용 vault 일 수 있음).
+**0-γ 질의 이스케이프(S3 · 모든 `search`·`search:context` 공통)**: Obsidian 검색 문법은 `낱말:`(예: 「(기준: …)」)·가운데 콜론(`14:26`·`https://…`)을 연산자로 읽어 rc 0 · stdout `Error: Operator "X" not recognized` 로 끝난다(JSON 아님). CLI 를 부르는 Bash 호출마다 앞머리에 아래 3줄을 두고 **query 값은 항상 `$(cliq "<질의>")`** 로 넣는다(셸 함수는 호출 사이에 안 남는다). 알려진 연산자(`tag:` `path:` `file:` `line:` `section:` `block:` `task:` …)·`[k:v]`·따옴표 구문은 그대로 통과한다.
+```bash
+KM_CLI_Q="${CLAUDE_PLUGIN_ROOT:-}/scripts/km_cli_query.py"
+[ -f "$KM_CLI_Q" ] || KM_CLI_Q="$(find "$HOME/.claude/plugins/cache/knowledge-manager" -name km_cli_query.py 2>/dev/null | sort | tail -1)"
+cliq() { if [ -f "$KM_CLI_Q" ]; then python3 "$KM_CLI_Q" "$1"; else printf '%s' "$1" | sed -E 's/([^[:space:]"]):([[:space:])]|$)/\1\2/g'; fi; }
+```
+**0-α 활성 vault 대조(1회)**: `"$OBSIDIAN_CLI" vault info=path` 실측값 ≠ `OBSIDIAN_VAULT` 의 경로(`"$OBSIDIAN_CLI" vaults verbose` 에서 이름→경로) 이면 `⚠ 활성 vault 불일치: <실측> (설정 <기대>)` 1줄 출력 후 계속 — CLI 의 `vault=` 인자는 search·backlinks·properties·tags 전부에서 무시되고 «앱에서 열린 vault» 로 동작한다(36 §8 ②).
+
+**0-β 질문 분해(1.7.0 · 스폰 ❌ · 이 스킬을 실행하는 모델 자신이 첫 단계로 아래 JSON 1개를 낸다 — 도구 호출 전, 다른 문장 ❌)**:
+```json
+{"intent":"nav|content|relation|meta|tag|temporal|mixed","targets":["노트명 후보 ≤3, 확신순"],"keywords":["핵심어 ≤5"],"tags":["태그 ≤3, # 제거"],"props":{"key":"value"},"path_hint":"폴더 힌트 or null","time":{"recent":false,"date":null},"axes":["bl|ln|prop|ctx|tag|full 실행 순서"],"topn":2}
+```
+intent: nav=위치·정본·목록·구조 / content=내용·설명·비교 / relation=역링크·정방향·누가 참조 / meta=속성·created·aliases / tag=태그 / temporal=최근·오늘·날짜 / mixed=둘 이상. `--decomp=sub`(DEEP 전용) 이면 이 JSON 을 `claude -p --model haiku --strict-mcp-config --mcp-config '{"mcpServers":{}}' --no-session-persistence "<같은 지시+질문>" < /dev/null` 로 받는다(상한 10s · 초과·JSON 파싱 실패 = 0-β 생략 = 1.6.0 규칙 파이프라인 그대로).
+
+**0-γ 재조립(분해 JSON → 호출 목록 · 규칙 고정)**:
+| intent | 먼저 | 그 다음 | 인자 |
+|---|---|---|---|
+| relation | targets 각각 ① `backlinks file=T format=json` + ② `links file=T` | ①이 `No backlinks found`(또는 0건)이면 **본문 언급 폴백**: `search query="T" format=json limit=50` → 경로 목록을 `[mention]` 라벨로(역링크 아님을 라벨로 구분 · «역링크 0·본문 언급 N건» 1줄 병기) · `search query=T total` 로 후보 검증(0 이면 다음 후보) | targets 없으면 keywords `search` 1회 → 상위 1건을 T 로 |
+| meta | ③ `properties file=T format=json` · props 있으면 `search query="[k:v]" format=json limit=20` | `property:read name=k file=T` | `[k:v]` 는 CLI 가 해석(부분일치) |
+| tag | ⑤ `tags counts format=json` 부분일치 후보 ≤3 → ⑤-b `search query="tag:t" limit=50` | 결과 ≤3 이면 ④ | 현행 ⑤/⑤-b |
+| nav | ④-name **파일명 축**: `"$OBSIDIAN_CLI" search query="$(cliq "<targets[0]>")" format=json limit=200` 결과 경로 중 «경로 전체(소문자)»에 targets[0] 의 토큰(공백 분리, 2자+)이 «모두» 포함된 경로 — 토큰 비교는 동의어표로 확장: 회의록·회의→meeting|minutes|회의 · 스펙→spec|01-spec · 진행→progress|02-progress · 결과→outcome|03-outcome · 발주→order · 보고→report · 설계→design · 맥락→context|00-context · 정본→canon|sot · 색인→index (토큰 원형 또는 동의어 중 하나라도 경로에 있으면 매치)를 [name] 라벨로 최상위(≤3) · 0건이면 targets[1..] 반복 | ④ `search query=keywords path=path_hint format=json limit=50`(path_hint null 이면 path 생략 + Phase 0.4/0.5 결과 ∪) → 상위 TOPN `properties`·`links` | Tier 1 결과 ∪ · [name] 히트가 있으면 그것이 답의 1순위 |
+| content | ④ `search query=keywords format=json limit=1000` → ④-b `search:context query=keywords path=<상위 1건 폴더> limit=3` | DEEP 이면 상위 TOPN `backlinks` | 현행 ④/④-b |
+| temporal | Tier 1-S 신선도 보강 강제(RECENT=1) + `search query="[created:<time.date 또는 YYYY-MM>]" format=json limit=20` | content 규칙 | 날짜 없으면 이번 달 |
+| mixed | axes 순서대로 위 행을 이어 붙임(중복 호출 제거) | — | 호출 상한 = 현행 유지 |
+분해가 없거나(0-β 생략) intent 를 못 정하면 아래 0단·1단을 «그대로» 실행한다(1.7.0 은 앞머리 추가이지 1.6.0 을 빼지 않는다). **1단 규칙 확장(TOPN 노트의 ①prop ②bl ③ln)은 intent 와 무관하게 항상 실행**.
+
+**0단 진입(신호어가 있으면 그 축을 먼저 · 신호 축이 돌아도 ④ 전문 검색은 항상 함께 실행 = 1단 TOPN 모집단) — 신호어 없으면 ④ 부터:**
+| 질의 신호 | 서브커맨드 | 출력 |
+|---|---|---|
+| ① `[[이름]]` 포함 또는 「역링크·백링크·어디서 참조·누가 링크」 + 노트명 | `"$OBSIDIAN_CLI" backlinks file="<노트명>" vault="${OBSIDIAN_VAULT}" format=json` | JSON `[{"file":…}]` |
+| ② 「이 노트가 링크하는·아웃링크·참조 목록」 + 노트명 | `"$OBSIDIAN_CLI" links file="<노트명>" vault="${OBSIDIAN_VAULT}"` | 평문 경로 줄(format 무시) |
+| ③ 「속성·frontmatter·메타·created/updated/aliases 값」 + 노트명 | `"$OBSIDIAN_CLI" properties file="<노트명>" vault="${OBSIDIAN_VAULT}" format=json` | JSON 객체 |
+| ⑤ `#태그` 토큰 또는 「태그·tag·태그가 붙은·태그로」 + 태그명 | `"$OBSIDIAN_CLI" tags vault="${OBSIDIAN_VAULT}" counts format=json` 에서 태그명 대소문자 무시 부분 일치로 후보 ≤5(count 내림차순) | 태그 후보 배열(각 `{tag,count}`) |
+| ⑤-b ⑤ 후보마다(후보 0 → ④ 폴백) | `"$OBSIDIAN_CLI" search query="tag:<태그(앞 # 제거)>" vault="${OBSIDIAN_VAULT}" format=json limit=50` → 후보별 결과 합집합, 각 경로에 `[tag:#…]` 라벨(리터럴 `#태그` 검색은 쓰지 않음) | 경로 배열, `[tag:#…]` 라벨 |
+| ④ 그 외(전문) | `"$OBSIDIAN_CLI" search query="$(cliq "${QUERY}")" vault="${OBSIDIAN_VAULT}" format=json limit=1000` | 파일 배열 |
+| ④-b DEEP 모드 또는 ④ 결과 ≤3건 | `"$OBSIDIAN_CLI" search:context query="$(cliq "${QUERY}")" vault="${OBSIDIAN_VAULT}" format=json limit=20` | 파일:줄:문맥 |
+**1단 규칙 확장(항상):**
+```
+TOPN = QUICK 2 / DEEP 5 (Tier 1 결과 ∪ 0단 결과에서 상위 TOPN 노트 · 노트명 = 경로 basename(.md 제거))
+각 노트 F 에 대해 순서 고정:
+ ① properties file="F" → created/updated/tags/aliases 요약 1줄 [prop]
+ ② backlinks file="F" format=json (≤5) [bl] · ③ links file="F" (≤5) [ln]
+ ④ search:context query="$(cliq "${QUERY}")" path="<F 의 폴더>" limit=3 → F 의 매치 줄 ≤3 [ctx]
+ ⑤ ① 의 tags 중 상위 2개 → search query="tag:<t>" format=json limit=20 → 기존 결과에 없는 경로 ≤3 [tag:#t]
+중복 경로 제거 · 각 줄에 축 라벨 · CLI 오류·0B 는 그 축만 건너뛰고 계속(전체 중단 ❌) · 호출 상한 = 0단 ≤6(④ 1 + ④-b 1 + ⑤ 후보 ≤5 중 실행분) + 1단 TOPN×6(①②③④ 4 + ⑤ 태그 2)
+```
+- 출력 규약: Tier 1/2 본 결과 «아래»에 `## 확장(규칙 5축)` 블록 — 노트별 5줄 이내. 본 결과 순위 재배열 ❌.
+- 기존 Phase 2.5-B(그래프 확장)와의 관계: Phase 2.5-B 의 backlinks 호출은 이 1단 ② 로 «대체»(중복 호출 ❌).
+- 노트명 = `file=` 는 wikilink 처럼 «이름»으로 해석(경로 ❌), 추출 우선순위: ① `[[…]]` 안 ② 따옴표(`" "` · `' '` · 「」) 안 ③ 둘 다 없으면 질의에서 조사(이/가/을/를/의/에/은/는/과/와) 직전 토큰 중 vault 노트 이름과 일치하는 것 — 확인 명령 `"$OBSIDIAN_CLI" search query="<토큰>" vault="${OBSIDIAN_VAULT}" path= total`(total ≥1). 일치 0 이면 ④ 전문 검색으로 폴백. 예: 「MOC-Map 이 링크하는 노트는?」 → ③ 「MOC-Map」.
+- **0 B·rc 0 ≠ 무결과** — 무결과 = `No matches found.`. 0 B 는 도구 순간 빈손 → 같은 명령 1회 재시도, 재현 시 Tier 3.
+- `base:query` 는 쓰지 않는다(문법 미확정).
+- 전제: Obsidian 데스크톱 앱 설치 + 실행 중 (setup 위저드가 감지·안내).
+- **질의는 핵심 키워드 1~2개로 축약해 넣는다** — CLI 는 전문 일치(full-text) 검색이라 문장형 통짜 질의는 0히트가 정상이다(실측: 문장형 "No matches" vs 키워드 2개 다수 히트). **0건이면 키워드 변형(동의어·영/한 표기) 1회 재질의**, 그래도 0건일 때만 다음 티어로.
+- CLI는 관련도 순위가 약하므로 흔한 단어는 limit을 크게 잡고 결과에서 추린다.
+- CLI 부재·실행 오류 → Tier 3로.
+
