@@ -9,11 +9,13 @@
 # 3문서만 대상으로 같은 키워드 1회 선검색(CLI 가 있으면 CLI, 없거나 0 B 면 grep) → 히트 = 📌 고정
 STRUCT_HITS=0
 if [ -d "$STRUCT_DIR" ]; then
-  for kw in $QUERY_KEYWORDS; do STRUCT_HITS=$((STRUCT_HITS + $(grep -il -- "$kw" "$STRUCT_DIR"/*.md 2>/dev/null | wc -l | tr -d ' '))); done
+  # 키워드 = 줄 단위로 쪼개 순회(zsh 는 따옴표 없는 $QUERY_KEYWORDS 를 안 쪼개 3낱말이 한 덩어리 grep 이 되고, bash 는 * 를 파일명으로 펼친다 — 둘 다 피함)
+  STRUCT_HITS=$(printf '%s\n' "${QUERY_KEYWORDS:-}" | tr ' ' '\n' | awk 'NF' | while IFS= read -r kw; do grep -il -- "$kw" "$STRUCT_DIR"/*.md 2>/dev/null; done | wc -l | tr -d ' ')
 fi
 echo "구조 문서: 참조함(${STRUCT_DOCS}/3 · 히트 ${STRUCT_HITS})"
 # ROUTE_HUBS 각 MOC 의 outlink 를 후보에 추가(Phase 2.5-B 와 같은 grep)
-for hub in $ROUTE_HUBS; do
+# ROUTE_HUBS = 줄바꿈 구분(Phase 0.4 값) 또는 stdout 에서 옮겨 적은 ` | ` 구분(`[a | b]` 대괄호째도) — 다 받는다(허브명 공백 보존 · zsh/bash 동일)
+printf '%s\n' "${ROUTE_HUBS:-}" | awk '{ if ($0 ~ /^\[.*\]$/) $0 = substr($0, 2, length($0) - 2); n = split($0, P, / [|] /); for (i = 1; i <= n; i++) { h = P[i]; gsub(/^[ \t]+|[ \t]+$/, "", h); if (h != "") print h } }' | while IFS= read -r hub; do
   HUB_FILE="$(find "$VAULT_PATH" -name "$hub.md" -not -path '*/.*' | head -1)"
   [ -n "$HUB_FILE" ] && grep -o '\[\[[^]|#]*' "$HUB_FILE" | sed 's/^\[\[//' | sort -u | head -15
 done

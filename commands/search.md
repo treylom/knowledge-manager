@@ -76,16 +76,21 @@ for f in START-HERE VAULT-STRUCTURE MOC-Map; do
   if [ -f "$STRUCT_DIR/$f.md" ]; then STRUCT_DOCS=$((STRUCT_DOCS+1)); else STRUCT_MISSING="$STRUCT_MISSING $f"; fi
 done
 echo "STRUCT_DOCS=${STRUCT_DOCS}/3 missing=[${STRUCT_MISSING# }]"
-# 허브 매핑: MOC-Map 앞 130줄의 표 행에서 질의 키워드와 겹치는 [[허브]] ≤3
+# 허브 매핑: MOC-Map 앞 130줄에서 허브마다 «겹친 키워드 수»를 세어 많은 순 ≤3 · 동점 = 지도 위쪽(먼저 나온) 순
+# 키워드는 awk 안에서 쪼갠다(zsh 는 $QUERY_KEYWORDS 를 안 쪼갬) · 대소문자 무시 글자 그대로 비교(정규식 ❌) · 허브명은 줄 단위(공백 든 이름 보존)
 ROUTE_HUBS=""
 if [ -f "$STRUCT_DIR/MOC-Map.md" ]; then
-  for kw in $QUERY_KEYWORDS; do
-    ROUTE_HUBS="$ROUTE_HUBS $(head -130 "$STRUCT_DIR/MOC-Map.md" | grep -i -- "$kw" | grep -o '\[\[[^]|#]*' | sed 's/^\[\[//')"
-  done
-  ROUTE_HUBS="$(echo $ROUTE_HUBS | tr ' ' '\n' | awk 'NF' | sort -u | head -3 | tr '\n' ' ')"
+  ROUTE_HUBS="$(head -130 "$STRUCT_DIR/MOC-Map.md" | awk -v kws="$QUERY_KEYWORDS" '
+    BEGIN { m = split(tolower(kws), T, " "); for (i = 1; i <= m; i++) if (!(T[i] in U)) { U[T[i]] = 1; K[++n] = T[i] } }
+    { l = tolower($0); s = $0
+      while (match(s, /\[\[[^]|#]*/)) { h = substr(s, RSTART + 2, RLENGTH - 2); s = substr(s, RSTART + RLENGTH)
+        if (!(h in F)) F[h] = NR
+        for (i = 1; i <= n; i++) if (index(l, K[i])) M[h SUBSEP i] = 1 } }
+    END { for (h in F) { c = 0; for (i = 1; i <= n; i++) if ((h SUBSEP i) in M) c++; if (c) printf "%d\t%d\t%s\n", c, F[h], h } }' \
+    | sort -t "$(printf '\t')" -k1,1nr -k2,2n | head -3 | cut -f3)"
 fi
-ROUTE_HUB_COUNT=$(echo $ROUTE_HUBS | wc -w | tr -d ' ')
-echo "ROUTE_HUBS=[${ROUTE_HUBS% }] count=${ROUTE_HUB_COUNT}"
+ROUTE_HUB_COUNT=$(printf '%s\n' "$ROUTE_HUBS" | awk 'NF' | wc -l | tr -d ' ')
+echo "ROUTE_HUBS=[$(printf '%s\n' "$ROUTE_HUBS" | awk 'NF' | paste -sd '|' - | sed 's/|/ | /g')] count=${ROUTE_HUB_COUNT}"
 ```
 
 - `STRUCT_DOCS` 가 3 미만이면 답변에 「구조 문서 없음(<빠진 것>) — `/km:setup` 재실행으로 생성」 1줄을 적고 **그대로 계속 진행**한다(멈춤 ❌).
@@ -207,8 +212,21 @@ FRESH_CLI="${OBSIDIAN_CLI:-/Applications/Obsidian.app/Contents/MacOS/obsidian-cl
 if [ "$GRAPHRAG_STATE" = "ok" ] && [ "$AGE_MIN" -gt "$STALE_MIN" ]; then
   echo "⚠ 색인 나이 ${AGE_MIN}분(finished_at ${FIN:-없음}) — 그 이후 생성·수정된 노트는 Tier 1 결과에 없음"
 fi
+# CLI 질의 이스케이프: Obsidian 검색은 `낱말:`·`14:26`·`https:` 를 연산자로 읽어 `Error: Operator "X" not recognized`(rc 0)로 끝난다
+KM_CLI_Q="${CLAUDE_PLUGIN_ROOT:-}/scripts/km_cli_query.py"
+[ -f "$KM_CLI_Q" ] || KM_CLI_Q="$(find "$HOME/.claude/plugins/cache/knowledge-manager" -name km_cli_query.py 2>/dev/null | sort | tail -1)"
+cliq() { if [ -f "$KM_CLI_Q" ]; then python3 "$KM_CLI_Q" "$1"; else printf '%s' "$1" | sed -E 's/([^[:space:]"]):([[:space:])]|$)/\1\2/g'; fi; }
+FRESH_JSON=""
 if [ "$GRAPHRAG_STATE" = "ok" ] && { [ "$AGE_MIN" -gt "$STALE_MIN" ] || [ "$RECENT" = 1 ]; } && [ -x "$FRESH_CLI" ]; then
-  FRESH_JSON="$("$FRESH_CLI" search query="${QUERY}" format=json limit=20 2>/dev/null)"
+  # 질의 = Phase 0.6 키워드 앞 2개(CLI 는 낱말 전부 일치라 문장형은 「No matches」가 정상 — 실측 25/26) · 키워드가 비면 원문
+  FRESH_Q="$(printf '%s' "${KEYWORDS_TOP:-}" | awk '{print $1, $2}' | sed 's/ *$//')"; [ -n "$FRESH_Q" ] || FRESH_Q="${QUERY}"
+  FRESH_RAW="$("$FRESH_CLI" search query="$(cliq "${FRESH_Q}")" format=json limit=20 2>/dev/null)"
+  # JSON 배열 1건+ 일 때만 보강으로 인정(오류 문자열·「No matches found.」 도 비어 있지 않아 예전엔 yes 로 찍혔다)
+  FRESH_JSON="$(printf '%s' "$FRESH_RAW" | python3 -c 'import sys,json
+try:
+    r=json.load(sys.stdin); print(json.dumps(r, ensure_ascii=False) if isinstance(r,list) and r else "")
+except Exception: print("")')"
+  [ -z "$FRESH_JSON" ] && [ -n "$FRESH_RAW" ] && echo "FRESH_CLI_OUT=$(printf '%s' "$FRESH_RAW" | head -1 | cut -c1-80)"
 fi
 echo "FRESH: age=${AGE_MIN}m recent=${RECENT} supplement=$([ -n "${FRESH_JSON:-}" ] && echo yes || echo no)"
 ```
@@ -221,11 +239,23 @@ echo "FRESH: age=${AGE_MIN}m recent=${RECENT} supplement=$([ -n "${FRESH_JSON:-}
   - 동작: `q = <targets> + <keywords 앞 3>`(Tier 1 질의와 같은 대상 고정 — 핵심어만 앞 3개로 축소) 로 같은 `/api/search` 를 다시 호출해 Tier 1 결과에 «없는» 경로만 `[target]` 라벨로 Tier 1 결과 **아래**에 덧붙인다(순위 재배열 ❌). 추가로 대상이 (a) MOC-Map `ROUTE_HUBS` 의 허브면 그 허브의 outlink ≤15 (b) vault 폴더명과 일치하면 그 폴더 하위 md ≤15 를 `[target:hub]`/`[target:folder]` 라벨로 덧붙인다. 보강으로 들어온 후보는 «후보» 일 뿐 채택은 본문 근거로 판단한다.
   - 기록: `KM_SEARCH_RUN_DIR` 가 있으면 그 폴더의 `target-boost.json` 에도 기록: {targets, tier1_target_hit_n, requery, added:[{path,label}]}.
 
+#### Tier 1-R — 규칙 코퍼스 보강 (S3 · 서버 무변경 · Tier 1 결과 불변 · 1회)
+운영 규율·스킬·봇 레지스트리 질문의 정본은 vault 노트가 아니라 repo 루트 규칙 코퍼스(예: `docs/rules-*`·`.claude/rules`·`.claude/skills/*/SKILL.md`)에 있다 — Tier 1(색인 = vault .md)도 Tier 2(CLI = 열린 vault)도 닿지 않는다. km-config `search.ruleCorpus`(root·index·globs·top)가 있을 때만 실행, 없으면 `RULES: off` 1줄 = 현행과 동일. **실행 시점** = Tier 1 이 `ok` 면 Tier 1-S·1-T 뒤 1회 · Tier 1 이 실패(`absent|unreachable|blocked|misrouted`)면 Tier 2 들어가기 «전» 1회(서버와 무관한 로컬 축이라 서버가 죽었을 때도 돈다). `other` 만 건너뛴다.
+```bash
+KM_RULES="${CLAUDE_PLUGIN_ROOT:-}/scripts/km_rules_route.py"
+[ -f "$KM_RULES" ] || KM_RULES="$(find "$HOME/.claude/plugins/cache/knowledge-manager" -name km_rules_route.py 2>/dev/null | sort | tail -1)"
+# 문 = 영수증 VL_HITS 와 같은 모양: other → 건너뜀 · same 또는 Tier 1 실패 → 실행 · 그 밖(미관측) → 건너뜀
+if [ "${VAULT_MODE:-}" = other ]; then echo "RULES: skip(vault_mode=other)"
+elif ! { [ "${VAULT_MODE:-}" = same ] || [[ "${GRAPHRAG_STATE:-}" =~ ^(absent|unreachable|blocked|misrouted)$ ]]; }; then echo "RULES: skip(vault_mode=${VAULT_MODE:-미관측} graphrag=${GRAPHRAG_STATE:-미관측})"
+elif [ -f "$KM_RULES" ]; then python3 "$KM_RULES" --config "./km-config.json" --config "${VAULT_PATH}/km-config.json" --query "${QUERY}" --keywords "${KEYWORDS_TOP:-}"; else echo "RULES: helper 없음"; fi
+```
+- 출력 `[rules:index]`(INDEX 트리거 표 겹침 → 그 rule 의 core·full 쌍) · `[rules:rg]`(코퍼스 낱말 겹침) 줄을 Tier 1 결과 **아래** 별도 절 `📐 규칙 코퍼스 (N)` 로 붙인다(Tier 1 실패 경로면 Tier 2~4 결과 아래 · 순위 재배열 ❌ · ≤5 · `other` 가 아니면 항상 실행 — 질의 내용으로 거르는 문 열기 조건 없음). 후보일 뿐 — 채택은 원문 Read 근거로, 읽은 경로는 출처에 그대로 적는다(vault 노트 아님을 경로로 구분). **읽기 예산(기본 3)은 늘리지 않는다** — 이 절의 경로를 Read 하면 그 3 안에서 센다.
+- 정답표·문항별 사전 ❌(Phase 0.6 과 같은 선) — 코퍼스는 «원칙»으로 정한다: 규칙·스킬·공용 레지스트리 정본. 봇 작업 폴더(`agent-*/out` 등)는 넣지 않는다.
 
-**other 보호:** Tier 1-S의 로컬 CLI 보강 및 Tier 1-T의 로컬 hub/folder 탐색은 `VAULT_MODE=same`일 때만 실행한다. `other`에서는 서버 질의·서버 body만 허용한다.
+**other 보호:** Tier 1-S의 로컬 CLI 보강 및 Tier 1-T의 로컬 hub/folder 탐색은 `VAULT_MODE=same`일 때만 실행한다. `other`에서는 서버 질의·서버 body만 허용한다. Tier 1-R 의 로컬 코퍼스 읽기는 `VAULT_MODE=same` 또는 Tier 1 실패 뒤에만 실행한다 — `other` 에선 0회(블록 첫 줄이 `RULES: skip` 으로 막는다).
 
 ### Tier 2 — Obsidian CLI
-Tier 1 실패/불충분 시: `tier2-struct-prelude.txt` → `tier2-cli.txt` 순 Read 후 실행.
+Tier 1 실패/불충분 시: `tier2-struct-prelude.txt` → `tier2-cli.txt` 순 Read 후 실행. Tier 1 «실패»(ok 아님)면 그 전에 위 Tier 1-R 블록을 1회 실행한다(이 줄을 Tier 1 성공 경로에선 다시 돌리지 않는다).
 
 ### Tier 3 — Obsidian MCP
 Tier 2 실패 시 `search-references/tier3-mcp.txt` Read 후 MCP 검색.
@@ -275,7 +305,7 @@ Tier 3 불가 시 `search-references/tier4-text.txt` Read. `GRAPHRAG_STATE`별 �
 - QUICK: 5줄 이내 + 출처 1-2개 / DEEP: 제한 없음 + 출처 3-5개
 
 
-## 부재·단정 추가 게이트 — 운영 정본 계약
+## 부재·단정 확인 절차
 부재·단정 발화 전에 실제 검색 증거 또는 `search checked: <top-hit-or-no-hit> | query="…"` 마커를 붙인다. top-hit/no-hit와 query는 실측값으로 대체하며 placeholder 금지. "볼트에 없다" 단정 전에는 `VAULT_MODE=same` 또는 Tier 1 실패 뒤 `bash .claude/scripts/vault-lookup.sh "${KEYWORD}"`를 vault 루트에서 1회 실행한다(3단 재질의와 별도). helper 부재·오류·실행 불가는 한계를 명시하고 확인된 범위만 답하며 볼트 전체 부재로 단정하지 않는다. `other`에서는 로컬 접근 0회 계약 때문에 helper 실행 금지; 다른 서버 인덱스의 검색 결과 한계만 말하고 사용자의 vault 전체 부재를 주장하지 않는다. no-hit도 실측 `search checked:` 마커와 영수증을 남긴다. 영수증 블록이 찍는 `VL_HITS`를 부재 단정 근거에 인용하되, 이는 helper 출력의 비어 있지 않은 줄 수(노트 히트 수 아님)이며 `skip`·`VL_UNAVAILABLE=1`·helper 부재의 0은 부재 증거가 아니다; 이 1회는 영수증 블록에서 수행하며 별도 선행 호출은 하지 않는다.
 
 ## 완료 전 게이트 — 모든 분기 공통
@@ -288,7 +318,7 @@ Tier 3 불가 시 `search-references/tier4-text.txt` Read. `GRAPHRAG_STATE`별 �
 
 ```bash
 # helper만 폴백한다. 측정 명령 본문은 이 사본 그대로이며 설치본 캐시 탐색은 하지 않는다.
-if [ "${VAULT_MODE:-}" = other ]; then VL_HITS=skip; elif [ "${VAULT_MODE:-}" = same ] || [[ "${GRAPHRAG_STATE:-}" =~ ^(absent|unreachable|blocked|misrouted)$ ]]; then VL_HITS=$(set -o pipefail; (read -r -a VL_TERMS <<< "${KEYWORDS_TOP:-$QUERY}"; cd "${VAULT_PATH:?vaultPath required}" && bash "$HOME/obsidian-ai-vault/.claude/scripts/vault-lookup.sh" "${VL_TERMS[@]}") 2>/dev/null | command grep -c .) || { VL_HITS=${VL_HITS:-0}; echo "VL_UNAVAILABLE=1 — 부재 단정 금지"; }; else VL_HITS=skip; fi; echo "VL_HITS=${VL_HITS}"
+if [ "${VAULT_MODE:-}" = other ]; then VL_HITS=skip; elif [ "${VAULT_MODE:-}" = same ] || [[ "${GRAPHRAG_STATE:-}" =~ ^(absent|unreachable|blocked|misrouted)$ ]]; then VL_HITS=$(set -o pipefail; (set -f; set -- $(printf '%s' "${KEYWORDS_TOP:-$QUERY}"); VL_GIT="$(git rev-parse --show-toplevel 2>/dev/null)"; cd "${VAULT_PATH:?vaultPath required}" || exit 1; VL_H=.claude/scripts/vault-lookup.sh; [ -f "$VL_H" ] || VL_H="${VL_GIT:+$VL_GIT/.claude/scripts/vault-lookup.sh}"; [ -n "$VL_H" ] && [ -f "$VL_H" ] && bash "$VL_H" "$@") 2>/dev/null | command grep -c .) || { VL_HITS=${VL_HITS:-0}; echo "VL_UNAVAILABLE=1 — 부재 단정 금지"; }; else VL_HITS=skip; fi; echo "VL_HITS=${VL_HITS}"
 RCPT=""
 if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] && [ -f "$CLAUDE_PLUGIN_ROOT/scripts/km-search-receipt.py" ]; then
   RCPT="$CLAUDE_PLUGIN_ROOT/scripts/km-search-receipt.py"
