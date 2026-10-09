@@ -1,0 +1,24 @@
+# km:search reference — lazy-load module
+
+> **로드 규칙**: 이 파일은 규칙·절차 참조다. **primary read 예산(기본 3)에 포함하지 않는다.**
+> 증거로 쓸 vault 노트 Read 만 primary read 로 센다.
+
+#### Tier 2·3 공통 — 구조 문서 선실행 (본 검색 전에 1회)
+
+```bash
+# 3문서만 대상으로 같은 키워드 1회 선검색(CLI 가 있으면 CLI, 없거나 0 B 면 grep) → 히트 = 📌 고정
+STRUCT_HITS=0
+if [ -d "$STRUCT_DIR" ]; then
+  for kw in $QUERY_KEYWORDS; do STRUCT_HITS=$((STRUCT_HITS + $(grep -il -- "$kw" "$STRUCT_DIR"/*.md 2>/dev/null | wc -l | tr -d ' '))); done
+fi
+echo "구조 문서: 참조함(${STRUCT_DOCS}/3 · 히트 ${STRUCT_HITS})"
+# ROUTE_HUBS 각 MOC 의 outlink 를 후보에 추가(Phase 2.5-B 와 같은 grep)
+for hub in $ROUTE_HUBS; do
+  HUB_FILE="$(find "$VAULT_PATH" -name "$hub.md" -not -path '*/.*' | head -1)"
+  [ -n "$HUB_FILE" ] && grep -o '\[\[[^]|#]*' "$HUB_FILE" | sed 's/^\[\[//' | sort -u | head -15
+done
+```
+- Obsidian CLI 는 **앱 내장 경로 우선**(mac `/Applications/Obsidian.app/Contents/MacOS/obsidian-cli`) + `vault=<볼트 이름>` 을 명시한다.
+- 출력이 0 B 인데 rc 가 0 이면 「도구가 순간 빈손」이므로 1회 재시도한다. 무결과 문구(≠0 B)일 때만 「없음」으로 판정한다.
+- 미히트여도 위 `구조 문서: 참조함(…)` 줄은 반드시 표기한다 — 참조 «했음»의 증명이다.
+
