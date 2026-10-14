@@ -13,11 +13,11 @@
 **URL 감지 시 반드시 다음 우선순위로 호출:**
 
 ```bash
-# 0순위: Aside (재경님 10-14 강제 — 웹 페이지 열기·JS 렌더·로그인 페이지는 aside 먼저)
-# 실행 이름: 맥 = aside · WSL = aside.exe (변수·$( ) 꼴은 명령 검사 훅이 막으므로 실행 이름을 그대로 적는다)
+# 0순위: Aside (1.8.4 부터 기본 — 웹 페이지 열기·JS 렌더·로그인 페이지는 aside 먼저)
+# 실행 이름: macOS = aside · WSL/Windows = aside.exe (변수·$( ) 대신 실행 이름을 그대로 적는다 — 동적 구문을 막는 명령 검사 훅이 있는 환경 대비)
 aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
 # 스크린샷·폼 입력·클릭도 같은 aside exec 지시문으로(예: "…열고 전체 화면 캡처를 [경로]에 저장")
-# aside 가 없거나 실패하면: 실패 사유 1줄을 남기고 아래 순위로. playwright 계열은 aside 강제 훅이 막으므로 Bash 는 명령 앞 ASIDE_SKIP="<사유 12자+>" 표지가 필요.
+# aside 가 없거나 실패하면: 실패 사유 1줄을 남기고 아래 순위로. (aside 우선 정책 훅을 쓰는 환경이면 playwright 계열 호출에 그 훅이 정한 우회 표지가 필요할 수 있다.)
 
 # 1순위: Scrapling (Python, JS 렌더링, 3x 빠름)
 # scripts/scrapling-crawl.py 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 playwright-cli
@@ -317,7 +317,7 @@ OBSIDIAN_CLI="$OBSIDIAN_CLI"
 ### 브라우징 스택 우선순위 (CRITICAL!)
 
 ```
-0순위: aside exec (재경님 10-14 강제 · 실패 시 사유 1줄)
+0순위: aside exec (1.8.4 부터 기본 · 실패 시 사유 1줄)
 1순위: scrapling-crawl.py --mode dynamic (Python, JS 렌더링, 3x 빠름)
 2순위: scrapling-crawl.py --mode stealth (Python, 안티봇 우회)
 3순위: playwright-cli (Bash, 폴백 + 스크린샷)
@@ -357,14 +357,14 @@ Step 4: 콘텐츠 분석 (프리셋 반영 — 타임라인, 인사이트, 인�
 - `instagram.com/p/*` → km-social-media.md 스킬 참조
 - `instagram.com/reel/*` → km-social-media.md 스킬 참조
 
-### 0순위: Aside (🚨 MUST TRY FIRST — 재경님 10-14)
+### 0순위: Aside (🚨 MUST TRY FIRST — 1.8.4 부터)
 
 ```bash
-# 0순위: Aside (재경님 10-14 강제 — 웹 페이지 열기·JS 렌더·로그인 페이지는 aside 먼저)
-# 실행 이름: 맥 = aside · WSL = aside.exe (변수·$( ) 꼴은 명령 검사 훅이 막으므로 실행 이름을 그대로 적는다)
+# 0순위: Aside (1.8.4 부터 기본 — 웹 페이지 열기·JS 렌더·로그인 페이지는 aside 먼저)
+# 실행 이름: macOS = aside · WSL/Windows = aside.exe (변수·$( ) 대신 실행 이름을 그대로 적는다 — 동적 구문을 막는 명령 검사 훅이 있는 환경 대비)
 aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
 # 스크린샷·폼 입력·클릭도 같은 aside exec 지시문으로(예: "…열고 전체 화면 캡처를 [경로]에 저장")
-# aside 가 없거나 실패하면: 실패 사유 1줄을 남기고 아래 순위로. playwright 계열은 aside 강제 훅이 막으므로 Bash 는 명령 앞 ASIDE_SKIP="<사유 12자+>" 표지가 필요.
+# aside 가 없거나 실패하면: 실패 사유 1줄을 남기고 아래 순위로. (aside 우선 정책 훅을 쓰는 환경이면 playwright 계열 호출에 그 훅이 정한 우회 표지가 필요할 수 있다.)
 ```
 
 ### 1순위: Scrapling (aside 실패 시 1순위)

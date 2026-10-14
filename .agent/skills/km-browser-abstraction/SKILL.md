@@ -34,14 +34,14 @@ function is_antigravity_environment() {
 
 ---
 
-## Aside (기본 - 재경님 10-14 강제)
+## Aside (기본 - 1.8.4 부터)
 
 ```bash
-# 0순위: Aside (재경님 10-14 강제 — 웹 페이지 열기·JS 렌더·로그인 페이지는 aside 먼저)
-# 실행 이름: 맥 = aside · WSL = aside.exe (변수·$( ) 꼴은 명령 검사 훅이 막으므로 실행 이름을 그대로 적는다)
+# 0순위: Aside (1.8.4 부터 기본 — 웹 페이지 열기·JS 렌더·로그인 페이지는 aside 먼저)
+# 실행 이름: macOS = aside · WSL/Windows = aside.exe (변수·$( ) 대신 실행 이름을 그대로 적는다 — 동적 구문을 막는 명령 검사 훅이 있는 환경 대비)
 aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
 # 스크린샷·폼 입력·클릭도 같은 aside exec 지시문으로(예: "…열고 전체 화면 캡처를 [경로]에 저장")
-# aside 가 없거나 실패하면: 실패 사유 1줄을 남기고 아래 순위로. playwright 계열은 aside 강제 훅이 막으므로 Bash 는 명령 앞 ASIDE_SKIP="<사유 12자+>" 표지가 필요.
+# aside 가 없거나 실패하면: 실패 사유 1줄을 남기고 아래 순위로. (aside 우선 정책 훅을 쓰는 환경이면 playwright 계열 호출에 그 훅이 정한 우회 표지가 필요할 수 있다.)
 ```
 
 ```javascript
@@ -94,7 +94,7 @@ function scrape_url(url, options = {}) {
       })
 
     case "playwright":
-      // aside 실패 시 - 사유 1줄 · ASIDE_SKIP 표지
+      // aside 실패 시 - 사유 1줄
       mcp__playwright__browser_navigate({ url: url })
       mcp__playwright__browser_wait_for({ time: 3 })
       return mcp__playwright__browser_snapshot()
@@ -182,7 +182,7 @@ function scrape_with_fallback(url, options = {}) {
   } catch (error) {
     // If primary provider fails, try alternatives
     if (provider === "aside") {
-      console.warn("Aside 실패(사유 1줄) → Playwright 시도(ASIDE_SKIP) → WebFetch 시도 (제한적)")
+      console.warn("Aside 실패(사유 1줄) → Playwright 시도 → WebFetch 시도 (제한적)")
     }
 
     if (provider === "playwright" && requires_stealth(url)) {
