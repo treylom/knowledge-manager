@@ -28,7 +28,7 @@ triggers:
 > `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 `playwright-cli`.
 
 ```bash
-# Aside (1.8.4 — 예전에 playwright 로 읽던 자리: 가벼운 길로 접근이 막히는 사이트 · SNS · 브라우저 조작)
+# Aside (1.8.4 — 예전에 playwright 로 읽던 자리: Scrapling 으로는 안 열리지만 브라우저로는 누구나 볼 수 있는 공개 페이지 · SNS · 브라우저 조작)
 # 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
 aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
 # 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다.

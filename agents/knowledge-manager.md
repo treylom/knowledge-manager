@@ -92,7 +92,7 @@ Task 도구로 호출된 경우:
 | 입력 유형 | 필수 도구 호출 | 절대 금지 |
 |----------|--------------|----------|
 | **Threads/Instagram URL** | `aside exec` ⭐ **1순위** · 없으면 `playwright-cli open → snapshot` (scrapling은 첫 포스트만 반환) | MCP playwright 사용 금지, WebFetch 사용 금지 |
-| 일반 웹 URL | `scrapling-crawl.py --mode dynamic` (1순위) → `--mode stealth` (2순위) → `playwright-cli` (3순위) → `WebFetch` (정적) | 추측 금지 |
+| 일반 웹 URL | `scrapling-crawl.py --mode dynamic` (1순위) → `--mode stealth` (2순위) → `aside exec` (3순위 · Scrapling 으로 안 열릴 때) → `playwright-cli` (4순위) → `WebFetch` (정적) | 추측 금지 |
 | **PDF 파일 (작은)** | `Read` 직접 시도 (< 5MB, < 20p) | 실패 시 marker 변환 |
 | **PDF 파일 (큰)** | `/pdf` 스킬 권장 또는 `marker_single` | 직접 Read 금지 |
 | DOCX/XLSX/PPTX | `Read` 또는 해당 스킬 도구 | 없음 |
@@ -447,12 +447,12 @@ Research/[프로젝트명]/
 
 ```bash
 # 1순위: Scrapling (Python, JS 렌더링, 빠름)
-python3 scripts/scrapling-crawl.py fetch "https://threads.net/@user/post/abc123" --mode dynamic --output markdown
+python3 scripts/scrapling-crawl.py fetch "https://example.com/article" --mode dynamic --output markdown
 
 # 2순위: Scrapling Stealth (안티봇 우회)
-python3 scripts/scrapling-crawl.py fetch "https://threads.net/@user/post/abc123" --mode stealth --output markdown
+python3 scripts/scrapling-crawl.py fetch "https://example.com/article" --mode stealth --output markdown
 
-# 3순위: Aside (1.8.4 — 예전에 playwright 로 읽던 자리: 가벼운 길로 접근이 막히는 사이트 · SNS · 브라우저 조작)
+# 3순위: Aside (1.8.4 — 예전에 playwright 로 읽던 자리: Scrapling 으로는 안 열리지만 브라우저로는 누구나 볼 수 있는 공개 페이지 · SNS · 브라우저 조작)
 # 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
 aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
 # 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다.

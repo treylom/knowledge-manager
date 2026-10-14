@@ -20,7 +20,7 @@ python3 scripts/scrapling-crawl.py fetch "[URL]" --mode dynamic --output markdow
 # 2순위: Scrapling Stealth (안티봇 우회 필요 시)
 python3 scripts/scrapling-crawl.py fetch "[URL]" --mode stealth --output markdown
 
-# 3순위: Aside (1.8.4 — 예전에 playwright 로 읽던 자리: 가벼운 길로 접근이 막히는 사이트 · SNS · 브라우저 조작)
+# 3순위: Aside (1.8.4 — 예전에 playwright 로 읽던 자리: Scrapling 으로는 안 열리지만 브라우저로는 누구나 볼 수 있는 공개 페이지 · SNS · 브라우저 조작)
 # 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
 aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
 # 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다.
@@ -374,17 +374,17 @@ python3 scripts/scrapling-crawl.py fetch "[URL]" --mode dynamic --images --outpu
 python3 scripts/scrapling-crawl.py fetch "[URL]" --mode stealth --output markdown
 ```
 
-### Aside (1.8.4 — 막히는 사이트·SNS)
+### 3순위: Aside (1.8.4 — Scrapling 으로 안 열리는 공개 페이지·SNS)
 
 ```bash
-# Aside (1.8.4 — 예전에 playwright 로 읽던 자리: 가벼운 길로 접근이 막히는 사이트 · SNS · 브라우저 조작)
+# Aside (1.8.4 — 예전에 playwright 로 읽던 자리: Scrapling 으로는 안 열리지만 브라우저로는 누구나 볼 수 있는 공개 페이지 · SNS · 브라우저 조작)
 # 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
 aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
 # 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다.
 # aside 가 없거나 실패하면: 실패 이유를 남기고 다음 순위(Playwright CLI)로 넘어간다.
 ```
 
-### 4순위: Playwright CLI (Scrapling 실패 시 + 스크린샷)
+### 4순위: Playwright CLI (Aside 실패 시 + 스크린샷)
 
 ```bash
 playwright-cli open "[URL]"
@@ -413,7 +413,7 @@ WebFetch({ url: "[URL]", prompt: "전체 내용을 추출해줘" })
 ### 웹 크롤링 완료 검증 (필수!)
 
 ```
-□ Scrapling·WebFetch 로 안 열리거나 SNS 면 aside 로 열었나? (실패하면 이유를 남겼나?)
+□ Scrapling 으로 안 열리거나 SNS 면 aside 로 열었나? (실패하면 이유를 남겼나?)
 □ scrapling-crawl.py 또는 playwright-cli snapshot 호출 완료?
 □ 출력에서 실제 콘텐츠 확인 가능?
 □ 실패 시 다음 순위 Fallback 시도 완료?

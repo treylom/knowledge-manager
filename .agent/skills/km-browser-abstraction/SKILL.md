@@ -1,12 +1,12 @@
 ---
 name: km-browser-abstraction
-description: Unified browser interface for Aside (default), Antigravity native, Playwright, and Hyperbrowser providers
+description: Unified browser interface for Aside (default browser provider), Antigravity native, Playwright, and Hyperbrowser providers
 ---
 
 # Browser Abstraction Layer
 
 > Unified interface for web content extraction across browser providers
-> This provider is only for when a browser is needed — for ordinary pages, the Scrapling / WebFetch order in km-content-extraction comes first.
+> This provider is only for when a browser is needed — for ordinary pages, the Scrapling order in km-content-extraction comes first.
 
 ---
 
@@ -35,10 +35,10 @@ function is_antigravity_environment() {
 
 ---
 
-## Aside (default since 1.8.4)
+## Aside (default browser provider since 1.8.4)
 
 ```bash
-# Aside (since 1.8.4) — where Playwright used to be needed: sites the lightweight path cannot reach, social media, browser actions.
+# Aside (since 1.8.4) — where Playwright used to be needed: public pages anyone can view in a browser but Scrapling cannot open, social media, browser actions.
 # Command name: macOS = aside · WSL/Windows = aside.exe (write the command name literally)
 aside exec "Open [URL] and return the page body text verbatim, without summarizing. Include title, author, date, and image descriptions."
 # Screenshots, form input, and clicks use the same aside exec prompt (e.g. "…open and save a full-page capture to [path]")
