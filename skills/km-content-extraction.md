@@ -114,7 +114,7 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 
 ```
 병렬 처리 가능:
-✅ 여러 URL 동시 크롤링
+✅ 여러 URL 동시 크롤링(scrapling·WebFetch — aside 는 차례로)
 ✅ 여러 Threads/Instagram 포스트 동시 수집
 ✅ 여러 파일 동시 읽기
 ✅ 여러 Notion 페이지 동시 가져오기
@@ -348,7 +348,7 @@ Step 4: 콘텐츠 분석 (프리셋 반영 — 타임라인, 인사이트, 인�
 ```
 
 **트랜스크립트 추출에는 Playwright/WebFetch·aside 사용 금지** — 자막은 반드시 youtube-transcript-api 또는 yt-dlp 사용.
-**메타데이터/챕터 수집에는 playwright-cli 사용 가능** — yt-dlp 실패 시 aside exec, 그다음 playwright-cli로 제목, 채널, 업로드일, 챕터 등 수집.
+**메타데이터/챕터 수집에는 aside·playwright-cli 사용 가능** — yt-dlp 실패 시 aside exec, 그다음 playwright-cli로 제목, 채널, 업로드일, 챕터 등 수집.
 
 ### 소셜 미디어 URL
 
