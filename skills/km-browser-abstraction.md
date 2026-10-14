@@ -26,7 +26,7 @@ provider = config.browser.provider  // "aside" | "playwright" | "hyperbrowser" |
 # 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
 aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
 # 스크린샷·폼 입력·클릭도 같은 aside exec 지시문으로(예: "…열고 전체 화면 캡처를 [경로]에 저장")
-# aside 가 없거나 실패하면: 실패 사유 1줄을 남기고 아래 순위로.
+# aside 가 없거나 실패하면: 실패 이유를 남기고 아래 순위로 넘어간다.
 ```
 
 ```javascript
@@ -46,7 +46,7 @@ async function scrape_with_aside(url) {
 
 ---
 
-### Playwright (aside 실패 시 - 사유 1줄)
+### Playwright (aside 가 실패했을 때 · 이유를 남긴 뒤)
 
 ```javascript
 // 단순 스크래핑 (3단계)

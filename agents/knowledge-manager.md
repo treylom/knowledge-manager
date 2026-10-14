@@ -450,7 +450,7 @@ Research/[프로젝트명]/
 # 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
 aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
 # 스크린샷·폼 입력·클릭도 같은 aside exec 지시문으로(예: "…열고 전체 화면 캡처를 [경로]에 저장")
-# aside 가 없거나 실패하면: 실패 사유 1줄을 남기고 아래 순위로.
+# aside 가 없거나 실패하면: 실패 이유를 남기고 아래 순위로 넘어간다.
 
 # 1순위: Scrapling (Python, JS 렌더링, 빠름)
 python3 scripts/scrapling-crawl.py fetch "https://threads.net/@user/post/abc123" --mode dynamic --output markdown
@@ -557,7 +557,7 @@ mcp__notebooklm__ask_question({
 
 ### Playwright 자동화 (노트북 생성 시)
 
-(1.8.4) 브라우저 조작은 aside exec 지시문 먼저 · playwright 는 aside 실패 시 사유 1줄 뒤
+(1.8.4) 브라우저 조작은 aside exec 지시문 먼저 · playwright 는 aside 가 실패해 그 이유를 남긴 뒤
 
 **사전 요구사항**: 최초 1회 수동 로그인 (Chrome 프로필에 세션 저장)
 
