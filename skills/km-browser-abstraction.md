@@ -1,7 +1,8 @@
 # Browser Abstraction Layer
 
 > Knowledge Manager의 브라우저 자동화 추상화 레이어
-> 설정에 따라 Playwright, Hyperbrowser, Antigravity 중 선택
+> 설정에 따라 Aside(기본), Playwright, Hyperbrowser, Antigravity 중 선택
+> 이 공급자는 브라우저가 필요할 때만 쓴다 — 일반 페이지는 km-content-extraction 의 Scrapling 이 먼저.
 
 ---
 
@@ -12,14 +13,42 @@
 ```javascript
 // 설정 파일 읽기
 config = Read("km-config.json")
-provider = config.browser.provider  // "playwright" | "hyperbrowser" | "antigravity"
+provider = config.browser.provider  // "aside" | "playwright" | "hyperbrowser" | "antigravity"
 ```
 
 ---
 
 ## Provider별 도구 매핑
 
-### Playwright (기본 - 무료, 로컬)
+### Aside (기본 - 1.8.4 부터)
+
+```bash
+# Aside (1.8.4 — 예전에 playwright 로 읽던 자리: Scrapling 으로는 안 열리지만 브라우저로는 누구나 볼 수 있는 공개 페이지 · SNS · 브라우저 조작)
+# 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다.
+# 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
+aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
+# 스크린샷·폼 입력·클릭도 같은 aside exec 지시문으로(예: "…열고 전체 화면 캡처를 [경로]에 저장")
+# aside 가 없거나 실패하면: 실패 이유를 남기고 아래 순위로 넘어간다.
+```
+
+```javascript
+// 의사코드: 공통 블록의 exec 1줄
+async function scrape_with_aside(url) {
+  return Bash(`aside exec "${url} 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."`)
+}
+```
+
+**장점:**
+- 로그인 세션 유지
+- 실제 브라우저
+
+**단점:**
+- 실행 시간 김
+- aside 앱 필요
+
+---
+
+### Playwright (aside 가 실패했을 때 · 이유를 남긴 뒤)
 
 ```javascript
 // 단순 스크래핑 (3단계)
@@ -116,6 +145,9 @@ function scrape_url(url, options = {}) {
 
   // 3. Provider별 처리
   switch (provider) {
+    case "aside":
+      return scrape_with_aside(url)
+
     case "playwright":
       if (is_social) {
         warn_user("소셜 미디어 URL입니다. 차단될 수 있습니다.")
@@ -137,8 +169,8 @@ function scrape_url(url, options = {}) {
       return scrape_with_antigravity(url)
 
     default:
-      // 기본값: playwright
-      return scrape_with_playwright(url)
+      // 기본값: aside
+      return scrape_with_aside(url)
   }
 }
 ```
@@ -216,7 +248,8 @@ Playwright로 시도하지만, 다음 문제가 발생할 수 있습니다:
 ### 폴백 체인
 
 ```
-Hyperbrowser 실패 → Playwright 시도
+Hyperbrowser 실패 → Aside 시도
+Aside 실패(이유 기록) → Playwright 시도
 Playwright 실패 → WebFetch 시도 (제한적)
 모두 실패 → 에러 보고
 ```
@@ -229,11 +262,9 @@ Playwright 실패 → WebFetch 시도 (제한적)
 
 ```
 URL: https://example.com/article
-Provider: playwright
+Provider: aside
 
-→ mcp__playwright__browser_navigate
-→ mcp__playwright__browser_wait_for
-→ mcp__playwright__browser_snapshot
+→ aside exec "[URL] 본문 그대로"
 → 콘텐츠 반환
 ```
 
@@ -267,6 +298,7 @@ Provider: playwright
 
 ```
 □ km-config.json에 browser.provider 설정됨?
+□ aside(맥) / aside.exe(WSL) 가 PATH 에 있음?
 □ 해당 MCP 서버가 .mcp.json에 설정됨?
 □ MCP 서버 연결 상태 정상? (claude mcp list)
 □ API 키 유효? (hyperbrowser 사용 시)

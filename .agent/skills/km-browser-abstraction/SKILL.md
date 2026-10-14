@@ -1,11 +1,12 @@
 ---
 name: km-browser-abstraction
-description: Unified browser interface for Antigravity native, Playwright, and Hyperbrowser providers
+description: Unified browser interface for Aside (default browser provider), Antigravity native, Playwright, and Hyperbrowser providers
 ---
 
 # Browser Abstraction Layer
 
 > Unified interface for web content extraction across browser providers
+> This provider is only for when a browser is needed — for ordinary pages, the Scrapling order in km-content-extraction comes first.
 
 ---
 
@@ -20,7 +21,7 @@ function get_browser_provider() {
 
   // 2. Fall back to config
   config = Read("km-config.json")
-  return config?.browser?.provider || "playwright"
+  return config?.browser?.provider || "aside"
 }
 
 function is_antigravity_environment() {
@@ -31,6 +32,29 @@ function is_antigravity_environment() {
          file_exists("~/.gemini/antigravity/")
 }
 ```
+
+---
+
+## Aside (default browser provider since 1.8.4)
+
+```bash
+# Aside (since 1.8.4) — where Playwright used to be needed: public pages anyone can view in a browser but Scrapling cannot open, social media, browser actions.
+# Command name: macOS = aside · WSL/Windows = aside.exe (write the command name literally)
+aside exec "Open [URL] and return the page body text verbatim, without summarizing. Include title, author, date, and image descriptions."
+# Screenshots, form input, and clicks use the same aside exec prompt (e.g. "…open and save a full-page capture to [path]")
+# Do not use it to get past someone else's login wall, paywall, CAPTCHA, or pages that robots.txt / ToS prohibit.
+# If Aside is missing or fails, log the reason and fall through to Playwright.
+```
+
+```javascript
+// Pseudocode: the single exec line from the common block
+async function scrape_with_aside(url) {
+  return Bash(`aside exec "Open ${url} and return the page body text verbatim, without summarizing. Include title, author, date, and image descriptions."`)
+}
+```
+
+- Pros: keeps login session · real browser
+- Cons: slow to run · requires the aside app
 
 ---
 
@@ -54,6 +78,9 @@ function scrape_url(url, options = {}) {
   provider = get_browser_provider()
 
   switch (provider) {
+    case "aside":
+      return scrape_with_aside(url)
+
     case "antigravity":
       // Antigravity has built-in browser agent
       // Simply ask it to fetch and analyze the page
@@ -69,10 +96,14 @@ function scrape_url(url, options = {}) {
       })
 
     case "playwright":
-    default:
+      // on aside failure — log the reason
       mcp__playwright__browser_navigate({ url: url })
       mcp__playwright__browser_wait_for({ time: 3 })
       return mcp__playwright__browser_snapshot()
+
+    default:
+      // default: aside
+      return scrape_with_aside(url)
   }
 }
 ```
@@ -152,6 +183,10 @@ function scrape_with_fallback(url, options = {}) {
     return scrape_url(url, options)
   } catch (error) {
     // If primary provider fails, try alternatives
+    if (provider === "aside") {
+      console.warn(`Aside failed (${error.message}) → trying Playwright → WebFetch (limited)`)
+    }
+
     if (provider === "playwright" && requires_stealth(url)) {
       console.warn("Playwright blocked. Try Antigravity native or Hyperbrowser.")
     }

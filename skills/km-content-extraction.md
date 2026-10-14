@@ -20,7 +20,13 @@ python3 scripts/scrapling-crawl.py fetch "[URL]" --mode dynamic --output markdow
 # 2순위: Scrapling Stealth (안티봇 우회 필요 시)
 python3 scripts/scrapling-crawl.py fetch "[URL]" --mode stealth --output markdown
 
-# 3순위: Playwright CLI (Bash 기반 - 폴백 + 스크린샷)
+# 3순위: Aside (1.8.4 — 예전에 playwright 로 읽던 자리: Scrapling 으로는 안 열리지만 브라우저로는 누구나 볼 수 있는 공개 페이지 · SNS · 브라우저 조작)
+# 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
+aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
+# 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다.
+# aside 가 없거나 실패하면: 실패 이유를 남기고 다음 순위(Playwright CLI)로 넘어간다.
+
+# 4순위: Playwright CLI (Bash 기반 - 폴백 + 스크린샷)
 playwright-cli open [URL]
 playwright-cli snapshot          # 접근성 스냅샷으로 전체 텍스트 추출
 playwright-cli screenshot        # 시각적 확인 필요 시
@@ -28,15 +34,15 @@ playwright-cli close
 ```
 
 ```tool-call
-# 4순위: Playwright MCP (CLI 실패 시)
+# 5순위: Playwright MCP (CLI 실패 시)
 mcp__playwright__browser_navigate({ url: "[URL]" })
 mcp__playwright__browser_wait_for({ time: 3 })
 mcp__playwright__browser_snapshot()
 
-# 5순위: WebFetch (정적 콘텐츠 추출 가능)
+# 6순위: WebFetch (정적 콘텐츠 추출 가능)
 WebFetch({ url: "[URL]", prompt: "전체 내용 추출" })
 
-# 6순위: Hyperbrowser (클라우드, 크레딧 소진 주의)
+# 7순위: Hyperbrowser (클라우드, 크레딧 소진 주의)
 mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 ```
 
@@ -58,8 +64,8 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 | 소스 유형 | 🚨 필수 도구 호출 | 이미지 처리 | 참조 스킬 |
 |----------|------------------|-----------|----------|
 | **YouTube** | `youtube-transcript-api` → `yt-dlp` 폴백 | 썸네일만 | → km-youtube-transcript.md |
-| **소셜 미디어** | `playwright-cli open → snapshot` ⭐ (fallback: MCP → WebFetch) | 미디어 URL 수집 | → km-social-media.md |
-| **일반 웹 페이지** | `playwright-cli open → snapshot` (fallback: MCP → WebFetch) | img/figure 파싱 + 차트 스크린샷 | 이 문서 |
+| **소셜 미디어** | `aside exec` ⭐ (fallback: playwright-cli → MCP → WebFetch · 실패 이유 기록) | 미디어 URL 수집 | → km-social-media.md |
+| **일반 웹 페이지** | Scrapling ⭐ (막히면 `aside exec` → playwright-cli → MCP → WebFetch) | img/figure 파싱 + 차트 스크린샷 | 이 문서 |
 | PDF | **1순위**: `Read` → **2순위**: `opendataloader-pdf` → **3순위**: `marker_single` → **4순위**: `GLM-OCR` → **5순위**: Gemini OCR | ODL/marker images/ 폴더 스캔 | → pdf 스킬, km-glm-ocr |
 | Word (DOCX) | **1순위**: `npx -y @firecrawl/anydoc "[파일]"` → **2순위**: `Read` | 임베디드 이미지 설명 추출 | → 아래 "Word 문서" · docx 스킬은 **편집 전용** |
 | Excel (XLSX) | **1순위**: `npx -y @firecrawl/anydoc "[파일]"` (수식 없는 표 한정) → **2순위**: `xlsx` 스킬 (수식·분석·편집) | 차트 없음 (데이터만) | → 아래 "Excel" — 🔴 수식 셀 소실·헤더 밀림 주의 |
@@ -108,7 +114,7 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 
 ```
 병렬 처리 가능:
-✅ 여러 URL 동시 크롤링
+✅ 여러 URL 동시 크롤링(scrapling·WebFetch — aside 는 차례로)
 ✅ 여러 Threads/Instagram 포스트 동시 수집
 ✅ 여러 파일 동시 읽기
 ✅ 여러 Notion 페이지 동시 가져오기
@@ -119,7 +125,7 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 ❌ 의존성 있는 데이터 (A 결과로 B 결정)
 ```
 
-### 1. 다중 URL 동시 크롤링
+### 1. 다중 URL 크롤링
 
 ```
 시나리오: 사용자가 3개 URL 제공
@@ -127,12 +133,12 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 - https://threads.net/@user/post/123
 - https://example2.com/docs
 
-→ 3개 playwright 호출 병렬 실행:
+→ Scrapling 으로 안 열리는 페이지일 때, 3개 aside exec Bash 호출 차례로 실행:
 
-동일 메시지에서 3개 도구 호출:
-1. mcp__playwright__browser_navigate(url="example1.com/...")
-2. mcp__playwright__browser_navigate(url="threads.net/...")
-3. mcp__playwright__browser_navigate(url="example2.com/...")
+3개 도구 호출:
+1. aside exec "example1.com/... 본문 그대로"
+2. aside exec "threads.net/... 본문 그대로"
+3. aside exec "example2.com/... 본문 그대로"
 
 각 결과 수집 후 통합 분석
 ```
@@ -313,10 +319,11 @@ OBSIDIAN_CLI="$OBSIDIAN_CLI"
 ```
 1순위: scrapling-crawl.py --mode dynamic (Python, JS 렌더링, 3x 빠름)
 2순위: scrapling-crawl.py --mode stealth (Python, 안티봇 우회)
-3순위: playwright-cli (Bash, 폴백 + 스크린샷)
-4순위: Playwright MCP (CLI 실패 시 - 동일 기능, MCP 프로토콜)
-5순위: WebFetch (정적 콘텐츠 추출 가능 - 허용)
-6순위: Hyperbrowser (클라우드, 유료 - 크레딧 소진 주의)
+3순위: aside exec (1.8.4 · 막히는 사이트·SNS — 예전 playwright 자리 · 실패하면 이유를 남긴다)
+4순위: playwright-cli (Bash, 폴백 + 스크린샷)
+5순위: Playwright MCP (CLI 실패 시 - 동일 기능, MCP 프로토콜)
+6순위: WebFetch (정적 콘텐츠 추출 가능 - 허용)
+7순위: Hyperbrowser (클라우드, 유료 - 크레딧 소진 주의)
 ```
 
 ### YouTube URL (🚨 전용 파이프라인!)
@@ -333,18 +340,19 @@ Step 1: Video ID 추출 (URL 파싱)
 Step 2: 트랜스크립트 추출 (youtube-transcript-api → yt-dlp 폴백)
 Step 3: 메타데이터 + 챕터 수집 (🚨 정확성 보장!)
         1순위: yt-dlp --dump-json
-        2순위: playwright-cli open → snapshot (⭐ 핵심 폴백)
-        3순위: Playwright MCP (CLI 실패 시)
+        2순위: aside exec(메타데이터)
+        3순위: playwright-cli open → snapshot (⭐ 핵심 폴백)
+        4순위: Playwright MCP (CLI 실패 시)
         → 챕터가 있으면 타임라인 타임스탬프로 활용!
 Step 4: 콘텐츠 분석 (프리셋 반영 — 타임라인, 인사이트, 인용구)
 ```
 
-**트랜스크립트 추출에는 Playwright/WebFetch 사용 금지** — 자막은 반드시 youtube-transcript-api 또는 yt-dlp 사용.
-**메타데이터/챕터 수집에는 playwright-cli 사용 가능** — yt-dlp 실패 시 playwright-cli로 제목, 채널, 업로드일, 챕터 등 수집.
+**트랜스크립트 추출에는 Playwright/WebFetch·aside 사용 금지** — 자막은 반드시 youtube-transcript-api 또는 yt-dlp 사용.
+**메타데이터/챕터 수집에는 aside·playwright-cli 사용 가능** — yt-dlp 실패 시 aside exec, 그다음 playwright-cli로 제목, 채널, 업로드일, 챕터 등 수집.
 
 ### 소셜 미디어 URL
 
-**다음 URL 패턴은 Playwright CLI로 크롤링:**
+**다음 URL 패턴은 aside 로 크롤링(없으면 Playwright CLI):**
 - `threads.net/*` → km-social-media.md 스킬 참조
 - `instagram.com/p/*` → km-social-media.md 스킬 참조
 - `instagram.com/reel/*` → km-social-media.md 스킬 참조
@@ -366,7 +374,17 @@ python3 scripts/scrapling-crawl.py fetch "[URL]" --mode dynamic --images --outpu
 python3 scripts/scrapling-crawl.py fetch "[URL]" --mode stealth --output markdown
 ```
 
-### 3순위: Playwright CLI (Scrapling 실패 시 + 스크린샷)
+### 3순위: Aside (1.8.4 — Scrapling 으로 안 열리는 공개 페이지·SNS)
+
+```bash
+# Aside (1.8.4 — 예전에 playwright 로 읽던 자리: Scrapling 으로는 안 열리지만 브라우저로는 누구나 볼 수 있는 공개 페이지 · SNS · 브라우저 조작)
+# 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
+aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
+# 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다.
+# aside 가 없거나 실패하면: 실패 이유를 남기고 다음 순위(Playwright CLI)로 넘어간다.
+```
+
+### 4순위: Playwright CLI (Aside 실패 시 + 스크린샷)
 
 ```bash
 playwright-cli open "[URL]"
@@ -376,7 +394,7 @@ playwright-cli screenshot          # 시각적 캡처 (선택)
 playwright-cli close
 ```
 
-### 4순위: Playwright MCP (CLI 실패 시)
+### 5순위: Playwright MCP (CLI 실패 시)
 
 ```tool-call
 mcp__playwright__browser_navigate({ url: "[URL]" })
@@ -384,7 +402,7 @@ mcp__playwright__browser_wait_for({ time: 3 })
 mcp__playwright__browser_snapshot()
 ```
 
-### 5순위: WebFetch (Playwright 모두 실패 시 - 허용)
+### 6순위: WebFetch (Playwright 모두 실패 시 - 허용)
 
 ```tool-call
 WebFetch({ url: "[URL]", prompt: "전체 내용을 추출해줘" })
@@ -395,6 +413,7 @@ WebFetch({ url: "[URL]", prompt: "전체 내용을 추출해줘" })
 ### 웹 크롤링 완료 검증 (필수!)
 
 ```
+□ Scrapling 으로 안 열리거나 SNS 면 aside 로 열었나? (실패하면 이유를 남겼나?)
 □ scrapling-crawl.py 또는 playwright-cli snapshot 호출 완료?
 □ 출력에서 실제 콘텐츠 확인 가능?
 □ 실패 시 다음 순위 Fallback 시도 완료?

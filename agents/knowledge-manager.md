@@ -91,8 +91,8 @@ Task 도구로 호출된 경우:
 
 | 입력 유형 | 필수 도구 호출 | 절대 금지 |
 |----------|--------------|----------|
-| **Threads/Instagram URL** | `playwright-cli open → snapshot` ⭐ **1순위** (scrapling은 첫 포스트만 반환) | MCP playwright 사용 금지, WebFetch 사용 금지 |
-| 일반 웹 URL | `scrapling-crawl.py --mode dynamic` (1순위) → `--mode stealth` (2순위) → `playwright-cli` (3순위) → `WebFetch` (정적) | 추측 금지 |
+| **Threads/Instagram URL** | `aside exec` ⭐ **1순위** · 없으면 `playwright-cli open → snapshot` (scrapling은 첫 포스트만 반환) | MCP playwright 사용 금지, WebFetch 사용 금지 |
+| 일반 웹 URL | `scrapling-crawl.py --mode dynamic` (1순위) → `--mode stealth` (2순위) → `aside exec` (3순위 · Scrapling 으로 안 열릴 때) → `playwright-cli` (4순위) → `WebFetch` (정적) | 추측 금지 |
 | **PDF 파일 (작은)** | `Read` 직접 시도 (< 5MB, < 20p) | 실패 시 marker 변환 |
 | **PDF 파일 (큰)** | `/pdf` 스킬 권장 또는 `marker_single` | 직접 Read 금지 |
 | DOCX/XLSX/PPTX | `Read` 또는 해당 스킬 도구 | 없음 |
@@ -429,16 +429,17 @@ Research/[프로젝트명]/
 
 ## Social Media Auto-Detection (NEW!) ⭐
 
-**CRITICAL**: 다음 URL 패턴 감지 시 자동으로 **playwright-cli** 사용 (1순위, scrapling은 SNS에서 첫 포스트만 반환)
+**CRITICAL**: 다음 URL 패턴 감지 시 자동으로 **aside** 사용 (1순위 · 없으면 playwright-cli, scrapling은 SNS에서 첫 포스트만 반환)
 
 | 플랫폼 | URL 패턴 | 처리 |
 |--------|----------|------|
-| Threads | `threads.net/@*`, `threads.com/@*` | → **playwright-cli** (1순위) + km-social-media.md |
-| Threads | `threads.net/t/*` | → **playwright-cli** (1순위) + km-social-media.md |
-| Instagram Post | `instagram.com/p/*` | → **playwright-cli** (1순위) + km-social-media.md |
-| Instagram Reel | `instagram.com/reel/*` | → **playwright-cli** (1순위) + km-social-media.md |
+| Threads | `threads.net/@*`, `threads.com/@*` | → **aside** (1순위 · 없으면 playwright-cli) + km-social-media.md |
+| Threads | `threads.net/t/*` | → **aside** (1순위 · 없으면 playwright-cli) + km-social-media.md |
+| Instagram Post | `instagram.com/p/*` | → **aside** (1순위 · 없으면 playwright-cli) + km-social-media.md |
+| Instagram Reel | `instagram.com/reel/*` | → **aside** (1순위 · 없으면 playwright-cli) + km-social-media.md |
 
 > ❌ SNS에서 Playwright MCP 사용 금지 — CLI만 사용합니다.
+> (1.8.4) SNS 는 aside 가 1순위 — 예전 playwright-cli 자리. 일반 웹 페이지는 Scrapling 부터.
 
 상세 워크플로우는 `km-social-media.md` 참조.
 
@@ -446,12 +447,18 @@ Research/[프로젝트명]/
 
 ```bash
 # 1순위: Scrapling (Python, JS 렌더링, 빠름)
-python3 scripts/scrapling-crawl.py fetch "https://threads.net/@user/post/abc123" --mode dynamic --output markdown
+python3 scripts/scrapling-crawl.py fetch "https://example.com/article" --mode dynamic --output markdown
 
 # 2순위: Scrapling Stealth (안티봇 우회)
-python3 scripts/scrapling-crawl.py fetch "https://threads.net/@user/post/abc123" --mode stealth --output markdown
+python3 scripts/scrapling-crawl.py fetch "https://example.com/article" --mode stealth --output markdown
 
-# 3순위 Fallback: Playwright CLI (스크린샷 필요 시)
+# 3순위: Aside (1.8.4 — 예전에 playwright 로 읽던 자리: Scrapling 으로는 안 열리지만 브라우저로는 누구나 볼 수 있는 공개 페이지 · SNS · 브라우저 조작)
+# 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
+aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
+# 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다.
+# aside 가 없거나 실패하면: 실패 이유를 남기고 다음 순위(Playwright CLI)로 넘어간다.
+
+# 4순위 Fallback: Playwright CLI (스크린샷 필요 시)
 playwright-cli open "https://threads.net/@user/post/abc123"
 playwright-cli press End           # 스크롤
 playwright-cli snapshot            # 접근성 스냅샷으로 텍스트 추출
@@ -459,14 +466,14 @@ playwright-cli close
 ```
 
 ```tool-call
-# 4순위 Fallback: Playwright MCP (CLI 실패 시)
+# 5순위 Fallback: Playwright MCP (CLI 실패 시)
 mcp__playwright__browser_navigate({ url: "https://threads.net/@user/post/abc123" })
 mcp__playwright__browser_wait_for({ time: 3 })
 mcp__playwright__browser_snapshot()
 ```
 
 ```tool-call
-# 5순위 Fallback: hyperbrowser (크레딧 있을 때)
+# 6순위 Fallback: hyperbrowser (크레딧 있을 때)
 mcp__hyperbrowser__scrape_webpage({
   url: "https://example.com/article",
   outputFormat: ["markdown"]
@@ -549,6 +556,8 @@ mcp__notebooklm__ask_question({
 ```
 
 ### Playwright 자동화 (노트북 생성 시)
+
+(1.8.4) 브라우저 조작은 aside exec 지시문 먼저 · playwright 는 aside 가 실패해 그 이유를 남긴 뒤
 
 **사전 요구사항**: 최초 1회 수동 로그인 (Chrome 프로필에 세션 저장)
 

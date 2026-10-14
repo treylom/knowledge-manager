@@ -27,6 +27,14 @@ triggers:
 
 > `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 `playwright-cli`.
 
+```bash
+# Aside (1.8.4 — 예전에 playwright 로 읽던 자리: Scrapling 으로는 안 열리지만 브라우저로는 누구나 볼 수 있는 공개 페이지 · SNS · 브라우저 조작)
+# 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
+aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
+# 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다.
+# aside 가 없거나 실패하면: 실패 이유를 남기고 다음 순위(Playwright CLI)로 넘어간다.
+```
+
 ```
 단순 스크래핑 (봇 탐지 없음)
   → scrapling-crawl.py --mode dynamic (1순위, 가장 빠름)
@@ -91,6 +99,7 @@ npm install ghost-cursor-playwright playwright-extra puppeteer-extra-plugin-stea
 3. 스텔스 스크립트 실행
 
 ### MCP 도구에 스텔스 패턴 적용
+
 기존 Playwright MCP를 사용할 때도 간단한 스텔스 효과를 줄 수 있습니다:
 
 ```
