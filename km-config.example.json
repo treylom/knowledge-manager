@@ -54,11 +54,15 @@
   },
 
   "browser": {
-    "provider": "playwright",
-    "_provider_help": "기본값 playwright 권장. 대부분의 웹사이트에서 작동합니다.",
+    "provider": "aside",
+    "_provider_help": "기본값 aside(1.8.4 부터). aside 가 없으면 playwright.",
+
+    "aside": {
+      "_help": "Aside 브라우저 CLI(macOS = aside · WSL/Windows = aside.exe). 설치: https://aside.com"
+    },
 
     "playwright": {
-      "_help": "기본 브라우저. 추가 설정 불필요."
+      "_help": "aside 가 없을 때 쓰는 브라우저. 추가 설정 불필요."
     }
   },
 
