@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.8.4 (2026-10-14)
+- 브라우저 공급자 0순위 = Aside(`aside exec` · WSL `aside.exe exec`). Playwright 등은 aside 실패 시 사유 1줄 뒤. km-config `browser.provider` 기본 aside.
+
 ## 1.8.3 (2026-09-28)
 - kordoc 최신판 고정: 한글·한국어 문서 변환 호출을 `npx kordoc` → `npx -y kordoc@latest` 로 교체(skills/km-content-extraction.md · .agent/skills/km-content-extraction · .agent/skills/km-workflow). npx 캐시에 옛 판이 남아 있어도 항상 최신판(2026-09-28 확인 = 4.15.7)을 받는다.
 - 안내 갱신: 지원 형식에 이미지(OCR) 추가 · 「PDF 는 `pdfjs-dist@4` peer 필요」 문구 삭제(4.15.7 은 선택 의존성으로 자동 설치 — HWP·PDF 변환 실측 OK) · `--ocr`·`--formula-ocr`·`--format chunks` 옵션 안내.
