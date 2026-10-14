@@ -13,12 +13,6 @@
 **URL 감지 시 반드시 다음 우선순위로 호출:**
 
 ```bash
-# 0순위: Aside (1.8.4 부터 기본 — 웹 페이지 열기·JS 렌더·이미 로그인해 둔 내 계정 페이지는 aside 먼저. 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다)
-# 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
-aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
-# 스크린샷·폼 입력·클릭도 같은 aside exec 지시문으로(예: "…열고 전체 화면 캡처를 [경로]에 저장")
-# aside 가 없거나 실패하면: 실패 이유를 남기고 아래 순위로 넘어간다.
-
 # 1순위: Scrapling (Python, JS 렌더링, 3x 빠름)
 # scripts/scrapling-crawl.py 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 playwright-cli
 python3 scripts/scrapling-crawl.py fetch "[URL]" --mode dynamic --output markdown
@@ -26,7 +20,13 @@ python3 scripts/scrapling-crawl.py fetch "[URL]" --mode dynamic --output markdow
 # 2순위: Scrapling Stealth (안티봇 우회 필요 시)
 python3 scripts/scrapling-crawl.py fetch "[URL]" --mode stealth --output markdown
 
-# 3순위: Playwright CLI (Bash 기반 - 폴백 + 스크린샷)
+# 3순위: Aside (1.8.4 — 예전에 playwright 로 읽던 자리: 가벼운 길로 접근이 막히는 사이트 · SNS · 브라우저 조작)
+# 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
+aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
+# 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다.
+# aside 가 없거나 실패하면: 실패 이유를 남기고 다음 순위(Playwright CLI)로 넘어간다.
+
+# 4순위: Playwright CLI (Bash 기반 - 폴백 + 스크린샷)
 playwright-cli open [URL]
 playwright-cli snapshot          # 접근성 스냅샷으로 전체 텍스트 추출
 playwright-cli screenshot        # 시각적 확인 필요 시
@@ -34,15 +34,15 @@ playwright-cli close
 ```
 
 ```tool-call
-# 4순위: Playwright MCP (CLI 실패 시)
+# 5순위: Playwright MCP (CLI 실패 시)
 mcp__playwright__browser_navigate({ url: "[URL]" })
 mcp__playwright__browser_wait_for({ time: 3 })
 mcp__playwright__browser_snapshot()
 
-# 5순위: WebFetch (정적 콘텐츠 추출 가능)
+# 6순위: WebFetch (정적 콘텐츠 추출 가능)
 WebFetch({ url: "[URL]", prompt: "전체 내용 추출" })
 
-# 6순위: Hyperbrowser (클라우드, 크레딧 소진 주의)
+# 7순위: Hyperbrowser (클라우드, 크레딧 소진 주의)
 mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 ```
 
@@ -65,7 +65,7 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 |----------|------------------|-----------|----------|
 | **YouTube** | `youtube-transcript-api` → `yt-dlp` 폴백 | 썸네일만 | → km-youtube-transcript.md |
 | **소셜 미디어** | `aside exec` ⭐ (fallback: playwright-cli → MCP → WebFetch · 실패 이유 기록) | 미디어 URL 수집 | → km-social-media.md |
-| **일반 웹 페이지** | `aside exec` ⭐ (fallback: playwright-cli → MCP → WebFetch · 실패 이유 기록) | img/figure 파싱 + 차트 스크린샷 | 이 문서 |
+| **일반 웹 페이지** | `playwright-cli open → snapshot` (fallback: MCP → WebFetch) · 막히면 aside | img/figure 파싱 + 차트 스크린샷 | 이 문서 |
 | PDF | **1순위**: `Read` → **2순위**: `opendataloader-pdf` → **3순위**: `marker_single` → **4순위**: `GLM-OCR` → **5순위**: Gemini OCR | ODL/marker images/ 폴더 스캔 | → pdf 스킬, km-glm-ocr |
 | Word (DOCX) | **1순위**: `npx -y @firecrawl/anydoc "[파일]"` → **2순위**: `Read` | 임베디드 이미지 설명 추출 | → 아래 "Word 문서" · docx 스킬은 **편집 전용** |
 | Excel (XLSX) | **1순위**: `npx -y @firecrawl/anydoc "[파일]"` (수식 없는 표 한정) → **2순위**: `xlsx` 스킬 (수식·분석·편집) | 차트 없음 (데이터만) | → 아래 "Excel" — 🔴 수식 셀 소실·헤더 밀림 주의 |
@@ -133,7 +133,7 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 - https://threads.net/@user/post/123
 - https://example2.com/docs
 
-→ 3개 aside exec Bash 호출 차례로 실행:
+→ Scrapling 으로 안 열리는 페이지일 때, 3개 aside exec Bash 호출 차례로 실행:
 
 3개 도구 호출:
 1. aside exec "example1.com/... 본문 그대로"
@@ -317,13 +317,13 @@ OBSIDIAN_CLI="$OBSIDIAN_CLI"
 ### 브라우징 스택 우선순위 (CRITICAL!)
 
 ```
-0순위: aside exec (1.8.4 부터 기본 · 실패하면 이유를 남긴다)
 1순위: scrapling-crawl.py --mode dynamic (Python, JS 렌더링, 3x 빠름)
 2순위: scrapling-crawl.py --mode stealth (Python, 안티봇 우회)
-3순위: playwright-cli (Bash, 폴백 + 스크린샷)
-4순위: Playwright MCP (CLI 실패 시 - 동일 기능, MCP 프로토콜)
-5순위: WebFetch (정적 콘텐츠 추출 가능 - 허용)
-6순위: Hyperbrowser (클라우드, 유료 - 크레딧 소진 주의)
+3순위: aside exec (1.8.4 · 막히는 사이트·SNS — 예전 playwright 자리 · 실패하면 이유를 남긴다)
+4순위: playwright-cli (Bash, 폴백 + 스크린샷)
+5순위: Playwright MCP (CLI 실패 시 - 동일 기능, MCP 프로토콜)
+6순위: WebFetch (정적 콘텐츠 추출 가능 - 허용)
+7순위: Hyperbrowser (클라우드, 유료 - 크레딧 소진 주의)
 ```
 
 ### YouTube URL (🚨 전용 파이프라인!)
@@ -357,17 +357,7 @@ Step 4: 콘텐츠 분석 (프리셋 반영 — 타임라인, 인사이트, 인�
 - `instagram.com/p/*` → km-social-media.md 스킬 참조
 - `instagram.com/reel/*` → km-social-media.md 스킬 참조
 
-### 0순위: Aside (🚨 MUST TRY FIRST — 1.8.4 부터)
-
-```bash
-# 0순위: Aside (1.8.4 부터 기본 — 웹 페이지 열기·JS 렌더·이미 로그인해 둔 내 계정 페이지는 aside 먼저. 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다)
-# 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
-aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
-# 스크린샷·폼 입력·클릭도 같은 aside exec 지시문으로(예: "…열고 전체 화면 캡처를 [경로]에 저장")
-# aside 가 없거나 실패하면: 실패 이유를 남기고 아래 순위로 넘어간다.
-```
-
-### 1순위: Scrapling (aside 실패 시 1순위)
+### 1순위: Scrapling (🚨 MUST TRY FIRST!)
 
 ```bash
 # 기본 크롤링 (dynamic 모드 — JS 렌더링, 가장 빠름)
@@ -384,7 +374,17 @@ python3 scripts/scrapling-crawl.py fetch "[URL]" --mode dynamic --images --outpu
 python3 scripts/scrapling-crawl.py fetch "[URL]" --mode stealth --output markdown
 ```
 
-### 3순위: Playwright CLI (Scrapling 실패 시 + 스크린샷)
+### Aside (1.8.4 — 막히는 사이트·SNS)
+
+```bash
+# Aside (1.8.4 — 예전에 playwright 로 읽던 자리: 가벼운 길로 접근이 막히는 사이트 · SNS · 브라우저 조작)
+# 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
+aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
+# 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다.
+# aside 가 없거나 실패하면: 실패 이유를 남기고 다음 순위(Playwright CLI)로 넘어간다.
+```
+
+### 4순위: Playwright CLI (Scrapling 실패 시 + 스크린샷)
 
 ```bash
 playwright-cli open "[URL]"
@@ -394,7 +394,7 @@ playwright-cli screenshot          # 시각적 캡처 (선택)
 playwright-cli close
 ```
 
-### 4순위: Playwright MCP (CLI 실패 시)
+### 5순위: Playwright MCP (CLI 실패 시)
 
 ```tool-call
 mcp__playwright__browser_navigate({ url: "[URL]" })
@@ -402,7 +402,7 @@ mcp__playwright__browser_wait_for({ time: 3 })
 mcp__playwright__browser_snapshot()
 ```
 
-### 5순위: WebFetch (Playwright 모두 실패 시 - 허용)
+### 6순위: WebFetch (Playwright 모두 실패 시 - 허용)
 
 ```tool-call
 WebFetch({ url: "[URL]", prompt: "전체 내용을 추출해줘" })
@@ -413,7 +413,7 @@ WebFetch({ url: "[URL]", prompt: "전체 내용을 추출해줘" })
 ### 웹 크롤링 완료 검증 (필수!)
 
 ```
-□ aside exec 먼저 시도? (실패하면 이유를 남겼나?)
+□ Scrapling·WebFetch 로 안 열리거나 SNS 면 aside 로 열었나? (실패하면 이유를 남겼나?)
 □ scrapling-crawl.py 또는 playwright-cli snapshot 호출 완료?
 □ 출력에서 실제 콘텐츠 확인 가능?
 □ 실패 시 다음 순위 Fallback 시도 완료?

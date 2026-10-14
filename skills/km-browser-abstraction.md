@@ -2,6 +2,7 @@
 
 > Knowledge Manager의 브라우저 자동화 추상화 레이어
 > 설정에 따라 Aside(기본), Playwright, Hyperbrowser, Antigravity 중 선택
+> 이 공급자는 브라우저가 필요할 때만 쓴다 — 일반 페이지는 km-content-extraction 의 Scrapling·WebFetch 순서가 먼저.
 
 ---
 
@@ -22,7 +23,8 @@ provider = config.browser.provider  // "aside" | "playwright" | "hyperbrowser" |
 ### Aside (기본 - 1.8.4 부터)
 
 ```bash
-# 0순위: Aside (1.8.4 부터 기본 — 웹 페이지 열기·JS 렌더·이미 로그인해 둔 내 계정 페이지는 aside 먼저. 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다)
+# Aside (1.8.4 — 예전에 playwright 로 읽던 자리: 가벼운 길로 접근이 막히는 사이트 · SNS · 브라우저 조작)
+# 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다.
 # 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
 aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
 # 스크린샷·폼 입력·클릭도 같은 aside exec 지시문으로(예: "…열고 전체 화면 캡처를 [경로]에 저장")

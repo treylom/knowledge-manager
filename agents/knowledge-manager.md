@@ -433,32 +433,32 @@ Research/[프로젝트명]/
 
 | 플랫폼 | URL 패턴 | 처리 |
 |--------|----------|------|
-| Threads | `threads.net/@*`, `threads.com/@*` | → **playwright-cli** (1순위) + km-social-media.md |
-| Threads | `threads.net/t/*` | → **playwright-cli** (1순위) + km-social-media.md |
-| Instagram Post | `instagram.com/p/*` | → **playwright-cli** (1순위) + km-social-media.md |
-| Instagram Reel | `instagram.com/reel/*` | → **playwright-cli** (1순위) + km-social-media.md |
+| Threads | `threads.net/@*`, `threads.com/@*` | → **aside** (1순위 · 없으면 playwright-cli) + km-social-media.md |
+| Threads | `threads.net/t/*` | → **aside** (1순위 · 없으면 playwright-cli) + km-social-media.md |
+| Instagram Post | `instagram.com/p/*` | → **aside** (1순위 · 없으면 playwright-cli) + km-social-media.md |
+| Instagram Reel | `instagram.com/reel/*` | → **aside** (1순위 · 없으면 playwright-cli) + km-social-media.md |
 
 > ❌ SNS에서 Playwright MCP 사용 금지 — CLI만 사용합니다.
-> (1.8.4) SNS 포함 웹 페이지 열기는 aside 가 0순위
+> (1.8.4) SNS 는 aside 가 1순위 — 예전 playwright-cli 자리. 일반 웹 페이지는 Scrapling 부터.
 
 상세 워크플로우는 `km-social-media.md` 참조.
 
 ### 크롤링 사용 패턴 (권장)
 
 ```bash
-# 0순위: Aside (1.8.4 부터 기본 — 웹 페이지 열기·JS 렌더·이미 로그인해 둔 내 계정 페이지는 aside 먼저. 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다)
-# 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
-aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
-# 스크린샷·폼 입력·클릭도 같은 aside exec 지시문으로(예: "…열고 전체 화면 캡처를 [경로]에 저장")
-# aside 가 없거나 실패하면: 실패 이유를 남기고 아래 순위로 넘어간다.
-
 # 1순위: Scrapling (Python, JS 렌더링, 빠름)
 python3 scripts/scrapling-crawl.py fetch "https://threads.net/@user/post/abc123" --mode dynamic --output markdown
 
 # 2순위: Scrapling Stealth (안티봇 우회)
 python3 scripts/scrapling-crawl.py fetch "https://threads.net/@user/post/abc123" --mode stealth --output markdown
 
-# 3순위 Fallback: Playwright CLI (스크린샷 필요 시)
+# 3순위: Aside (1.8.4 — 예전에 playwright 로 읽던 자리: 가벼운 길로 접근이 막히는 사이트 · SNS · 브라우저 조작)
+# 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
+aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
+# 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다.
+# aside 가 없거나 실패하면: 실패 이유를 남기고 다음 순위(Playwright CLI)로 넘어간다.
+
+# 4순위 Fallback: Playwright CLI (스크린샷 필요 시)
 playwright-cli open "https://threads.net/@user/post/abc123"
 playwright-cli press End           # 스크롤
 playwright-cli snapshot            # 접근성 스냅샷으로 텍스트 추출
@@ -466,14 +466,14 @@ playwright-cli close
 ```
 
 ```tool-call
-# 4순위 Fallback: Playwright MCP (CLI 실패 시)
+# 5순위 Fallback: Playwright MCP (CLI 실패 시)
 mcp__playwright__browser_navigate({ url: "https://threads.net/@user/post/abc123" })
 mcp__playwright__browser_wait_for({ time: 3 })
 mcp__playwright__browser_snapshot()
 ```
 
 ```tool-call
-# 5순위 Fallback: hyperbrowser (크레딧 있을 때)
+# 6순위 Fallback: hyperbrowser (크레딧 있을 때)
 mcp__hyperbrowser__scrape_webpage({
   url: "https://example.com/article",
   outputFormat: ["markdown"]

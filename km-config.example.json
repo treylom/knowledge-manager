@@ -55,7 +55,7 @@
 
   "browser": {
     "provider": "aside",
-    "_provider_help": "기본값 aside(1.8.4 부터). aside 가 없으면 playwright.",
+    "_provider_help": "브라우저가 필요할 때의 기본 = aside(1.8.4 부터). aside 가 없으면 playwright.",
 
     "aside": {
       "_help": "Aside 브라우저 CLI(macOS = aside · WSL/Windows = aside.exe). 설치: https://aside.com"

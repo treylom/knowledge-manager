@@ -6,6 +6,7 @@ description: Unified browser interface for Aside (default), Antigravity native, 
 # Browser Abstraction Layer
 
 > Unified interface for web content extraction across browser providers
+> This provider is only for when a browser is needed — for ordinary pages, the Scrapling / WebFetch order in km-content-extraction comes first.
 
 ---
 
@@ -37,11 +38,12 @@ function is_antigravity_environment() {
 ## Aside (default since 1.8.4)
 
 ```bash
-# Tier 0: Aside (default since 1.8.4) — try it first for opening pages, JS rendering, and pages of accounts you are already signed in to. Do not use it to get past someone else's login wall, paywall, CAPTCHA, or pages that robots.txt / ToS prohibit.
+# Aside (since 1.8.4) — where Playwright used to be needed: sites the lightweight path cannot reach, social media, browser actions.
 # Command name: macOS = aside · WSL/Windows = aside.exe (write the command name literally)
 aside exec "Open [URL] and return the page body text verbatim, without summarizing. Include title, author, date, and image descriptions."
 # Screenshots, form input, and clicks use the same aside exec prompt (e.g. "…open and save a full-page capture to [path]")
-# If aside is missing or fails: log the reason in one line, then fall through to the order below.
+# Do not use it to get past someone else's login wall, paywall, CAPTCHA, or pages that robots.txt / ToS prohibit.
+# If Aside is missing or fails, log the reason and fall through to Playwright.
 ```
 
 ```javascript
