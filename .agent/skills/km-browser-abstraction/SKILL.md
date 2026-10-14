@@ -34,25 +34,25 @@ function is_antigravity_environment() {
 
 ---
 
-## Aside (기본 - 1.8.4 부터)
+## Aside (default since 1.8.4)
 
 ```bash
-# 0순위: Aside (1.8.4 부터 기본 — 웹 페이지 열기·JS 렌더·로그인 페이지는 aside 먼저)
-# 실행 이름: macOS = aside · WSL/Windows = aside.exe (변수·$( ) 대신 실행 이름을 그대로 적는다 — 동적 구문을 막는 명령 검사 훅이 있는 환경 대비)
-aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
-# 스크린샷·폼 입력·클릭도 같은 aside exec 지시문으로(예: "…열고 전체 화면 캡처를 [경로]에 저장")
-# aside 가 없거나 실패하면: 실패 사유 1줄을 남기고 아래 순위로. (aside 우선 정책 훅을 쓰는 환경이면 playwright 계열 호출에 그 훅이 정한 우회 표지가 필요할 수 있다.)
+# Tier 0: Aside (default since 1.8.4) — try it first for opening pages, JS rendering, and pages of accounts you are already signed in to. Do not use it to get past someone else's login wall, paywall, CAPTCHA, or pages that robots.txt / ToS prohibit.
+# Command name: macOS = aside · WSL/Windows = aside.exe (write the command name literally)
+aside exec "Open [URL] and return the page body text verbatim, without summarizing. Include title, author, date, and image descriptions."
+# Screenshots, form input, and clicks use the same aside exec prompt (e.g. "…open and save a full-page capture to [path]")
+# If aside is missing or fails: log the reason in one line, then fall through to the order below.
 ```
 
 ```javascript
-// 의사코드: 공통 블록의 exec 1줄
+// Pseudocode: the single exec line from the common block
 async function scrape_with_aside(url) {
-  return Bash(`aside exec "${url} 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."`)
+  return Bash(`aside exec "Open ${url} and return the page body text verbatim, without summarizing. Include title, author, date, and image descriptions."`)
 }
 ```
 
-- 장점: 로그인 세션 유지 · 실제 브라우저 · 훅 허용
-- 단점: 실행 시간 김 · aside 앱 필요
+- Pros: keeps login session · real browser
+- Cons: slow to run · requires the aside app
 
 ---
 
@@ -94,13 +94,13 @@ function scrape_url(url, options = {}) {
       })
 
     case "playwright":
-      // aside 실패 시 - 사유 1줄
+      // on aside failure — log the reason
       mcp__playwright__browser_navigate({ url: url })
       mcp__playwright__browser_wait_for({ time: 3 })
       return mcp__playwright__browser_snapshot()
 
     default:
-      // 기본값: aside
+      // default: aside
       return scrape_with_aside(url)
   }
 }
@@ -182,7 +182,7 @@ function scrape_with_fallback(url, options = {}) {
   } catch (error) {
     // If primary provider fails, try alternatives
     if (provider === "aside") {
-      console.warn("Aside 실패(사유 1줄) → Playwright 시도 → WebFetch 시도 (제한적)")
+      console.warn(`Aside failed (${error.message}) → trying Playwright → WebFetch (limited)`)
     }
 
     if (provider === "playwright" && requires_stealth(url)) {

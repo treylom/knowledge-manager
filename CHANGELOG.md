@@ -1,7 +1,7 @@
 # Changelog
 
 ## 1.8.4 (2026-10-14)
-- 브라우저 공급자 0순위 = Aside(`aside exec` · WSL `aside.exe exec`). Playwright 등은 aside 실패 시 사유 1줄 뒤. km-config `browser.provider` 기본 aside.
+- 브라우저 공급자 0순위 = Aside(`aside exec` · WSL `aside.exe exec`). Aside 가 없거나 실패하면 그 이유를 남기고 Playwright 등 기존 순서로 넘어간다. km-config `browser.provider` 기본 aside.
 
 ## 1.8.3 (2026-09-28)
 - kordoc 최신판 고정: 한글·한국어 문서 변환 호출을 `npx kordoc` → `npx -y kordoc@latest` 로 교체(skills/km-content-extraction.md · .agent/skills/km-content-extraction · .agent/skills/km-workflow). npx 캐시에 옛 판이 남아 있어도 항상 최신판(2026-09-28 확인 = 4.15.7)을 받는다.

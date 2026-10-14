@@ -439,18 +439,18 @@ Research/[프로젝트명]/
 | Instagram Reel | `instagram.com/reel/*` | → **playwright-cli** (1순위) + km-social-media.md |
 
 > ❌ SNS에서 Playwright MCP 사용 금지 — CLI만 사용합니다.
-> (10-14) SNS 포함 웹 페이지 열기는 aside 가 0순위
+> (1.8.4) SNS 포함 웹 페이지 열기는 aside 가 0순위
 
 상세 워크플로우는 `km-social-media.md` 참조.
 
 ### 크롤링 사용 패턴 (권장)
 
 ```bash
-# 0순위: Aside (1.8.4 부터 기본 — 웹 페이지 열기·JS 렌더·로그인 페이지는 aside 먼저)
-# 실행 이름: macOS = aside · WSL/Windows = aside.exe (변수·$( ) 대신 실행 이름을 그대로 적는다 — 동적 구문을 막는 명령 검사 훅이 있는 환경 대비)
+# 0순위: Aside (1.8.4 부터 기본 — 웹 페이지 열기·JS 렌더·이미 로그인해 둔 내 계정 페이지는 aside 먼저. 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다)
+# 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
 aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
 # 스크린샷·폼 입력·클릭도 같은 aside exec 지시문으로(예: "…열고 전체 화면 캡처를 [경로]에 저장")
-# aside 가 없거나 실패하면: 실패 사유 1줄을 남기고 아래 순위로. (aside 우선 정책 훅을 쓰는 환경이면 playwright 계열 호출에 그 훅이 정한 우회 표지가 필요할 수 있다.)
+# aside 가 없거나 실패하면: 실패 사유 1줄을 남기고 아래 순위로.
 
 # 1순위: Scrapling (Python, JS 렌더링, 빠름)
 python3 scripts/scrapling-crawl.py fetch "https://threads.net/@user/post/abc123" --mode dynamic --output markdown
@@ -557,7 +557,7 @@ mcp__notebooklm__ask_question({
 
 ### Playwright 자동화 (노트북 생성 시)
 
-(10-14) 브라우저 조작은 aside exec 지시문 먼저 · playwright 는 aside 실패 시 사유 1줄 뒤
+(1.8.4) 브라우저 조작은 aside exec 지시문 먼저 · playwright 는 aside 실패 시 사유 1줄 뒤
 
 **사전 요구사항**: 최초 1회 수동 로그인 (Chrome 프로필에 세션 저장)
 
