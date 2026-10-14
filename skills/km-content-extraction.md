@@ -65,7 +65,7 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 |----------|------------------|-----------|----------|
 | **YouTube** | `youtube-transcript-api` → `yt-dlp` 폴백 | 썸네일만 | → km-youtube-transcript.md |
 | **소셜 미디어** | `aside exec` ⭐ (fallback: playwright-cli → MCP → WebFetch · 실패 이유 기록) | 미디어 URL 수집 | → km-social-media.md |
-| **일반 웹 페이지** | `playwright-cli open → snapshot` (fallback: MCP → WebFetch) · 막히면 aside | img/figure 파싱 + 차트 스크린샷 | 이 문서 |
+| **일반 웹 페이지** | Scrapling ⭐ (막히면 `aside exec` → playwright-cli → MCP → WebFetch) | img/figure 파싱 + 차트 스크린샷 | 이 문서 |
 | PDF | **1순위**: `Read` → **2순위**: `opendataloader-pdf` → **3순위**: `marker_single` → **4순위**: `GLM-OCR` → **5순위**: Gemini OCR | ODL/marker images/ 폴더 스캔 | → pdf 스킬, km-glm-ocr |
 | Word (DOCX) | **1순위**: `npx -y @firecrawl/anydoc "[파일]"` → **2순위**: `Read` | 임베디드 이미지 설명 추출 | → 아래 "Word 문서" · docx 스킬은 **편집 전용** |
 | Excel (XLSX) | **1순위**: `npx -y @firecrawl/anydoc "[파일]"` (수식 없는 표 한정) → **2순위**: `xlsx` 스킬 (수식·분석·편집) | 차트 없음 (데이터만) | → 아래 "Excel" — 🔴 수식 셀 소실·헤더 밀림 주의 |
@@ -352,7 +352,7 @@ Step 4: 콘텐츠 분석 (프리셋 반영 — 타임라인, 인사이트, 인�
 
 ### 소셜 미디어 URL
 
-**다음 URL 패턴은 Playwright CLI로 크롤링:**
+**다음 URL 패턴은 aside 로 크롤링(없으면 Playwright CLI):**
 - `threads.net/*` → km-social-media.md 스킬 참조
 - `instagram.com/p/*` → km-social-media.md 스킬 참조
 - `instagram.com/reel/*` → km-social-media.md 스킬 참조

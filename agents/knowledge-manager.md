@@ -91,7 +91,7 @@ Task 도구로 호출된 경우:
 
 | 입력 유형 | 필수 도구 호출 | 절대 금지 |
 |----------|--------------|----------|
-| **Threads/Instagram URL** | `playwright-cli open → snapshot` ⭐ **1순위** (scrapling은 첫 포스트만 반환) | MCP playwright 사용 금지, WebFetch 사용 금지 |
+| **Threads/Instagram URL** | `aside exec` ⭐ **1순위** · 없으면 `playwright-cli open → snapshot` (scrapling은 첫 포스트만 반환) | MCP playwright 사용 금지, WebFetch 사용 금지 |
 | 일반 웹 URL | `scrapling-crawl.py --mode dynamic` (1순위) → `--mode stealth` (2순위) → `playwright-cli` (3순위) → `WebFetch` (정적) | 추측 금지 |
 | **PDF 파일 (작은)** | `Read` 직접 시도 (< 5MB, < 20p) | 실패 시 marker 변환 |
 | **PDF 파일 (큰)** | `/pdf` 스킬 권장 또는 `marker_single` | 직접 Read 금지 |
@@ -429,7 +429,7 @@ Research/[프로젝트명]/
 
 ## Social Media Auto-Detection (NEW!) ⭐
 
-**CRITICAL**: 다음 URL 패턴 감지 시 자동으로 **playwright-cli** 사용 (1순위, scrapling은 SNS에서 첫 포스트만 반환)
+**CRITICAL**: 다음 URL 패턴 감지 시 자동으로 **aside** 사용 (1순위 · 없으면 playwright-cli, scrapling은 SNS에서 첫 포스트만 반환)
 
 | 플랫폼 | URL 패턴 | 처리 |
 |--------|----------|------|
