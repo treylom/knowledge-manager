@@ -84,6 +84,9 @@ printf 'inside canary -> [[inside-canary-zz]]\n' > "${VAULT3}/010-Notes/ln/plain
 ln -s "loop-b.md" "${VAULT3}/010-Notes/ln/loop-a.md"
 ln -s "loop-a.md" "${VAULT3}/010-Notes/ln/loop-b.md"
 ln -s "${WORK}/outdir" "${VAULT3}/010-Notes/ln/outdir"
+# a 9-link chain ending outside: after the 8-hop limit the path is still a link → must be refused
+for i in 1 2 3 4 5 6 7 8; do ln -s "c$(( i + 1 )).md" "${VAULT3}/010-Notes/ln/c${i}.md"; done
+ln -s "${WORK}/outside-canary.md" "${VAULT3}/010-Notes/ln/c9.md"
 # PATH shims for the binding cells: one swaps the checked note for an outside symlink right before the real
 # perl opens it (check→open race, made deterministic), one fails the read outright.
 REAL_PERL="$(command -v perl)"
@@ -141,7 +144,8 @@ expect_failed() {
 for F in "$A" "$B"; do
   BLK="${WORK}/$(basename "$(dirname "$F")")-graph.sh"
   section_b "$F" | first_bash_block > "$BLK"
-  if grep -q 'BL_LIST="$(command grep -rl' "$BLK" && grep -q 'O_RDONLY | O_NOFOLLOW' "$BLK" && grep -q 'OL_RAW="$(printf' "$BLK"; then pass "graph-block-present ${F}"; else fail "graph-block-present ${F}" "Phase 2.5-B block with separate backlink/outlink scans not found"; continue; fi
+  # presence only — behaviour is judged by the cells below (a text anchor must not stand in for a behaviour check)
+  if grep -q 'BL_LIST="$(command grep -rl' "$BLK"; then pass "graph-block-present ${F}"; else fail "graph-block-present ${F}" "Phase 2.5-B block with separate backlink/outlink scans not found"; continue; fi
   GOT_STATES="$(grep -oE "GRAPH_EXPANSION=(\"[^\"]*\"|'[^']*'|[A-Za-z][A-Za-z:-]*)" "$BLK" | sed -e 's/^GRAPH_EXPANSION=//' -e "s/^[\"']//" -e "s/[\"']$//" | grep . | sort -u | tr '\n' ' ' | sed 's/ $//')"
   [ "$GOT_STATES" = "$CLOSED_STATES" ] && pass "graph-closed-values ${F}" "${GOT_STATES}" || fail "graph-closed-values ${F}" "want '${CLOSED_STATES}', got '${GOT_STATES}'"
   for SH in $SHELLS; do
@@ -183,6 +187,7 @@ for F in "$A" "$B"; do
     run_graph "$SH" "$BLK" "$VAULT3" "${VAULT3}/010-Notes/ln/link-out.md"; no_canary && expect_failed "graph-final-symlink-outside-abs ${tag}" "failed:no-note" || fail "graph-final-symlink-outside-abs ${tag}" "outside canary consumed: $(gline)"
     run_graph "$SH" "$BLK" "$VAULT3" "010-Notes/ln/outdir/x.md"; no_canary && expect_failed "graph-dir-symlink-outside ${tag}" "failed:no-note" || fail "graph-dir-symlink-outside ${tag}" "outside canary consumed: $(gline)"
     run_graph "$SH" "$BLK" "$VAULT3" "010-Notes/ln/loop-a.md"; expect_failed "graph-final-symlink-loop ${tag}" "failed:no-note"
+    run_graph "$SH" "$BLK" "$VAULT3" "010-Notes/ln/c1.md"; no_canary && expect_failed "graph-symlink-chain-over-limit ${tag}" "failed:no-note" || fail "graph-symlink-chain-over-limit ${tag}" "outside canary consumed: $(gline)"
     # final symlink that stays in the vault = followed to its real target (positive, not a blanket symlink ban)
     WO="$(python3 -c 'import re,sys; print(len({m for m in re.findall(r"\[\[([^\]|#\n]*)", open(sys.argv[1], encoding="utf-8").read()) if m}))' "${VAULT3}/010-Notes/a/note-a1.md")"
     run_graph "$SH" "$BLK" "$VAULT3" "010-Notes/ln/link-in.md"
