@@ -38,6 +38,12 @@ v4 (2026-10-26 저녁):
      모델이 레포 루트(약 300만 파일)에서 prune 없는 find·grep -r 을 돌려 4칸 중 3칸 180초 시한. 그 링크는 고른 절(34–47줄)
      밖 49줄 → 절 안만 풀면 못 막으므로 파일 전체를 풀되 절 안을 앞에 둔다.
 
+경계 (1.8.5 공개 전 검토):
+  ⑦ «노트 찾기 못 함» 다음 줄 `↳ $ …` 명령은 모델이 그대로 치는 실행 지점 — 따로 한 줄(표시용 이름과 섞지 않음) · vault
+     경로는 문자열로 넣지 않고 "$VAULT_PATH" 변수로만 · 노트 이름은 늘 작은따옴표로 감싼 -g 값으로만(lookup_command · sq).
+  ⑧ --auto 탐침: source_note = vault 상대 경로만(classify_note · 거절은 수만 셈 · 거절만으로 other 확정 ❌) · endpoint =
+     http/https + 설정 host 만(probe_url) · redirect 안 따라감 · 응답 PROBE_MAX_BYTES 상한 · 전체 시한 · 응답 모양 검사(예외 ❌).
+
 usage: km_rules_route.py --config <후보1> [--config <후보2> …] --query "<질문>" [--keywords "<k1 k2 k3>"] [--auto] [--json]
        --config = km-config.json 후보 경로(실재하는 첫 파일 · Phase -1 순서 = 현재 폴더 → vault)
        --auto   = 위 ① 판정까지 대본이 함 · 없으면 판정 없이 바로 훑음(v1 동작)
@@ -48,9 +54,11 @@ import json
 import math
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -173,6 +181,24 @@ def note_names(lines, sec):
     return out
 
 
+def lookup_command(names):
+    """«노트 찾기 못 함» 줄 끝에 붙는 실행 줄. vault 경로는 문자열로 넣지 않고 이미 정해진 셸 변수 "$VAULT_PATH" 로만
+    가리키고(비었으면 ${VAULT_PATH:?} 가 멈춤), 노트 이름은 shlex.quote 로 감싼 -g 값으로만 넣는다 — 작은따옴표·$(…)·백틱·
+    공백이 든 이름·경로가 셸 명령이 되지 않게(생성한 줄을 그대로 치라고 지시하므로 실행 지점이다)."""
+    globs = ' '.join('-g %s' % sq(n + '.md') for n in names)
+    return 'rg --files --hidden %s -- "${VAULT_PATH:?VAULT_PATH 를 이 vault 경로로 다시 할당}"' % globs
+
+
+def clean(s):
+    """출력에 찍는 경로·이름의 제어 문자(줄바꿈 등) → '?' — 파일 이름으로 «↳ $» 줄을 지어내지 못하게(명령 인자는 sq 로 따로)."""
+    return ''.join(ch if ch.isprintable() else '?' for ch in s)
+
+
+def sq(s):
+    """항상 작은따옴표로 감싼다(shlex.quote 는 안전 글자만이면 따옴표를 생략해 zsh 의 `=이름` 확장이 남는다)."""
+    return "'%s'" % s.replace("'", "'\"'\"'")
+
+
 def note_line(path, toks, vault, corpus, root):
     """후보 아래 «↳ 가리키는 노트» 한 줄 | None(노트 이름 0 · 볼트에 있는 슬러그도 0)."""
     try:
@@ -188,9 +214,11 @@ def note_line(path, toks, vault, corpus, root):
     if not ok:
         if not links:
             return None
-        return ('    ↳ 가리키는 노트 %s — 노트 찾기 못 함(%s · 부재 아님) · 레포 전체 훑기 ❌ · 찾을 땐 이 한 줄만: '
-                "rg --files --hidden -g '<이름>.md' '%s'"
-                % ('·'.join('[[%s]]' % n for n in links[:NOTE_CAP]), why, vault))
+        # 명령은 따로 한 줄 — 원본 글에서 온 노트 이름(표시용)이 같은 줄에 있으면 이름 안에 «구분 문구 + 명령»을 넣어
+        # 명령 시작점을 속일 수 있다(이름엔 줄바꿈이 없으므로 다음 줄은 고정 머리말 + 대본이 만든 명령뿐).
+        return ('    ↳ 가리키는 노트 %s — 노트 찾기 못 함(%s · 부재 아님) · 레포 전체 훑기 ❌ · 찾을 땐 다음 줄 명령만\n'
+                '    ↳ $ %s'
+                % ('·'.join('[[%s]]' % clean(n) for n in links[:NOTE_CAP]), why, lookup_command(links[:NOTE_CAP])))
     by_stem = {}
     for f in files:
         by_stem.setdefault(os.path.splitext(os.path.basename(f))[0], []).append(f)
@@ -208,11 +236,11 @@ def note_line(path, toks, vault, corpus, root):
             cand = [f for f in cand if os.path.splitext(f)[0].endswith(n)]
         if cand:
             cand = sorted(cand, key=lambda f: (len(f), f))
-            hits.append('[[%s]] → %s%s' % (n, cand[0], (' (같은 이름 %d개 더)' % (len(cand) - 1)) if len(cand) > 1 else ''))
+            hits.append('[[%s]] → %s%s' % (clean(n), clean(cand[0]), (' (같은 이름 %d개 더)' % (len(cand) - 1)) if len(cand) > 1 else ''))
         elif link and base.lower() in stems:
-            hits.append('[[%s]] → 규칙 원본 %s' % (n, os.path.relpath(stems[base.lower()], root)))
+            hits.append('[[%s]] → 규칙 원본 %s' % (clean(n), clean(os.path.relpath(stems[base.lower()], root))))
         elif link:
-            absent.append(n)
+            absent.append(clean(n))
         else:
             continue  # 볼트에 없는 백틱 슬러그 = 노트 이름 아님(훅·도구 이름 등)
         used += 1
@@ -375,34 +403,143 @@ def route(query, keywords, root, index_rel, globs, top=5, vault=None):
     return res
 
 
+def _env_int(name, default, low):
+    try:
+        return max(low, int(os.environ.get(name, default)))
+    except ValueError:
+        return default
+
+
+PROBE_MAX_BYTES = _env_int('KM_RULES_PROBE_MAX_BYTES', 1 << 20, 1)  # 응답 상한(넘으면 misrouted)
+PROBE_MAX_RESULTS = 50   # top_k=5 를 묻는다 · 이보다 많으면 모양이 틀린 응답
+NOTE_PATH_MAX = 1024     # source_note 한 개 길이 상한(문자)
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """탐침은 redirect 를 따라가지 않는다 → 3xx 는 HTTPError 로 올라와 misrouted."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def probe_url(endpoint, query):
+    """endpoint → 탐침 URL | None(정책 밖). http/https · host 있음 · 계정 정보·query·fragment 없음 만 허용 —
+    요청은 설정에 적힌 그 host 하나로만 간다(redirect 도 안 따라감)."""
+    if not isinstance(endpoint, str) or not endpoint or any(c in endpoint for c in '\x00\r\n?#'):
+        return None
+    try:
+        u = urllib.parse.urlsplit(endpoint.strip())
+        u.port  # 잘못된 port = ValueError
+    except ValueError:
+        return None
+    if u.scheme not in ('http', 'https') or not u.hostname or u.username or u.password or u.query or u.fragment:
+        return None
+    return endpoint.strip().rstrip('/') + '/api/search?' + urllib.parse.urlencode({'q': query, 'top_k': 5, 'mode': 'hybrid'})
+
+
+def classify_note(vault, n):
+    """서버가 준 source_note 하나 → 'in'(이 vault 안 실재 파일) | 'absent'(vault 상대 경로로 맞지만 없음) |
+    'rejected:<사유>'(비문자열·빈 값·NUL·절대 경로·`..`·vault 밖으로 풀림·너무 김). 예외를 던지지 않는다."""
+    if not isinstance(n, str):
+        return 'rejected:not-string'
+    if not n.strip() or n != n.strip() or len(n) > NOTE_PATH_MAX:
+        return 'rejected:length'
+    if '\x00' in n:
+        return 'rejected:nul'
+    try:
+        n.encode('utf-8')
+    except UnicodeEncodeError:  # 짝 없는 서로게이트 등 — 경로 함수에 넣으면 예외
+        return 'rejected:encoding'
+    if os.path.isabs(n) or n.startswith(('/', '\\', '~')) or re.match(r'^[A-Za-z]:', n):
+        return 'rejected:absolute'
+    if '..' in re.split(r'[\\/]', n):
+        return 'rejected:dotdot'
+    try:
+        root = os.path.realpath(vault)
+        full = os.path.realpath(os.path.join(root, n))
+        if os.path.commonpath([root, full]) != root or full == root:
+            return 'rejected:outside-vault'
+        return 'in' if os.path.isfile(full) else 'absent'
+    except (OSError, ValueError, UnicodeError):
+        return 'rejected:invalid'
+
+
+def _fetch(url, timeout, box):
+    """일꾼: box['r'] = ('ok', body) | ('slow', None) | ('http', None) | ('err', 예외). body ≤ PROBE_MAX_BYTES+64KiB."""
+    opener = urllib.request.build_opener(_NoRedirect)
+    deadline = time.monotonic() + timeout
+    try:
+        with opener.open(url, timeout=timeout) as r:
+            chunks, size = [], 0
+            while size <= PROBE_MAX_BYTES:
+                if time.monotonic() > deadline:
+                    box['r'] = ('slow', None)
+                    return
+                c = r.read1(65536)
+                if not c:
+                    break
+                chunks.append(c)
+                size += len(c)
+            box['r'] = ('ok', b''.join(chunks))
+    except urllib.error.HTTPError:
+        box['r'] = ('http', None)
+    except Exception as e:
+        box['r'] = ('err', e)
+
+
 def decide(full_cfg, query, timeout=None, switch=SWITCH):
-    """--auto gate, decided here (not by the model) → (run?, vault_mode, graphrag_state).
-    Skip only when vault_mode == 'other' is confirmed: path-bearing results exist and none exists in this vault."""
+    """--auto gate, decided here (not by the model) → (run?, vault_mode, graphrag_state, rejected_notes).
+    Skip only when vault_mode == 'other' is confirmed: vault-relative results exist, none is in this vault, and no
+    result was rejected. Endpoint = http/https on the configured host only · no redirect · response ≤ PROBE_MAX_BYTES ·
+    shape = {"results": [ {…}, … ]} (anything else → misrouted, never an exception)."""
     vault = ((full_cfg.get('storage') or {}).get('obsidian') or {}).get('vaultPath') or ''
+    vault = vault if isinstance(vault, str) else ''
     endpoint = (((full_cfg.get('linking') or {}).get('semantic_adapter') or {}).get('endpoint')
                 or os.environ.get('GRAPHRAG_API_URL') or 'http://127.0.0.1:8400')
     if os.path.exists(switch):
-        return True, 'unknown', 'disabled'
+        return True, 'unknown', 'disabled', 0
     timeout = float(timeout if timeout is not None else os.environ.get('KM_RULES_PROBE_TIMEOUT', '8'))
-    url = endpoint.rstrip('/') + '/api/search?' + urllib.parse.urlencode({'q': query, 'top_k': 5, 'mode': 'hybrid'})
+    url = probe_url(endpoint, query)
+    if url is None:
+        return True, 'unknown', 'misrouted', 0
+    # 전체 벽시계 예산 = timeout(+0.5초) — 소켓 시한은 한 번 읽기마다라 헤더·본문을 한 바이트씩 흘리면 끝없이 늘어난다.
+    # 연결·헤더·본문을 일꾼 스레드에서 받고 여기선 그 예산만큼만 기다린다(넘기면 unreachable · 스레드는 데몬).
+    box = {}
+    worker = threading.Thread(target=_fetch, args=(url, timeout, box), daemon=True)
+    worker.start()
+    worker.join(timeout + 0.5)
+    kind, val = box.get('r', ('slow', None))
+    if kind == 'slow':
+        return True, 'unknown', 'unreachable', 0
+    if kind == 'http':  # 4xx·5xx · 3xx(redirect 안 따라감)
+        return True, 'unknown', 'misrouted', 0
+    if kind == 'err':  # refused · timeout · sandbox-blocked
+        reason = getattr(val, 'reason', val)
+        return True, 'unknown', 'absent' if isinstance(reason, ConnectionRefusedError) else 'unreachable', 0
+    body = val
+    if len(body) > PROBE_MAX_BYTES:
+        return True, 'unknown', 'misrouted', 0
     try:
-        with urllib.request.urlopen(url, timeout=timeout) as r:
-            body = r.read()
-    except urllib.error.HTTPError:
-        return True, 'unknown', 'misrouted'
-    except Exception as e:  # refused · timeout · sandbox-blocked
-        reason = getattr(e, 'reason', e)
-        return True, 'unknown', 'absent' if isinstance(reason, ConnectionRefusedError) else 'unreachable'
-    try:
-        results = json.loads(body).get('results') or []
-    except (ValueError, AttributeError):
-        return True, 'unknown', 'misrouted'
-    notes = [x.get('source_note') for x in results if isinstance(x, dict) and x.get('source_note')]
-    if not notes or not vault:
-        return True, 'unknown', 'ok'
-    if any(os.path.isfile(os.path.join(vault, n)) for n in notes):
-        return True, 'same', 'ok'
-    return False, 'other', 'ok'
+        doc = json.loads(body)
+    except (ValueError, UnicodeDecodeError, RecursionError):
+        return True, 'unknown', 'misrouted', 0
+    if not isinstance(doc, dict):
+        return True, 'unknown', 'misrouted', 0
+    results = doc.get('results')
+    if results is None:
+        results = []
+    if not isinstance(results, list) or len(results) > PROBE_MAX_RESULTS or not all(isinstance(x, dict) for x in results):
+        return True, 'unknown', 'misrouted', 0
+    notes = [x['source_note'] for x in results if x.get('source_note') not in (None, '')]
+    if not notes or not vault or not os.path.isdir(vault):
+        return True, 'unknown', 'ok', 0
+    kinds = [classify_note(vault, n) for n in notes]
+    rejected = sum(1 for k in kinds if k.startswith('rejected:'))
+    if 'in' in kinds:
+        return True, 'same', 'ok', rejected
+    if rejected:
+        return True, 'unknown', 'ok', rejected
+    return False, 'other', 'ok', 0
 
 
 def main():
@@ -427,19 +564,20 @@ def main():
         return 0
     gate = ''
     if a.auto:
-        run, vm, gs = decide(full, a.query)
-        gate = ' vault_mode=%s graphrag=%s' % (vm, gs)
+        run, vm, gs, rej = decide(full, a.query)
+        gate = ' vault_mode=%s graphrag=%s%s' % (vm, gs, (' notes_rejected=%d' % rej) if rej else '')
         if not run:
             print('RULES: %s skip(vault_mode=other — 서버 색인이 다른 vault · 로컬 규칙 읽기 0)%s' % (VERSION, gate))
             return 0
     vault = ((full.get('storage') or {}).get('obsidian') or {}).get('vaultPath') or ''
+    vault = vault if isinstance(vault, str) else ''
     r = route(a.query, a.keywords, cfg['root'], cfg.get('index'), cfg['globs'], int(cfg.get('top', 5)), vault=vault)
     if a.json:
         print(json.dumps(r, ensure_ascii=False))
         return 0
     print('RULES: %s%s tokens=%d index_rows=%d hits=%d' % (VERSION, gate, len(r['tokens']), len(r['index_rows']), len(r['merged'])))
     for m in r['merged']:
-        print('[%s] %s' % (m['label'], os.path.relpath(m['path'], cfg['root'])))
+        print('[%s] %s' % (m['label'], clean(os.path.relpath(m['path'], cfg['root']))))
         if m.get('marks'):
             print(mark_line(m['marks']))
         if m.get('notes'):

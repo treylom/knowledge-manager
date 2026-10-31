@@ -33,15 +33,42 @@ def free_port():
 class FakeServer:
     """Minimal /api/search stand-in: returns the given results list."""
 
-    def __init__(self, results):
-        body = json.dumps({'results': results}).encode()
+    def __init__(self, results=None, raw=None, status=200, headers=(), drip=None, slow_headers=0):
+        body = raw if raw is not None else json.dumps({'results': results}).encode()
+        self.hits = 0
+        srv = self
 
         class H(http.server.BaseHTTPRequestHandler):
             def do_GET(self):
-                self.send_response(200)
+                srv.hits += 1
+                if slow_headers:  # 헤더 줄을 소켓 시한 안쪽 간격으로 하나씩
+                    import time
+                    try:
+                        self.wfile.write(b'HTTP/1.0 200 OK\r\n')
+                        for i in range(slow_headers):
+                            self.wfile.write(b'X-Slow-%d: y\r\n' % i)
+                            self.wfile.flush()
+                            time.sleep(0.25)
+                        self.wfile.write(b'\r\n' + body)
+                    except (BrokenPipeError, ConnectionResetError):
+                        pass
+                    return
+                self.send_response(status)
                 self.send_header('Content-Type', 'application/json')
+                for k, v in headers:
+                    self.send_header(k, v)
                 self.end_headers()
-                self.wfile.write(body)
+                if drip is None:
+                    self.wfile.write(body)
+                    return
+                import time
+                try:
+                    for i in range(len(body)):  # 한 바이트씩 흘림(소켓 시한 안쪽 간격)
+                        self.wfile.write(body[i:i + 1])
+                        self.wfile.flush()
+                        time.sleep(drip)
+                except (BrokenPipeError, ConnectionResetError):
+                    pass
 
             def log_message(self, *a):
                 pass
@@ -287,9 +314,285 @@ class NoteLinks(Base):
         nl = self.note_line(p.stdout, 'docs/rules-core/icloud.md')
         self.assertIsNotNone(nl, p.stdout)
         self.assertIn('노트 찾기 못 함', nl)
-        self.assertIn("rg --files --hidden -g '<이름>.md' '%s'" % self.vault, nl)  # 칠 명령 = vault 한정
+        # 칠 명령 = 다음 줄 따로 · vault 한정 · 경로는 문자열이 아니라 이미 정해진 변수 · 이름은 작은따옴표 -g 값
+        lines = p.stdout.splitlines()
+        cmd = lines[lines.index(nl) + 1]
+        self.assertTrue(cmd.startswith('    ↳ $ rg --files --hidden -g \'some-note.md\' -- "${VAULT_PATH:?'), cmd)
+        self.assertNotIn(str(self.vault), nl + cmd)
         self.assertNotIn('볼트에 없음', nl)
         self.assertIn('레포 전체 훑기 ❌', nl)
+
+
+class LookupCommandInjection(Base):
+    """F3: «노트 찾기 못 함» 줄 끝 명령은 그대로 실행되는 줄이다 — 작은따옴표·$(…)·백틱·줄바꿈·공백이 든 vault 경로와
+    노트 이름이 셸 명령이 되면 안 된다(감시 파일 생성 0). 같은 시험 안 양성 미끼 = 옛 꼴(경로를 작은따옴표로 박음)은 만든다."""
+
+    MARK = '    ↳ $ '
+
+    def cmd_from(self, out):
+        lines = out.splitlines()
+        i = [k for k, l in enumerate(lines) if '노트 찾기 못 함' in l]
+        self.assertEqual(len(i), 1, out)
+        cmds = [l for l in lines if l.startswith(self.MARK)]
+        self.assertEqual(len(cmds), 1, out)  # 명령 줄은 딱 하나 · «못 함» 줄 바로 다음
+        self.assertEqual(lines[i[0] + 1], cmds[0])
+        return cmds[0][len(self.MARK):]
+
+    def fake_rg(self):
+        """PATH 맨 앞 가짜 rg — 받은 인자를 NUL 로 이어 적는다(실제 rg 유무와 상관없이 «정확히 이 인자» 를 본다)."""
+        d = Path(self.td.name) / 'fakebin'
+        d.mkdir(exist_ok=True)
+        log = Path(self.td.name) / 'rg-argv'
+        (d / 'rg').write_text('#!%s\nimport sys\nopen(%r, "w").write("\\0".join(sys.argv[1:]))\n' % (sys.executable, str(log)))
+        (d / 'rg').chmod(0o755)
+        return d, log
+
+    def hostile(self):
+        t = Path(self.td.name)
+        s = {k: t / ('sentinel-%s' % k) for k in ('vq', 'vb', 'nq', 'nb', 'sp1', 'sp2', 'bait')}
+        vault = str(t / ("va'l $(touch %s) `touch %s`\nx y" % (s['vq'], s['vb'])))
+        # 표시용 이름으로 명령 시작점 속이기(옛 구분 문구 · 새 머리말 흉내) + zsh `=이름` + 빈칸 · 앞 대시
+        names = ["n'$(touch %s)'q" % s['nq'], 'b`touch %s`c' % s['nb'], 'sp ace',
+                 'x 이 한 줄만: touch %s;' % s['sp1'], 'x ↳ $ touch %s;' % s['sp2'], '=ls', '-rf']
+        self.names = names
+        (self.root / 'docs/rules-core/icloud.md').write_text(
+            '## iCloud 납품\n- 바이너리는 %s\n' % ' '.join('[[%s]]' % n for n in names), encoding='utf-8')
+        c = json.loads(self.config('http://127.0.0.1:%d' % free_port()).read_text(encoding='utf-8'))
+        c['storage']['obsidian']['vaultPath'] = vault
+        cfg = Path(self.td.name) / 'km-config.json'
+        cfg.write_text(json.dumps(c), encoding='utf-8')
+        return cfg, vault, s
+
+    def run_cmd(self, shell, cmd, vault, path_prefix=None):
+        import shutil
+        if not shutil.which(shell):
+            self.skipTest(shell + ' 없음')
+        env = {**os.environ, 'VAULT_PATH': vault, 'HOME': str(self.home)}
+        if path_prefix:
+            env['PATH'] = '%s:%s' % (path_prefix, env.get('PATH', ''))
+        return subprocess.run([shell, '-c', cmd], capture_output=True, text=True, env=env, timeout=30, cwd=self.td.name)
+
+    def check(self, shell):
+        cfg, vault, s = self.hostile()
+        p = self.run_route(cfg, query='iCloud 납품 바이너리', auto=False)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        cmd = self.cmd_from(p.stdout)
+        self.assertNotIn(vault, cmd)
+        fake, log = self.fake_rg()
+        r = self.run_cmd(shell, cmd, vault, path_prefix=str(fake))
+        made = [k for k, f in s.items() if f.exists()]
+        self.assertEqual(made, [], 'sentinel created by generated command: %s · cmd=%r' % (made, cmd))
+        # 가짜 rg 가 받은 인자 = 정확히 기대값(이름마다 -g '<이름>.md' · -- · vault 경로 그대로)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        want = ['--files', '--hidden']
+        for n in self.names:
+            want += ['-g', n + '.md']
+        want += ['--', vault]
+        self.assertEqual(log.read_text().split('\0'), want)
+        # 양성 미끼(같은 시험 안): 옛 꼴 = 경로를 작은따옴표로 박은 줄 → 감시 파일이 생긴다(이 시험이 잡을 수 있다는 증거)
+        # (따옴표가 짝이 맞는 주입 문자열 — 짝이 안 맞으면 zsh 는 줄 전체를 문법 오류로 거부해 미끼가 안 돈다)
+        legacy = "rg --files --hidden -g '<이름>.md' '%s'" % (Path(self.td.name) / ("ba'$(touch %s)'it" % s['bait']))
+        self.run_cmd(shell, legacy, vault)
+        self.assertTrue(s['bait'].exists(), 'bait: legacy single-quoted form did not execute — sentinel check is blind')
+
+    def test_hostile_path_and_names_bash(self):
+        self.check('bash')
+
+    def test_hostile_path_and_names_zsh(self):  # Claude Code Bash = 사용자 셸(zsh)
+        self.check('zsh')
+
+    def test_forged_rule_filename_cannot_add_a_command_line(self):  # 출력에 찍는 경로의 줄바꿈 = '?'
+        t = Path(self.td.name)
+        sent = t / 'sentinel-fname'
+        # 파일 이름엔 '/' 가 못 들어가므로 감시 파일은 실행 폴더(임시 폴더) 기준 상대 이름
+        forged = 'a\n    ↳ 가리키는 노트 [[x]] — 노트 찾기 못 함(x)\n    ↳ $ touch %s; #.md' % sent.name
+        (self.root / 'docs/rules-core' / forged).write_text('## iCloud 납품\n- 바이너리 iCloud 납품\n', encoding='utf-8')
+        (self.root / 'docs/rules-core/icloud.md').write_text('## iCloud 납품\n- 바이너리는 [[some-note]]\n', encoding='utf-8')
+        cfg = self.config('http://127.0.0.1:%d' % free_port())
+        c = json.loads(cfg.read_text(encoding='utf-8'))
+        c['storage']['obsidian']['vaultPath'] = str(t / 'gone')
+        cfg.write_text(json.dumps(c), encoding='utf-8')
+        p = self.run_route(cfg, query='iCloud 납품 바이너리', auto=False)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertIn('a?    ↳', p.stdout)  # 양성: 위조 이름 후보가 실제로 찍혔다(한 줄로)
+        cmds = [l for l in p.stdout.splitlines() if l.startswith(self.MARK)]
+        self.assertEqual(len(cmds), 1, p.stdout)
+        self.assertTrue(cmds[0].startswith(self.MARK + 'rg --files'), cmds[0])
+        for l in cmds:
+            self.run_cmd('bash', l[len(self.MARK):], str(t / 'gone'), path_prefix=str(self.fake_rg()[0]))
+        self.assertFalse(sent.exists())
+
+    def test_quoted_command_still_finds_the_note(self):  # 음성 짝: 따옴표 처리 뒤에도 같은 파일을 찾는다
+        import shutil
+        if not shutil.which('rg'):
+            self.skipTest('rg 없음')
+        from importlib import util
+        spec = util.spec_from_file_location('km_rules_route_mod', str(SCRIPT))
+        mod = util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        weird = self.vault / "it's $HOME `x`"
+        weird.mkdir(parents=True)
+        (weird / "o'k $(no) note.md").write_text('x\n', encoding='utf-8')
+        p = self.run_cmd('bash', mod.lookup_command(["o'k $(no) note"]), str(self.vault))
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertIn("o'k $(no) note.md", p.stdout)
+
+
+class ProbeBoundary(Base):
+    """F4: --auto 탐침 경계 — source_note 는 vault 상대 경로만(절대·..·NUL·비문자열·vault 밖 = 거절 · 예외 ❌) ·
+    endpoint = http/https + 그 host 만 · redirect 안 따라감 · 응답 바이트 상한 · 응답 모양 검사."""
+
+    def gate(self, srv_or_url, vault=None):
+        url = srv_or_url if isinstance(srv_or_url, str) else srv_or_url.url
+        cfg = self.config(url)
+        if vault is not None:
+            c = json.loads(cfg.read_text(encoding='utf-8'))
+            c['storage']['obsidian']['vaultPath'] = vault
+            cfg.write_text(json.dumps(c), encoding='utf-8')
+        p = self.run_route(cfg)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertNotIn('Traceback', p.stderr)
+        return p.stdout.splitlines()[0] if p.stdout else '', p.stdout
+
+    def served(self, results=None, **kw):
+        srv = FakeServer(results, **kw)
+        self.addCleanup(srv.close)
+        return srv
+
+    def test_valid_relative_note_is_same(self):  # 음성 짝(정상)
+        head, _ = self.gate(self.served([{'source_note': 'notes/here.md'}]))
+        self.assertRegex(head, r'^RULES: v\d+ vault_mode=same graphrag=ok tokens=')
+
+    def test_absolute_path_outside_vault_is_rejected(self):
+        outside = Path(self.td.name) / 'outside.md'
+        outside.write_text('x\n', encoding='utf-8')
+        head, out = self.gate(self.served([{'source_note': str(outside)}]))
+        self.assertIn('vault_mode=unknown graphrag=ok notes_rejected=1', head)
+        self.assertIn('[rules:', out)
+
+    def test_dotdot_is_rejected_not_same(self):
+        (Path(self.td.name) / 'outside.md').write_text('x\n', encoding='utf-8')
+        head, _ = self.gate(self.served([{'source_note': '../outside.md'}]))
+        self.assertIn('vault_mode=unknown graphrag=ok notes_rejected=1', head)
+
+    def test_symlink_escaping_vault_is_rejected(self):
+        (Path(self.td.name) / 'outside.md').write_text('x\n', encoding='utf-8')
+        os.symlink(str(Path(self.td.name) / 'outside.md'), str(self.vault / 'notes/link.md'))
+        head, _ = self.gate(self.served([{'source_note': 'notes/link.md'}]))
+        self.assertIn('vault_mode=unknown graphrag=ok notes_rejected=1', head)
+
+    def test_nul_is_rejected(self):
+        head, _ = self.gate(self.served([{'source_note': 'notes/here.md\x00.txt'}]))
+        self.assertIn('vault_mode=unknown graphrag=ok notes_rejected=1', head)
+
+    def test_non_string_notes_are_structured_rejects(self):  # TypeError ❌
+        head, _ = self.gate(self.served([{'source_note': 123}, {'source_note': ['a']}, {'source_note': {'a': 1}}]))
+        self.assertIn('vault_mode=unknown graphrag=ok notes_rejected=3', head)
+
+    def test_rejected_only_never_becomes_other(self):  # 거절만 있으면 skip ❌(other 확정 아님)
+        head, out = self.gate(self.served([{'source_note': '../nope.md'}]))
+        self.assertNotIn('skip(vault_mode=other', out)
+        self.assertIn('[rules:', out)
+
+    def test_in_vault_hit_wins_over_rejects(self):
+        head, _ = self.gate(self.served([{'source_note': '/etc/hosts'}, {'source_note': 'notes/here.md'}]))
+        self.assertIn('vault_mode=same graphrag=ok notes_rejected=1', head)
+
+    def test_missing_vault_dir_is_unknown_not_other(self):
+        head, out = self.gate(self.served([{'source_note': 'notes/here.md'}]), vault=str(Path(self.td.name) / 'gone'))
+        self.assertIn('vault_mode=unknown graphrag=ok', head)
+        self.assertNotIn('skip(vault_mode=other', out)
+
+    def test_endpoint_scheme_and_host_policy(self):
+        srv = self.served([{'source_note': 'notes/here.md'}])
+        port = srv.httpd.server_address[1]
+        for bad in ('file:///etc/hosts', 'ftp://127.0.0.1:%d' % port, 'http://', 'http://u:p@127.0.0.1:%d' % port,
+                    'http://127.0.0.1:%d/?x=1' % port, 'http://127.0.0.1:%d/#f' % port, 'http://127.0.0.1:99999'):
+            head, _ = self.gate(bad)
+            self.assertIn('vault_mode=unknown graphrag=misrouted', head, bad)
+        self.assertEqual(srv.hits, 0)
+        head, _ = self.gate(srv.url)  # 짝: 같은 서버, 정책 안 = same
+        self.assertIn('vault_mode=same graphrag=ok', head)
+        self.assertEqual(srv.hits, 1)
+
+    def test_redirect_is_not_followed(self):
+        target = self.served([{'source_note': 'notes/here.md'}])
+        hop = self.served(raw=b'', status=302, headers=(('Location', target.url + '/api/search?q=x'),))
+        head, _ = self.gate(hop)
+        self.assertIn('vault_mode=unknown graphrag=misrouted', head)
+        self.assertEqual((hop.hits, target.hits), (1, 0))
+
+    def test_oversized_response_is_capped(self):
+        raw = json.dumps({'results': [{'source_note': 'notes/here.md'}], 'pad': 'x' * (2 << 20)}).encode()
+        head, _ = self.gate(self.served(raw=raw))
+        self.assertIn('vault_mode=unknown graphrag=misrouted', head)
+
+    def test_valid_json_one_byte_over_cap_is_rejected(self):  # 경계: 잘림이 아니라 상한 검사가 거절해야 하는 칸
+        body = json.dumps({'results': [{'source_note': 'notes/here.md'}]}).encode()
+        os.environ['KM_RULES_PROBE_MAX_BYTES'] = str(len(body) - 1)
+        try:
+            head, _ = self.gate(self.served(raw=body))
+        finally:
+            del os.environ['KM_RULES_PROBE_MAX_BYTES']
+        self.assertIn('vault_mode=unknown graphrag=misrouted', head)
+        os.environ['KM_RULES_PROBE_MAX_BYTES'] = str(len(body))  # 짝: 딱 상한 = 통과
+        try:
+            head, _ = self.gate(self.served(raw=body))
+        finally:
+            del os.environ['KM_RULES_PROBE_MAX_BYTES']
+        self.assertIn('vault_mode=same graphrag=ok', head)
+
+    def test_lone_surrogate_note_is_rejected_not_a_crash(self):
+        raw = b'{"results": [{"source_note": "\\ud800.md"}, {"source_note": "notes/here.md"}]}'
+        head, _ = self.gate(self.served(raw=raw))
+        self.assertIn('vault_mode=same graphrag=ok notes_rejected=1', head)
+        head, out = self.gate(self.served(raw=b'{"results": [{"source_note": "\\ud800.md"}]}'))
+        self.assertIn('vault_mode=unknown graphrag=ok notes_rejected=1', head)
+        self.assertNotIn('skip(vault_mode=other', out)
+
+    def test_whitespace_note_cannot_force_other(self):
+        head, out = self.gate(self.served([{'source_note': ' '}, {'source_note': ' notes/here.md'}]))
+        self.assertIn('vault_mode=unknown graphrag=ok notes_rejected=2', head)
+        self.assertNotIn('skip(vault_mode=other', out)
+
+    def test_slow_drip_response_hits_total_deadline(self):  # 소켓 시한(3초) 안쪽으로 한 바이트씩 → 전체 시한
+        import time
+        raw = json.dumps({'results': [{'source_note': 'notes/here.md'}], 'pad': 'x' * 200}).encode()
+        t = time.time()
+        head, _ = self.gate(self.served(raw=raw, drip=0.1))  # 다 받으면 ≈25초
+        took = time.time() - t
+        self.assertIn('vault_mode=unknown graphrag=unreachable', head)
+        self.assertLess(took, 10, took)
+
+    def test_slow_headers_hit_wall_clock_budget(self):  # 헤더를 한 줄씩 흘림(다 받으면 ≈10초) → 연결·헤더·본문 합친 예산
+        import time
+        t = time.time()
+        head, _ = self.gate(self.served([{'source_note': 'notes/here.md'}], slow_headers=40))
+        took = time.time() - t
+        self.assertIn('vault_mode=unknown graphrag=unreachable', head)
+        self.assertLess(took, 8, took)
+
+    def test_empty_query_or_fragment_endpoint_is_misrouted(self):
+        srv = self.served([{'source_note': 'notes/here.md'}])
+        for bad in (srv.url + '?', srv.url + '#', srv.url + '/?'):
+            head, _ = self.gate(bad)
+            self.assertIn('vault_mode=unknown graphrag=misrouted', head, bad)
+        self.assertEqual(srv.hits, 0)
+
+    def test_bad_cap_env_falls_back_without_traceback(self):
+        for v in ('abc', '-5', ''):
+            os.environ['KM_RULES_PROBE_MAX_BYTES'] = v
+            try:
+                head, _ = self.gate(self.served([{'source_note': 'notes/here.md'}]))
+            finally:
+                del os.environ['KM_RULES_PROBE_MAX_BYTES']
+            self.assertRegex(head, r'^RULES: v\d+ vault_mode=(same|unknown) graphrag=(ok|misrouted)', v)
+
+    def test_bad_shapes_are_misrouted(self):
+        for raw in (b'[]', b'{"results": {"a": 1}}', b'{"results": ["notes/here.md"]}', b'{"results": 5}',
+                    b'[' * 100000 + b']' * 100000, b'\xff\xfe'):
+            head, _ = self.gate(self.served(raw=raw))
+            self.assertIn('vault_mode=unknown graphrag=misrouted', head, raw[:30])
 
 
 class ReceiptVaultLookupTimeout(unittest.TestCase):
