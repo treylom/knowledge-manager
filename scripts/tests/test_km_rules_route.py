@@ -595,6 +595,107 @@ class ProbeBoundary(Base):
             self.assertIn('vault_mode=unknown graphrag=misrouted', head, raw[:30])
 
 
+class MalformedConfig(Base):
+    """잘못된 설정 모양·시한 env = traceback 0 · rc 0 · 안전한 기본값 + stderr 사유 줄 `RULES_CONFIG_IGNORED=<칸>: <사유>`.
+    endpoint 는 정책 밖 값(not-a-url)이라 요청 0 (network 0)."""
+
+    def write(self, cfg):
+        q = Path(self.td.name) / 'bad-config.json'
+        q.write_text(json.dumps(cfg), encoding='utf-8')
+        return q
+
+    def corpus(self):
+        return {'root': str(self.root), 'index': '.claude/rules/INDEX.md',
+                'globs': ['docs/rules-core/*.md', '.claude/rules/*.md'], 'top': 5}
+
+    def run_cfg(self, cfg, auto=True, timeout_env='3', extra_env=None):
+        argv = [sys.executable, '-I', '-B', str(SCRIPT), '--config', str(self.write(cfg)), '--query', '장부 규칙'] + (['--auto'] if auto else [])
+        env = {k: v for k, v in os.environ.items() if k not in ('KM_RULES_PROBE_TIMEOUT', 'GRAPHRAG_API_URL')}
+        env.update({'HOME': str(self.home), 'GRAPHRAG_API_URL': 'not-a-url'})
+        if timeout_env is not None:
+            env['KM_RULES_PROBE_TIMEOUT'] = timeout_env
+        env.update(extra_env or {})
+        return subprocess.run(argv, capture_output=True, text=True, env=env, timeout=30)
+
+    def assertClean(self, r, reason):
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertNotIn('Traceback', r.stderr)
+        self.assertRegex(r.stdout.splitlines()[0], r'^RULES: v\d+ ')
+        if reason is None:
+            self.assertNotIn('RULES_CONFIG_IGNORED=', r.stderr)
+        else:
+            self.assertEqual([l for l in r.stderr.splitlines() if l.startswith('RULES_CONFIG_IGNORED=')], [reason])
+
+    def hits(self, r):
+        return re.search(r' hits=(\d+)$', r.stdout.splitlines()[0]).group(1)
+
+    def test_storage_list_matches_base_behaviour(self):  # base a6799fb = rc 0 RULES 줄 · r2 = AttributeError rc 1 (새 회귀)
+        good = self.run_cfg({'search': {'ruleCorpus': self.corpus()}}, auto=False)
+        self.assertClean(good, None)
+        bad = self.run_cfg({'storage': [1, 2], 'search': {'ruleCorpus': self.corpus()}}, auto=False)
+        self.assertClean(bad, 'RULES_CONFIG_IGNORED=storage: not an object')
+        self.assertEqual(self.hits(bad), self.hits(good))
+        bad_auto = self.run_cfg({'storage': [1, 2], 'linking': {'semantic_adapter': {'endpoint': 'not-a-url'}},
+                                 'search': {'ruleCorpus': self.corpus()}})
+        self.assertClean(bad_auto, 'RULES_CONFIG_IGNORED=storage: not an object')
+        self.assertIn('vault_mode=unknown graphrag=misrouted', bad_auto.stdout.splitlines()[0])
+
+    def test_obsidian_string_auto(self):
+        r = self.run_cfg({'storage': {'obsidian': 'x'}, 'linking': {'semantic_adapter': {'endpoint': 'not-a-url'}},
+                          'search': {'ruleCorpus': self.corpus()}})
+        self.assertClean(r, 'RULES_CONFIG_IGNORED=storage.obsidian: not an object')
+        self.assertIn('vault_mode=unknown graphrag=misrouted', r.stdout.splitlines()[0])
+
+    def test_semantic_adapter_string_auto_falls_back_to_env_endpoint(self):
+        r = self.run_cfg({'storage': {'obsidian': {'vaultPath': str(self.vault)}}, 'linking': {'semantic_adapter': 'x'},
+                          'search': {'ruleCorpus': self.corpus()}})
+        self.assertClean(r, 'RULES_CONFIG_IGNORED=linking.semantic_adapter: not an object')
+        self.assertIn('vault_mode=unknown graphrag=misrouted', r.stdout.splitlines()[0])  # env GRAPHRAG_API_URL=not-a-url
+
+    def test_bad_timeout_env_falls_back_with_reason(self):
+        cfg = {'linking': {'semantic_adapter': {'endpoint': 'not-a-url'}}, 'search': {'ruleCorpus': self.corpus()}}
+        for v in ('abc', 'nan', 'inf', '-1', '0', '30.5', ''):
+            r = self.run_cfg(cfg, timeout_env=v)
+            self.assertClean(r, 'RULES_CONFIG_IGNORED=KM_RULES_PROBE_TIMEOUT: not a number in (0, 30]')
+        for v in ('2.5', '30'):  # 음성 짝: 범위 안 = 사유 줄 0
+            self.assertClean(self.run_cfg(cfg, timeout_env=v), None)
+        self.assertClean(self.run_cfg(cfg, timeout_env=None), None)  # 없음 = 기본값 · 사유 줄 0
+
+    def test_env_timeout_value_is_used(self):  # 해석한 값이 실제로 쓰이는지(상한 안 값 그대로 · 밖 = 기본값)
+        from importlib import util
+        spec = util.spec_from_file_location('kmr', str(SCRIPT))
+        mod = util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        seen = []
+        for v, want in (('2.5', 2.5), ('31', mod.PROBE_TIMEOUT_DEFAULT), ('abc', mod.PROBE_TIMEOUT_DEFAULT)):
+            os.environ['KM_RULES_PROBE_TIMEOUT'] = v
+            try:
+                self.assertEqual(mod._env_timeout(lambda *a: seen.append(a)), want, v)
+            finally:
+                del os.environ['KM_RULES_PROBE_TIMEOUT']
+        self.assertEqual(len(seen), 2)
+
+    def test_other_bad_shapes_no_traceback(self):
+        cases = [
+            ([1, 2], 'RULES: off', 'RULES_CONFIG_IGNORED=(top level): not an object'),
+            ({'search': [1]}, 'RULES: off', 'RULES_CONFIG_IGNORED=search: not an object'),
+            ({'search': {'ruleCorpus': 'x'}}, 'RULES: off', 'RULES_CONFIG_IGNORED=search.ruleCorpus: not an object'),
+            ({'search': {'ruleCorpus': {**self.corpus(), 'globs': 'docs/*.md'}}}, 'RULES: off',
+             'RULES_CONFIG_IGNORED=search.ruleCorpus.globs: not a list of strings'),
+            ({'search': {'ruleCorpus': {**self.corpus(), 'root': 7}}}, 'RULES: off',
+             'RULES_CONFIG_IGNORED=search.ruleCorpus.root: not a string'),
+            ({'search': {'ruleCorpus': {**self.corpus(), 'top': 'x'}}}, 'RULES: v', 'RULES_CONFIG_IGNORED=search.ruleCorpus.top: not an integer in 1..50'),
+            ({'storage': {'obsidian': {'vaultPath': 5}}, 'search': {'ruleCorpus': self.corpus()}}, 'RULES: v',
+             'RULES_CONFIG_IGNORED=storage.obsidian.vaultPath: not a string'),
+        ]
+        for cfg, head, reason in cases:
+            r = self.run_cfg(cfg, auto=False)
+            self.assertEqual(r.returncode, 0, (cfg, r.stderr))
+            self.assertNotIn('Traceback', r.stderr, cfg)
+            self.assertTrue(r.stdout.startswith(head), (cfg, r.stdout[:80]))
+            self.assertEqual([l for l in r.stderr.splitlines() if l.startswith('RULES_CONFIG_IGNORED=')], [reason], cfg)
+
+
 class ReceiptVaultLookupTimeout(unittest.TestCase):
     """영수증 절 vault-lookup 줄 = 시한(KM_VL_TIMEOUT · 기본 20초) — 넘기면 VL_HITS=timeout + «부재 단정 금지» · 자식까지 끔."""
 

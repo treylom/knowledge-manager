@@ -411,6 +411,59 @@ def _env_int(name, default, low):
 
 
 PROBE_MAX_BYTES = _env_int('KM_RULES_PROBE_MAX_BYTES', 1 << 20, 1)  # 응답 상한(넘으면 misrouted)
+PROBE_TIMEOUT_DEFAULT = 8.0
+PROBE_TIMEOUT_MAX = 30.0  # 탐침 시한 env 상한(초) — 넘거나 숫자가 아니면 기본값
+
+
+def _env_timeout(warn):
+    """KM_RULES_PROBE_TIMEOUT → 유한·양수·상한 이하 float | 기본값(+사유 1줄). 예외를 던지지 않는다."""
+    raw = os.environ.get('KM_RULES_PROBE_TIMEOUT')
+    if raw is None:
+        return PROBE_TIMEOUT_DEFAULT
+    try:
+        v = float(raw)
+    except ValueError:
+        v = None
+    if v is None or not math.isfinite(v) or v <= 0 or v > PROBE_TIMEOUT_MAX:
+        warn('KM_RULES_PROBE_TIMEOUT', 'not a number in (0, %g]' % PROBE_TIMEOUT_MAX)
+        return PROBE_TIMEOUT_DEFAULT
+    return v
+
+
+def cfg_node(cfg, path, warn):
+    """중첩 설정 칸 → dict. 경로 중간이 객체가 아니면 {}(안전한 기본값) + 사유 1줄 — traceback 0."""
+    node, seen = cfg, []
+    for k in path:
+        seen.append(k)
+        node = node.get(k) if isinstance(node, dict) else None
+        if node is None:
+            return {}
+        if not isinstance(node, dict):
+            warn('.'.join(seen), 'not an object')
+            return {}
+    return node
+
+
+def cfg_str(node, key, dotted, warn):
+    """설정 문자열 칸 → str | ''(없음·빈 값·다른 형 = 기본값, 다른 형이면 사유 1줄)."""
+    v = node.get(key)
+    if v is None or v == '':
+        return ''
+    if not isinstance(v, str):
+        warn(dotted, 'not a string')
+        return ''
+    return v
+
+
+def config_warner():
+    """사유 줄 = stderr `RULES_CONFIG_IGNORED=<칸>: <사유>` (같은 칸은 1번) — stdout `RULES:` 줄 모양은 그대로."""
+    done = set()
+
+    def warn(dotted, why):
+        if dotted not in done:
+            done.add(dotted)
+            print('RULES_CONFIG_IGNORED=%s: %s' % (dotted, why), file=sys.stderr)
+    return warn
 PROBE_MAX_RESULTS = 50   # top_k=5 를 묻는다 · 이보다 많으면 모양이 틀린 응답
 NOTE_PATH_MAX = 1024     # source_note 한 개 길이 상한(문자)
 
@@ -487,18 +540,20 @@ def _fetch(url, timeout, box):
         box['r'] = ('err', e)
 
 
-def decide(full_cfg, query, timeout=None, switch=SWITCH):
+def decide(full_cfg, query, timeout=None, switch=SWITCH, warn=None):
     """--auto gate, decided here (not by the model) → (run?, vault_mode, graphrag_state, rejected_notes).
     Skip only when vault_mode == 'other' is confirmed: vault-relative results exist, none is in this vault, and no
     result was rejected. Endpoint = http/https on the configured host only · no redirect · response ≤ PROBE_MAX_BYTES ·
     shape = {"results": [ {…}, … ]} (anything else → misrouted, never an exception)."""
-    vault = ((full_cfg.get('storage') or {}).get('obsidian') or {}).get('vaultPath') or ''
-    vault = vault if isinstance(vault, str) else ''
-    endpoint = (((full_cfg.get('linking') or {}).get('semantic_adapter') or {}).get('endpoint')
+    warn = warn or config_warner()
+    full_cfg = full_cfg if isinstance(full_cfg, dict) else {}
+    vault = cfg_str(cfg_node(full_cfg, ('storage', 'obsidian'), warn), 'vaultPath', 'storage.obsidian.vaultPath', warn)
+    endpoint = (cfg_str(cfg_node(full_cfg, ('linking', 'semantic_adapter'), warn), 'endpoint',
+                        'linking.semantic_adapter.endpoint', warn)
                 or os.environ.get('GRAPHRAG_API_URL') or 'http://127.0.0.1:8400')
     if os.path.exists(switch):
         return True, 'unknown', 'disabled', 0
-    timeout = float(timeout if timeout is not None else os.environ.get('KM_RULES_PROBE_TIMEOUT', '8'))
+    timeout = float(timeout) if timeout is not None else _env_timeout(warn)
     url = probe_url(endpoint, query)
     if url is None:
         return True, 'unknown', 'misrouted', 0
@@ -550,34 +605,49 @@ def main():
     ap.add_argument('--auto', action='store_true', help='돌릴지 판정(볼트 같음/다름 · 서버 상태)을 대본이 함')
     ap.add_argument('--json', action='store_true')
     a = ap.parse_args()
+    warn = config_warner()
     full = {}
     for c in a.config:
         if c and os.path.isfile(c):
             try:
-                full = json.load(open(c))
-            except (OSError, ValueError):
+                with open(c, encoding='utf-8') as fh:
+                    full = json.load(fh)
+            except (OSError, ValueError, RecursionError):
                 full = {}
             break
-    cfg = (full.get('search') or {}).get('ruleCorpus') or {}
-    if not cfg.get('root') or not cfg.get('globs'):
+    if not isinstance(full, dict):
+        warn('(top level)', 'not an object')
+        full = {}
+    cfg = cfg_node(full, ('search', 'ruleCorpus'), warn)
+    root = cfg_str(cfg, 'root', 'search.ruleCorpus.root', warn)
+    globs = cfg.get('globs')
+    if globs is not None and not (isinstance(globs, list) and all(isinstance(g, str) for g in globs)):
+        warn('search.ruleCorpus.globs', 'not a list of strings')
+        globs = None
+    index = cfg_str(cfg, 'index', 'search.ruleCorpus.index', warn) or None
+    top = cfg.get('top', 5)
+    if isinstance(top, bool) or not isinstance(top, int) or not 1 <= top <= 50:
+        if 'top' in cfg:
+            warn('search.ruleCorpus.top', 'not an integer in 1..50')
+        top = 5
+    if not root or not globs:
         print('RULES: off (km-config search.ruleCorpus 미설정)')
         return 0
     gate = ''
     if a.auto:
-        run, vm, gs, rej = decide(full, a.query)
+        run, vm, gs, rej = decide(full, a.query, warn=warn)
         gate = ' vault_mode=%s graphrag=%s%s' % (vm, gs, (' notes_rejected=%d' % rej) if rej else '')
         if not run:
             print('RULES: %s skip(vault_mode=other — 서버 색인이 다른 vault · 로컬 규칙 읽기 0)%s' % (VERSION, gate))
             return 0
-    vault = ((full.get('storage') or {}).get('obsidian') or {}).get('vaultPath') or ''
-    vault = vault if isinstance(vault, str) else ''
-    r = route(a.query, a.keywords, cfg['root'], cfg.get('index'), cfg['globs'], int(cfg.get('top', 5)), vault=vault)
+    vault = cfg_str(cfg_node(full, ('storage', 'obsidian'), warn), 'vaultPath', 'storage.obsidian.vaultPath', warn)
+    r = route(a.query, a.keywords, root, index, globs, top, vault=vault)
     if a.json:
         print(json.dumps(r, ensure_ascii=False))
         return 0
     print('RULES: %s%s tokens=%d index_rows=%d hits=%d' % (VERSION, gate, len(r['tokens']), len(r['index_rows']), len(r['merged'])))
     for m in r['merged']:
-        print('[%s] %s' % (m['label'], clean(os.path.relpath(m['path'], cfg['root']))))
+        print('[%s] %s' % (m['label'], clean(os.path.relpath(m['path'], root))))
         if m.get('marks'):
             print(mark_line(m['marks']))
         if m.get('notes'):
