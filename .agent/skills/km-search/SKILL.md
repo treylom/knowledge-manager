@@ -416,7 +416,7 @@ fi
 echo "GRAPH_EXPANSION=${GRAPH_EXPANSION} BACKLINKS_N=${BACKLINKS_N} OUTLINKS_N=${OUTLINKS_N} BL_RC=${BL_RC} OL_RC=${OL_RC}"
 case "$GRAPH_EXPANSION" in failed:*) false ;; esac
 ```
-- `GRAPH_EXPANSION` 닫힌 값 = `done` · `skipped:no-top-note` · `failed:no-vault|no-note|unreadable-note|backlink-scan|outlink-scan`(`no-note` = 없음 · vault 밖 · 줄바꿈 든 경로). `failed:*` 이면 블록 rc 1 이고 `BACKLINKS_N` 은 빈 값이다 — 답변 마지막 줄은 `그래프 확장(실패: <사유>)` 로 쓰고 숫자를 지어내지 않는다(`backlinks 0` ❌).
+- `GRAPH_EXPANSION` 닫힌 값 = `done` · `skipped:no-top-note` · `failed:no-vault|no-note|unreadable-note|backlink-scan|outlink-scan`(`no-note` = 없음 · vault 밖 · vault 밖을 가리키는 노트 링크 · 링크 고리 · 확인 뒤 바꿔치기(열기 거절) · 줄바꿈 든 경로 · `outlink-scan` = 노트를 읽지 못함). `failed:*` 이면 블록 rc 1 이고 `BACKLINKS_N` 은 빈 값이다 — 답변 마지막 줄은 `그래프 확장(실패: <사유>)` 로 쓰고 숫자를 지어내지 않는다(`backlinks 0` ❌).
 - backlinks 가 많은 노트 = 허브 → 답변 진입점으로 우선한다.
 - backlinks/outlinks 중 질문과 겹치는 노트 1~2개를 추가 Read → 답변의 "🔗 연결 맥락"에 반영.
 - **`BACKLINKS_N`(backlink grep 결과 파일 수 · 실측 정수) 이 답변 마지막 줄 `그래프 확장(backlinks N)` 의 N 이다** (top 2 노트를 돌렸으면 두 값의 합 · 제약 §"사용 티어 명시" 형식 고정과 1:1). 블록이 찍은 `GRAPH_EXPANSION`·`BACKLINKS_N` 은 영수증 블록에 다시 할당해 넘긴다(Bash 호출이 나뉘면 셸 변수가 이어지지 않는다).
@@ -519,7 +519,7 @@ if [ -f "$RCPT" ]; then
     --top-hit "<상위 1건 source_note 경로 또는 no-hit>" --n-hits <Tier 1~4 히트 수 정수> "${GRAPH_ARGS[@]}"
 fi
 ```
-- 그래프 칸(1.8.5): `KM_MODE`(이번 판정 QUICK|DEEP) 가 DEEP 이면 Phase 2.5-B 가 찍은 `GRAPH_EXPANSION`(`done` · 못 돌렸으면 `skipped:<사유>` · 오류면 `failed:<사유>` — 이때 `BACKLINKS_N` 은 빈 값이라 `--backlinks` 를 넘기지 않는다)·`BACKLINKS_N` 을 재할당해 `--graph-expansion`·`--backlinks` 로 넘긴다. helper `--help` 에 두 인자가 없으면 넘기지 않고 `KM_RECEIPT_GRAPH_FIELDS=unsupported` 1줄만 찍는다(영수증 기록은 그대로).
+- 그래프 칸(1.8.5): `KM_MODE`(이번 판정 QUICK|DEEP) 가 DEEP 이면 Phase 2.5-B 가 찍은 `GRAPH_EXPANSION`(`done` · 못 돌렸으면 `skipped:<사유>` · 오류면 `failed:<사유>` — 이때 `BACKLINKS_N` 은 빈 값이라 `--backlinks` 를 넘기지 않는다)·`BACKLINKS_N` 을 재할당해 `--km-mode DEEP`·`--vault-mode <VAULT_MODE, 미관측 = unknown>`·`--graph-expansion`·`--backlinks` 로 한 묶음으로 넘긴다. helper `--help` 에 네 인자가 다 있지 않으면 넘기지 않고 `KM_RECEIPT_GRAPH_FIELDS=unsupported` 1줄만 찍는다(영수증 기록은 그대로).
 - 영수증 = `~/.claude-state/km-search-receipts.jsonl` 1행(ts·session_id·bot·query·tiers_tried·top_hit·n_hits). no-hit 도 영수증이다(검색을 «했다»는 기록이지 «찾았다»는 기록이 아니다).
 - 스킬을 거치지 않고 curl 만 던진 검색은 영수증이 없다 — 그건 게이트가 의도한 대로 막는다.
 

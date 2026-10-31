@@ -373,7 +373,7 @@ fi
 echo "GRAPH_EXPANSION=${GRAPH_EXPANSION} BACKLINKS_N=${BACKLINKS_N} OUTLINKS_N=${OUTLINKS_N} BL_RC=${BL_RC} OL_RC=${OL_RC}"
 case "$GRAPH_EXPANSION" in failed:*) false ;; esac
 ```
-- `GRAPH_EXPANSION` 닫힌 값 = `done` · `skipped:no-top-note` · `failed:no-vault|no-note|unreadable-note|backlink-scan|outlink-scan`(`no-note` = 없음 · vault 밖 · 줄바꿈 든 경로). `failed:*` 이면 블록 rc 1 이고 `BACKLINKS_N` 은 빈 값이다 — 답변 마지막 줄은 `그래프 확장(실패: <사유>)` 로 쓰고 숫자를 지어내지 않는다(`backlinks 0` ❌).
+- `GRAPH_EXPANSION` 닫힌 값 = `done` · `skipped:no-top-note` · `failed:no-vault|no-note|unreadable-note|backlink-scan|outlink-scan`(`no-note` = 없음 · vault 밖 · vault 밖을 가리키는 노트 링크 · 링크 고리 · 확인 뒤 바꿔치기(열기 거절) · 줄바꿈 든 경로 · `outlink-scan` = 노트를 읽지 못함). `failed:*` 이면 블록 rc 1 이고 `BACKLINKS_N` 은 빈 값이다 — 답변 마지막 줄은 `그래프 확장(실패: <사유>)` 로 쓰고 숫자를 지어내지 않는다(`backlinks 0` ❌).
 - backlinks 가 많은 노트 = 허브 → 답변 진입점으로 우선한다.
 - backlinks/outlinks 중 질문과 겹치는 노트 1~2개를 추가 Read → 답변의 "🔗 연결 맥락"에 반영.
 - **`BACKLINKS_N`(backlink grep 결과 파일 수 · 실측 정수) 이 답변 마지막 줄 `그래프 확장(backlinks N)` 의 N 이다** (top 2 노트를 돌렸으면 두 값의 합 · 제약 §"사용 티어 명시" 형식 고정과 1:1). 블록이 찍은 `GRAPH_EXPANSION`·`BACKLINKS_N` 은 영수증 블록에 다시 할당해 넘긴다(Bash 호출이 나뉘면 셸 변수가 이어지지 않는다).
@@ -444,8 +444,8 @@ else
 fi
 ```
 - `VL_HITS`는 stdout 전용이며 신·구형 helper 모두 인자로 전달하지 않는다(저장 필드 미지원). 실행 전 이번 검색의 `VAULT_PATH`·`VAULT_MODE`·`GRAPHRAG_STATE`·`KEYWORDS_TOP`·`QUERY`를 관측값으로 재할당하며 미관측 상태는 skip, `other`는 실패 상태여도 skip이다.
-- 마커 필드 `km_mode`·`vault_mode`·`km_hits`는 stdout과 동일; 미관측은 null. 구형 vault helper 폴백은 기존 스키마만 기록하므로 신규 3필드는 없고 `KM_RECEIPT_MARKER_FIELDS=unsupported`로 표시한다. helper 가 구판(`--km-mode` 모름)이면 영수증 `tiers_tried` 끝에 `rcpt:repo-legacy` 꼬리표가 붙어 사후 계수로 구판 비율이 보인다(`src` 는 그대로 — 착수 게이트가 `src=manual` 만 센다). 플러그인은 helper 를 싣지 않는다 — 착수 게이트(vault 훅)와 짝인 vault 사본(`.claude/scripts/km-search-receipt.py`) 하나가 정본이고 그쪽으로 가는 것이 보통 길이다. 플러그인 자리(`${CLAUDE_PLUGIN_ROOT}/scripts/…`) 확인 줄은 그 자리에 helper 를 둔 설치본과의 호환용. `km_hits`는 Tier 1 반환 건수, 기존 `n_hits`는 Tier 1~4 최종 건수다.
-- 그래프 칸(1.8.5): DEEP 이면 Phase 2.5-B 가 찍은 `GRAPH_EXPANSION`(`done` · 못 돌렸으면 `skipped:<사유>` · 오류면 `failed:<사유>` — 이때 `BACKLINKS_N` 은 빈 값이라 `--backlinks` 를 넘기지 않는다)·`BACKLINKS_N` 을 재할당해 `--graph-expansion`·`--backlinks` 로 넘긴다. helper `--help` 에 두 인자가 없으면 넘기지 않고 `KM_RECEIPT_GRAPH_FIELDS=unsupported` 1줄만 찍는다(영수증 기록은 그대로).
+- 마커 필드 `km_mode`·`vault_mode`·`km_hits`는 stdout과 동일; 미관측은 null — 단 `vault_mode` 는 `KM_MODE` 가 있으면 미관측 = `unknown` 으로 넘긴다(`KM_MODE` 도 없으면 안 넘김). 구형 vault helper 폴백은 기존 스키마만 기록하므로 신규 3필드는 없고 `KM_RECEIPT_MARKER_FIELDS=unsupported`로 표시한다. helper 가 구판(`--km-mode` 모름)이면 영수증 `tiers_tried` 끝에 `rcpt:repo-legacy` 꼬리표가 붙어 사후 계수로 구판 비율이 보인다(`src` 는 그대로 — 착수 게이트가 `src=manual` 만 센다). 플러그인은 helper 를 싣지 않는다 — 착수 게이트(vault 훅)와 짝인 vault 사본(`.claude/scripts/km-search-receipt.py`) 하나가 정본이고 그쪽으로 가는 것이 보통 길이다. 플러그인 자리(`${CLAUDE_PLUGIN_ROOT}/scripts/…`) 확인 줄은 그 자리에 helper 를 둔 설치본과의 호환용. `km_hits`는 Tier 1 반환 건수, 기존 `n_hits`는 Tier 1~4 최종 건수다.
+- 그래프 칸(1.8.5): DEEP 이면 Phase 2.5-B 가 찍은 `GRAPH_EXPANSION`(`done` · 못 돌렸으면 `skipped:<사유>` · 오류면 `failed:<사유>` — 이때 `BACKLINKS_N` 은 빈 값이라 `--backlinks` 를 넘기지 않는다)·`BACKLINKS_N` 을 재할당해 `--graph-expansion`·`--backlinks` 로 넘긴다. helper `--help` 에 두 인자가 없으면 넘기지 않고(`--vault-mode` 는 위 마커 칸으로 함께 간다) `KM_RECEIPT_GRAPH_FIELDS=unsupported` 1줄만 찍는다(영수증 기록은 그대로).
 - 영수증 = `~/.claude-state/km-search-receipts.jsonl` 1행(ts·session_id·bot·query·tiers_tried·top_hit·n_hits). no-hit 도 영수증이다(검색을 «했다»는 기록이지 «찾았다»는 기록이 아니다).
 - 스킬을 거치지 않고 curl 만 던진 검색은 영수증이 없다 — 그건 게이트가 의도한 대로 막는다.
 
