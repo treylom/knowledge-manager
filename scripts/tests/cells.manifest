@@ -92,9 +92,9 @@ id scripts/tests/test_search_tier0_mb.sh old-block-both-limit3 @zsh
 id scripts/tests/test_search_tier0_mb.sh copy-parity-tier0-mb
 body scripts/tests/test_search_graph_expansion.sh prelude 59450165c4215fe4b23c1a6b9270b7bfe05925c63efee9a23ba688b2aec7677b
 body scripts/tests/test_search_graph_expansion.sh helpers 09987fca2ab1fb4244228eae8602a3daf2b325fc225dbc54b568e0e8f93e23f0
-body scripts/tests/test_search_graph_expansion.sh graph-fixtures c2b52004d004d567cdab11d18d10cda75ea771f69130e100371f16ddf4980e4c
+body scripts/tests/test_search_graph_expansion.sh graph-fixtures 4fc5cde16cb31d04663665e444fa5d80ce1ef6a84ab2fbae4a97cb9a36ce595b
 body scripts/tests/test_search_graph_expansion.sh graph-block 8cc119c6910e12d141c2faf511e4b679077c116b218bd29fabd3c5f32d4b225e
-body scripts/tests/test_search_graph_expansion.sh graph-final-component 5802dc419f9eadc7abd37bde7b257e9cdbef9ddf977173a2dfc22b21062cf183
+body scripts/tests/test_search_graph_expansion.sh graph-final-component d26d17795766fd491bddb7b760a7161d14d90cf37b0780bce80aefccc03e43db
 body scripts/tests/test_search_graph_expansion.sh graph-shadow-and-pairs c177536385d58eb27f71b15f567c7e42c7ba964caadcb05aa619fd97061d4254
 body scripts/tests/test_search_graph_expansion.sh receipt-block 85d1a80fdbf25f3a3caf853d1b89e3f4f23c688ef5068205035dba2ff0a8a993
 body scripts/tests/test_search_graph_expansion.sh order fe0e1918c50cd4b8d9e75297cba6f793a8bd4abe91d1c86964e596952c07580b
@@ -133,6 +133,8 @@ id scripts/tests/test_search_graph_expansion.sh graph-symlink-chain-over-limit c
 id scripts/tests/test_search_graph_expansion.sh graph-final-symlink-inside commands/search.md@bash
 id scripts/tests/test_search_graph_expansion.sh graph-swap-after-check commands/search.md@bash
 id scripts/tests/test_search_graph_expansion.sh graph-outlink-scan-failed commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-fifo-swap-after-check commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-dir-swap-after-check commands/search.md@bash
 id scripts/tests/test_search_graph_expansion.sh graph-backlinks commands/search.md@zsh note-a1
 id scripts/tests/test_search_graph_expansion.sh graph-outlinks commands/search.md@zsh note-a1
 id scripts/tests/test_search_graph_expansion.sh graph-backlinks commands/search.md@zsh orphan-zz
@@ -164,6 +166,8 @@ id scripts/tests/test_search_graph_expansion.sh graph-symlink-chain-over-limit c
 id scripts/tests/test_search_graph_expansion.sh graph-final-symlink-inside commands/search.md@zsh
 id scripts/tests/test_search_graph_expansion.sh graph-swap-after-check commands/search.md@zsh
 id scripts/tests/test_search_graph_expansion.sh graph-outlink-scan-failed commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-fifo-swap-after-check commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-dir-swap-after-check commands/search.md@zsh
 id scripts/tests/test_search_graph_expansion.sh graph-block-present .agent/skills/km-search/SKILL.md
 id scripts/tests/test_search_graph_expansion.sh graph-closed-values .agent/skills/km-search/SKILL.md
 id scripts/tests/test_search_graph_expansion.sh graph-backlinks .agent/skills/km-search/SKILL.md@bash note-a1
@@ -197,6 +201,8 @@ id scripts/tests/test_search_graph_expansion.sh graph-symlink-chain-over-limit .
 id scripts/tests/test_search_graph_expansion.sh graph-final-symlink-inside .agent/skills/km-search/SKILL.md@bash
 id scripts/tests/test_search_graph_expansion.sh graph-swap-after-check .agent/skills/km-search/SKILL.md@bash
 id scripts/tests/test_search_graph_expansion.sh graph-outlink-scan-failed .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-fifo-swap-after-check .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-dir-swap-after-check .agent/skills/km-search/SKILL.md@bash
 id scripts/tests/test_search_graph_expansion.sh graph-backlinks .agent/skills/km-search/SKILL.md@zsh note-a1
 id scripts/tests/test_search_graph_expansion.sh graph-outlinks .agent/skills/km-search/SKILL.md@zsh note-a1
 id scripts/tests/test_search_graph_expansion.sh graph-backlinks .agent/skills/km-search/SKILL.md@zsh orphan-zz
@@ -228,6 +234,8 @@ id scripts/tests/test_search_graph_expansion.sh graph-symlink-chain-over-limit .
 id scripts/tests/test_search_graph_expansion.sh graph-final-symlink-inside .agent/skills/km-search/SKILL.md@zsh
 id scripts/tests/test_search_graph_expansion.sh graph-swap-after-check .agent/skills/km-search/SKILL.md@zsh
 id scripts/tests/test_search_graph_expansion.sh graph-outlink-scan-failed .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-fifo-swap-after-check .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-dir-swap-after-check .agent/skills/km-search/SKILL.md@zsh
 id scripts/tests/test_search_graph_expansion.sh graph-grep-function-shadow commands/search.md
 id scripts/tests/test_search_graph_expansion.sh graph-grep-function-shadow .agent/skills/km-search/SKILL.md
 id scripts/tests/test_search_graph_expansion.sh graph-pair-is-a-pair

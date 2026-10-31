@@ -93,7 +93,15 @@ REAL_PERL="$(command -v perl)"
 mkdir -p "${WORK}/shim-swap" "${WORK}/shim-fail"
 printf '#!/bin/sh\nmv -f "$SWAP_NOTE" "$SWAP_NOTE.moved" && ln -s "$SWAP_TARGET" "$SWAP_NOTE" && exec "$REAL_PERL" "$@"\n' > "${WORK}/shim-swap/perl"
 printf '#!/bin/sh\nexit 9\n' > "${WORK}/shim-fail/perl"
-chmod +x "${WORK}/shim-swap/perl" "${WORK}/shim-fail/perl"
+# the note becomes a FIFO right before the real perl opens it (fstat on the opened handle must refuse)
+mkdir -p "${WORK}/shim-fifo" "${WORK}/shim-dirswap"
+printf '#!/bin/sh\nmv -f "$SWAP_NOTE" "$SWAP_NOTE.moved" && mkfifo "$SWAP_NOTE" && exec "$REAL_PERL" "$@"\n' > "${WORK}/shim-fifo/perl"
+# the note folder becomes a symlink to an outside folder during the backlink scan (after the in-vault check,
+# before the read subshell enters it) — the pwd -P recheck inside that subshell must refuse
+REAL_GREP="$(command -v grep)"
+printf '#!/bin/sh\nif [ ! -L "$SWAP_DIR" ]; then mv -f "$SWAP_DIR" "$SWAP_DIR.moved" && ln -s "$SWAP_TARGET" "$SWAP_DIR"; fi\nexec "$REAL_GREP" "$@"\n' > "${WORK}/shim-dirswap/grep"
+chmod +x "${WORK}/shim-swap/perl" "${WORK}/shim-fail/perl" "${WORK}/shim-fifo/perl" "${WORK}/shim-dirswap/grep"
+mkdir -p "${WORK}/outdir2/sub"; printf 'outside sub -> [[outside-canary-zz]]\n' > "${WORK}/outdir2/sub/s.md"
 SWAP_N=0
 # second vault for the unreadable cells (the main vault stays readable)
 VAULT2="${WORK}/vault2"
@@ -197,6 +205,12 @@ for F in "$A" "$B"; do
     run_graph "$SH" "$BLK" "$SV" "n/s.md" PATH="${WORK}/shim-swap:${PATH}" REAL_PERL="$REAL_PERL" SWAP_NOTE="${SV}/n/s.md" SWAP_TARGET="${WORK}/outside-canary.md"
     if [ -L "${SV}/n/s.md" ] && no_canary; then expect_failed "graph-swap-after-check ${tag}" "failed:no-note"; else fail "graph-swap-after-check ${tag}" "swap did not happen or canary consumed: $(gline)"; fi
     run_graph "$SH" "$BLK" "$VAULT3" "010-Notes/ln/plain-in.md" PATH="${WORK}/shim-fail:${PATH}"; expect_failed "graph-outlink-scan-failed ${tag}" "failed:outlink-scan"
+    SWAP_N=$(( SWAP_N + 1 )); SV="${WORK}/swap-${SWAP_N}"; mkdir -p "${SV}/n"; printf 'fifo -> [[inside-swap-zz]]\n' > "${SV}/n/s.md"
+    run_graph "$SH" "$BLK" "$SV" "n/s.md" PATH="${WORK}/shim-fifo:${PATH}" REAL_PERL="$REAL_PERL" SWAP_NOTE="${SV}/n/s.md"
+    if [ -p "${SV}/n/s.md" ]; then expect_failed "graph-fifo-swap-after-check ${tag}" "failed:no-note"; else fail "graph-fifo-swap-after-check ${tag}" "swap did not happen: $(gline)"; fi
+    SWAP_N=$(( SWAP_N + 1 )); SV="${WORK}/swap-${SWAP_N}"; mkdir -p "${SV}/n/sub"; printf 'dir -> [[inside-swap-zz]]\n' > "${SV}/n/sub/s.md"
+    run_graph "$SH" "$BLK" "$SV" "n/sub/s.md" PATH="${WORK}/shim-dirswap:${PATH}" REAL_GREP="$REAL_GREP" SWAP_DIR="${SV}/n/sub" SWAP_TARGET="${WORK}/outdir2/sub"
+    if [ -L "${SV}/n/sub" ] && no_canary; then expect_failed "graph-dir-swap-after-check ${tag}" "failed:outlink-scan"; else fail "graph-dir-swap-after-check ${tag}" "swap did not happen or canary consumed: $(gline)"; fi
   done
 done
 # @cell graph-shadow-and-pairs
