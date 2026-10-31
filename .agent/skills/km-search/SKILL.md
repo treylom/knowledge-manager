@@ -364,19 +364,42 @@ top 1~2 노트에 대해 **backlink(그 노트를 가리키는 노트)** 와 **o
 # Obsidian CLI 의 backlinks 서브커맨드가 있으면(맥 데스크톱) 그걸 우선, 부재·오류 시 아래가 항상 동작한다.
 # Tier 2 1단 ②가 이미 돌았으면 재호출 없이 그 결과 사용(중복 호출 ❌).
 "$OBSIDIAN_CLI" backlinks file="<top노트 basename(.md 제거)>" vault="${OBSIDIAN_VAULT}" format=json
-# 변수 규약: NOTE_PATH = VAULT_PATH 기준 상대경로. (절대경로가 들어와도 아래 NOTE_FILE 라인이 흡수한다.)
-NOTE_FILE="${VAULT_PATH}/${NOTE_PATH}"; [ -f "$NOTE_FILE" ] || NOTE_FILE="${NOTE_PATH}"
-STEM="$(basename "${NOTE_PATH}" .md)"
-if [ -z "$STEM" ]; then GRAPH_EXPANSION="skipped:no-top-note"; BACKLINKS_N=""
+# 변수 규약: NOTE_PATH = VAULT_PATH 기준 상대경로(절대경로는 vault 안일 때만 · 현재 폴더 같은 이름으로 대체 ❌).
+# fail-closed: vault·노트를 먼저 확인하고 backlink·outlink 를 따로 재며 각 grep rc 를 본다(0 = 있음 · 1 = 0개 · 2+ = 오류).
+# 어느 하나라도 오류(없는 vault·vault 밖/없는/읽기 불가 노트·읽기 불가 하위 폴더로 모집단 불완전) = failed:<사유> · BACKLINKS_N 빈 값 · 블록 rc 1.
+# vault 는 실제 경로(cd -P)로 훑는다 — 심볼릭 링크 vault 를 grep -r 이 안 내려가 0 으로 세던 문제.
+# 줄바꿈 든 경로는 받지 않는다($(…) 가 끝 줄바꿈을 지워 옆 폴더가 vault 로 풀리고 grep -F 가 줄마다 패턴으로 나눔).
+# 훑기 = `command grep` — 하네스가 grep 을 셸 함수(무시 파일 존중 등)로 덮어도 실제 grep 으로 센다.
+GRAPH_EXPANSION=""; BACKLINKS_N=""; OUTLINKS_N=""; BL_RC=skip; OL_RC=skip; NOTE_FILE=""; IN_VAULT=no
+NL_IN_VAULT=$(printf '%s' "${VAULT_PATH}" | wc -l | tr -d ' '); NL_IN_NOTE=$(printf '%s' "${NOTE_PATH}" | wc -l | tr -d ' ')
+VAULT_REAL="$(CDPATH= cd -P -- "${VAULT_PATH:-/nonexistent-vault}" 2>/dev/null && pwd -P)"
+STEM="${NOTE_PATH##*/}"; STEM="${STEM%.md}"
+case "${NOTE_PATH}" in /*) NOTE_FILE="${NOTE_PATH}" ;; ?*) NOTE_FILE="${VAULT_REAL}/${NOTE_PATH}" ;; esac
+NOTE_DIR_REAL="$(CDPATH= cd -P -- "${NOTE_FILE%/*}/" 2>/dev/null && pwd -P)"
+[ -n "$VAULT_REAL" ] && [ -n "$NOTE_DIR_REAL" ] && case "${NOTE_DIR_REAL%/}/" in "${VAULT_REAL%/}"/*) IN_VAULT=yes ;; esac
+if [ -z "${NOTE_PATH}" ]; then GRAPH_EXPANSION="skipped:no-top-note"
+elif [ -z "${VAULT_PATH}" ] || [ "$NL_IN_VAULT" != 0 ] || [ -z "$VAULT_REAL" ] || [ ! -r "$VAULT_REAL" ]; then GRAPH_EXPANSION="failed:no-vault"
+elif [ -z "$STEM" ] || [ "$NL_IN_NOTE" != 0 ] || [ "$IN_VAULT" != yes ] || [ ! -f "$NOTE_FILE" ]; then GRAPH_EXPANSION="failed:no-note"
+elif [ ! -r "$NOTE_FILE" ]; then GRAPH_EXPANSION="failed:unreadable-note"
 else
-  # 계수 = 목록을 자르기(head) «전» 전체 파일 수 · 0 도 그대로 0 으로 적는다
-  BACKLINKS_N=$(grep -rl --include="*.md" -F "[[${STEM}" "${VAULT_PATH}" | wc -l | tr -d ' ')
-  grep -rl --include="*.md" -F "[[${STEM}" "${VAULT_PATH}" | head -10
-  grep -o '\[\[[^]|#]*' "${NOTE_FILE}" | sed 's/^\[\[//' | sort -u | head -15
-  GRAPH_EXPANSION=done
+  BL_LIST="$(command grep -rl -D skip --include="*.md" -F "[[${STEM}" "${VAULT_REAL}")"; BL_RC=$?
+  OL_RAW="$(command grep -a -o '\[\[[^]|#]*' "${NOTE_FILE}")"; OL_RC=$?
+  if [ "$BL_RC" -gt 1 ]; then GRAPH_EXPANSION="failed:backlink-scan"
+  elif [ "$OL_RC" -gt 1 ]; then GRAPH_EXPANSION="failed:outlink-scan"
+  else
+    # 계수 = 목록을 자르기(head) «전» 전체 수 · 0 도 그대로 0 으로 적는다
+    OL_LIST="$(printf '%s\n' "$OL_RAW" | sed 's/^\[\[//' | command grep . | sort -u)"
+    BACKLINKS_N=$(printf '%s\n' "$BL_LIST" | command grep -c . || true)
+    OUTLINKS_N=$(printf '%s\n' "$OL_LIST" | command grep -c . || true)
+    printf '%s\n' "$BL_LIST" | command grep . | head -10
+    printf '%s\n' "$OL_LIST" | command grep . | head -15
+    GRAPH_EXPANSION=done
+  fi
 fi
-echo "GRAPH_EXPANSION=${GRAPH_EXPANSION} BACKLINKS_N=${BACKLINKS_N}"
+echo "GRAPH_EXPANSION=${GRAPH_EXPANSION} BACKLINKS_N=${BACKLINKS_N} OUTLINKS_N=${OUTLINKS_N} BL_RC=${BL_RC} OL_RC=${OL_RC}"
+case "$GRAPH_EXPANSION" in failed:*) false ;; esac
 ```
+- `GRAPH_EXPANSION` 닫힌 값 = `done` · `skipped:no-top-note` · `failed:no-vault|no-note|unreadable-note|backlink-scan|outlink-scan`(`no-note` = 없음 · vault 밖 · 줄바꿈 든 경로). `failed:*` 이면 블록 rc 1 이고 `BACKLINKS_N` 은 빈 값이다 — 답변 마지막 줄은 `그래프 확장(실패: <사유>)` 로 쓰고 숫자를 지어내지 않는다(`backlinks 0` ❌).
 - backlinks 가 많은 노트 = 허브 → 답변 진입점으로 우선한다.
 - backlinks/outlinks 중 질문과 겹치는 노트 1~2개를 추가 Read → 답변의 "🔗 연결 맥락"에 반영.
 - **`BACKLINKS_N`(backlink grep 결과 파일 수 · 실측 정수) 이 답변 마지막 줄 `그래프 확장(backlinks N)` 의 N 이다** (top 2 노트를 돌렸으면 두 값의 합 · 제약 §"사용 티어 명시" 형식 고정과 1:1). 블록이 찍은 `GRAPH_EXPANSION`·`BACKLINKS_N` 은 영수증 블록에 다시 할당해 넘긴다(Bash 호출이 나뉘면 셸 변수가 이어지지 않는다).
@@ -478,7 +501,7 @@ if [ -f "$RCPT" ]; then
     --top-hit "<상위 1건 source_note 경로 또는 no-hit>" --n-hits <Tier 1~4 히트 수 정수> "${GRAPH_ARGS[@]}"
 fi
 ```
-- 그래프 칸(1.8.5): `KM_MODE`(이번 판정 QUICK|DEEP) 가 DEEP 이면 Phase 2.5-B 가 찍은 `GRAPH_EXPANSION`(`done` · 못 돌렸으면 `skipped:<사유>`)·`BACKLINKS_N` 을 재할당해 `--graph-expansion`·`--backlinks` 로 넘긴다. helper `--help` 에 두 인자가 없으면 넘기지 않고 `KM_RECEIPT_GRAPH_FIELDS=unsupported` 1줄만 찍는다(영수증 기록은 그대로).
+- 그래프 칸(1.8.5): `KM_MODE`(이번 판정 QUICK|DEEP) 가 DEEP 이면 Phase 2.5-B 가 찍은 `GRAPH_EXPANSION`(`done` · 못 돌렸으면 `skipped:<사유>` · 오류면 `failed:<사유>` — 이때 `BACKLINKS_N` 은 빈 값이라 `--backlinks` 를 넘기지 않는다)·`BACKLINKS_N` 을 재할당해 `--graph-expansion`·`--backlinks` 로 넘긴다. helper `--help` 에 두 인자가 없으면 넘기지 않고 `KM_RECEIPT_GRAPH_FIELDS=unsupported` 1줄만 찍는다(영수증 기록은 그대로).
 - 영수증 = `~/.claude-state/km-search-receipts.jsonl` 1행(ts·session_id·bot·query·tiers_tried·top_hit·n_hits). no-hit 도 영수증이다(검색을 «했다»는 기록이지 «찾았다»는 기록이 아니다).
 - 스킬을 거치지 않고 curl 만 던진 검색은 영수증이 없다 — 그건 게이트가 의도한 대로 막는다.
 

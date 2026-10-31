@@ -4,7 +4,8 @@
 # and runs it against a fake memory-bank CLI (fixtures/fake-memory-bank.js) under a temp HOME.
 # Pair in the same run: the pre-1.8.5 block (default both mode, --limit 3) on the same fake
 # must give 6 — that is the bug this block fixes.
-# Spec: CHANGELOG.md 1.8.5. Needs node; runs each block under bash, and under zsh when present.
+# Spec: CHANGELOG.md 1.8.5. Needs node (missing node = FAIL rc 1); runs each block under bash, and under zsh
+# when present. Population authority: recorded cell ids must equal expected_ids() exactly.
 
 set -uo pipefail
 
@@ -14,12 +15,15 @@ cd "${REPO_ROOT}"
 
 PASS_COUNT=0
 FAIL_COUNT=0
-pass() { echo "PASS ${1}"; PASS_COUNT=$(( PASS_COUNT + 1 )); }
-fail() { echo "FAIL ${1} — ${2}" >&2; FAIL_COUNT=$(( FAIL_COUNT + 1 )); }
+SEEN_IDS=""
+pass() { SEEN_IDS="${SEEN_IDS}${1}"$'\n'; echo "PASS ${1}${2:+ (${2})}"; PASS_COUNT=$(( PASS_COUNT + 1 )); }
+fail() { SEEN_IDS="${SEEN_IDS}${1}"$'\n'; echo "FAIL ${1} — ${2}" >&2; FAIL_COUNT=$(( FAIL_COUNT + 1 )); }
 
+# node is required: a missing runtime is a failed contract run, not a pass (no SKIP rc 0).
 if ! command -v node >/dev/null 2>&1; then
-  echo "SKIP tier0-mb — node not found"
-  exit 0
+  echo "FAIL tier0-mb — node not found: the Tier 0 block cannot be exercised" >&2
+  echo "PASS_COUNT=0 FAIL_COUNT=1"
+  exit 1
 fi
 
 A="commands/search.md"
@@ -60,22 +64,45 @@ expect() {
   # expect <label> <output> <want "state hits"> [<want vec> <want txt>]
   local label="$1" out="$2" want="$3" got
   got="$(state_of "$out")"
-  if [ "$got" = "$want" ]; then pass "${label} (MB_STATE/mb_hits = ${got})"; else fail "$label" "want '${want}', got '${got}'"; fi
+  if [ "$got" = "$want" ]; then pass "$label" "MB_STATE/mb_hits = ${got}"; else fail "$label" "want '${want}', got '${got}'"; fi
   if [ $# -ge 5 ]; then
     local v t
     v="$(count_of "$out" '^\[mb:의미\] ')"; t="$(count_of "$out" '^\[mb:글자\] ')"
-    if [ "$v" = "$4" ] && [ "$t" = "$5" ]; then pass "${label} labels (의미 ${v} · 글자 ${t})"; else fail "${label} labels" "want 의미 $4 · 글자 $5, got 의미 ${v} · 글자 ${t}"; fi
+    if [ "$v" = "$4" ] && [ "$t" = "$5" ]; then pass "${label} labels" "의미 ${v} · 글자 ${t}"; else fail "${label} labels" "want 의미 $4 · 글자 $5, got 의미 ${v} · 글자 ${t}"; fi
   fi
 }
 
 SHELLS="bash"
 command -v zsh >/dev/null 2>&1 && SHELLS="bash zsh"
+echo "shells=${SHELLS}"
+# KM_TEST_REQUIRE_SHELLS="bash zsh" (set in CI) = a missing shell fails the run instead of shrinking the population
+for _req in ${KM_TEST_REQUIRE_SHELLS:-}; do
+  case " ${SHELLS} " in *" ${_req} "*) ;; *) echo "FAIL required shell missing: ${_req} (KM_TEST_REQUIRE_SHELLS)" >&2; echo "PASS_COUNT=0 FAIL_COUNT=1"; exit 1 ;; esac
+done
+
+# Population authority: every cell records its fixed id; the run fails unless the recorded ids equal
+# this list exactly (same set, same count) — deleting or skipping a cell turns the run RED.
+expected_ids() {
+  local F SH tag c
+  for F in "$A" "$B"; do
+    echo "extract ${F}"
+    for SH in $SHELLS; do
+      tag="${F}@${SH}"
+      echo "s1-calls ${tag}"; echo "s1-score-only-on-vector ${tag}"; echo "s1-no-chatter ${tag}"
+      for c in s1-no-overlap s2-overlap s3-absent s4-error s4b-partial-error s4c-vector-error s6-cli-ignores-limit s5-empty; do
+        echo "${c} ${tag}"; echo "${c} ${tag} labels"
+      done
+    done
+  done
+  for SH in $SHELLS; do echo "old-block-both-limit3 @${SH}"; done
+  echo "copy-parity-tier0-mb"
+}
 
 for F in "$A" "$B"; do
   BLK="${WORK}/$(basename "$(dirname "$F")")-tier0.sh"
   extract_tier0_block "$F" > "$BLK"
   if grep -q -- '--vector --limit 2' "$BLK" && grep -q -- '--text --limit 1' "$BLK"; then
-    pass "extract ${F} (two calls present)"
+    pass "extract ${F}" "two calls present"
   else
     fail "extract ${F}" "Tier 0 bash block missing --vector --limit 2 / --text --limit 1"
   fi
@@ -86,8 +113,8 @@ for F in "$A" "$B"; do
     OUT="$(run_block "$SH" "$BLK" "$HOME_WITH" FAKE_MB_LOG="$LOG")"
     expect "s1-no-overlap ${tag}" "$OUT" "ok 3" 2 1
     CALLS="$(tr '\n' ',' < "$LOG")"
-    [ "$CALLS" = "vector 2,text 1," ] && pass "s1-calls ${tag} (${CALLS})" || fail "s1-calls ${tag}" "want 'vector 2,text 1,', got '${CALLS}'"
-    n="$(count_of "$OUT" '% match')"; [ "$n" = "2" ] && pass "s1-score-only-on-vector ${tag} (${n})" || fail "s1-score-only-on-vector ${tag}" "want 2 '% match', got ${n}"
+    [ "$CALLS" = "vector 2,text 1," ] && pass "s1-calls ${tag}" "${CALLS}" || fail "s1-calls ${tag}" "want 'vector 2,text 1,', got '${CALLS}'"
+    n="$(count_of "$OUT" '% match')"; [ "$n" = "2" ] && pass "s1-score-only-on-vector ${tag}" "${n}" || fail "s1-score-only-on-vector ${tag}" "want 2 '% match', got ${n}"
     n="$(count_of "$OUT" '^Loading\|^Found ')"; [ "$n" = "0" ] && pass "s1-no-chatter ${tag}" || fail "s1-no-chatter ${tag}" "Loading/Found lines leaked: ${n}"
     # ② 겹침 1 → 2 (text block dropped, vector block with the score kept)
     OUT="$(run_block "$SH" "$BLK" "$HOME_WITH" FAKE_MB_OVERLAP=1)"
@@ -118,7 +145,7 @@ OLD="${WORK}/old-tier0.sh"
 printf '%s\n' "$OLD_BLOCK" > "$OLD"
 for SH in $SHELLS; do
   OUT="$(run_block "$SH" "$OLD" "$HOME_WITH")"
-  expect "old-block-both-limit3 @${SH} (regression reference)" "$OUT" "ok 6"
+  expect "old-block-both-limit3 @${SH}" "$OUT" "ok 6"
 done
 
 # Parity: the memory-bank part of Tier 0 is identical in both files — the bash block up to its
@@ -131,7 +158,18 @@ mb_part() {
 }
 DIFF0="$(diff <(mb_part "$A") <(mb_part "$B"))"
 n_mb="$(mb_part "$A" | grep -c -e 'MB_STATE=' -e '\[mb:의미\]' || true)"
-[ -z "$DIFF0" ] && [ "$n_mb" -ge 3 ] && pass "copy-parity-tier0-mb (A/B memory-bank part diff 0 · anchors ${n_mb})" || fail "copy-parity-tier0-mb" "${DIFF0:-anchors ${n_mb} < 3}"
+[ -z "$DIFF0" ] && [ "$n_mb" -ge 3 ] && pass "copy-parity-tier0-mb" "A/B memory-bank part diff 0 · anchors ${n_mb}" || fail "copy-parity-tier0-mb" "${DIFF0:-anchors ${n_mb} < 3}"
+
+expected_ids | sort > "${WORK}/ids.want"
+printf '%s' "$SEEN_IDS" | sort > "${WORK}/ids.got"
+NWANT=$(grep -c . "${WORK}/ids.want"); NGOT=$(grep -c . "${WORK}/ids.got")
+if diff "${WORK}/ids.want" "${WORK}/ids.got" > "${WORK}/ids.diff"; then
+  echo "POPULATION exact: ${NGOT}/${NWANT} cell ids (shells=${SHELLS})"
+else
+  echo "FAIL population — recorded ${NGOT} ids, expected ${NWANT}:" >&2
+  sed 's/^/  /' "${WORK}/ids.diff" >&2
+  FAIL_COUNT=$(( FAIL_COUNT + 1 ))
+fi
 
 echo "----"
 echo "PASS_COUNT=${PASS_COUNT} FAIL_COUNT=${FAIL_COUNT}"
