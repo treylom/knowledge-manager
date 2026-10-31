@@ -16,22 +16,8 @@
 - `related:` · `parent:` · 본문 `[[링크]]` → 추가 Read 후보. **MOC·허브로 «올라가는» 링크 우선**(주변 노트→정본 허브 도달이 목적 — 2026-07-13 벤치: 에이전트 검색은 주변 노트엔 도달하나 **허브에 못 가는 게 주 실패 모드**. Phase 0.5 입구 라우팅과는 다른 실패층: 0.5 = 처음부터 허브로, 여기 = 주변에 떨어졌을 때 위로 복귀 · v1.7.1). 개수는 아래 «링크 추적 예산» 안에서.
 
 ### B. backlinks 1-hop (DEEP 필수 · QUICK 은 top hit 이 얇을 때)
-top 1~2 노트에 대해 **backlink(그 노트를 가리키는 노트)** 와 **outlink(그 노트가 가리키는 노트)** 를 실측한다:
-```bash
-# 집행 계약: DEEP 모드에서 top 1~2 노트에 반드시 실행. backlinks = 전 플랫폼 grep 근사 —
-# Obsidian CLI 의 backlinks 서브커맨드가 있으면(맥 데스크톱) 그걸 우선, 부재·오류 시 아래가 항상 동작한다.
-# Tier 2 1단 ②가 이미 돌았으면 재호출 없이 그 결과 사용(중복 호출 ❌).
-"$OBSIDIAN_CLI" backlinks file="<top노트 basename(.md 제거)>" vault="${OBSIDIAN_VAULT}" format=json
-# 변수 규약: NOTE_PATH = VAULT_PATH 기준 상대경로. (절대경로가 들어와도 아래 NOTE_FILE 라인이 흡수한다.)
-NOTE_FILE="${VAULT_PATH}/${NOTE_PATH}"; [ -f "$NOTE_FILE" ] || NOTE_FILE="${NOTE_PATH}"
-STEM="$(basename "${NOTE_PATH}" .md)"
-grep -rl --include="*.md" -F "[[${STEM}" "${VAULT_PATH}" | head -10
-grep -o '\[\[[^]|#]*' "${NOTE_FILE}" | sed 's/^\[\[//' | sort -u | head -15
-```
-- backlinks 가 많은 노트 = 허브 → 답변 진입점으로 우선한다.
-- backlinks/outlinks 중 질문과 겹치는 노트를 추가 Read → 답변의 "🔗 연결 맥락"에 반영 — 여기서도 허브로 올라가는 쪽을 먼저.
+1.8.5: B 의 명령·계수(`BACKLINKS_N`)는 본문(commands/search.md «Phase 2.5 — 조건부 로드» 의 B)으로 옮겼다 — DEEP 이 이 파일을 읽지 않아도 그래프 확장이 돌게 하려는 것. 여기엔 예산만 남긴다.
 - **링크 추적 예산(v1.7.1)**: A(related/parent/[[링크]]) + B(backlinks/outlinks) 합산 추가 Read = **QUICK ≤1 / DEEP ≤3** · 총 Read = 기본(QUICK 1-2 / DEEP 3-5) + 추가 → **QUICK 총 3 / DEEP 총 8 초과 ❌**(무한 걷기 방지).
-- **backlink grep 결과 줄 수를 센다(`| wc -l`) → 이 정수 N 이 답변 마지막 줄 `그래프 확장(backlinks N)` 에 들어간다** (제약 §"사용 티어 명시" 형식 고정과 1:1).
 
 ### C. 부재 발화 전 3단 재질의 (특히 Codex 등 도구가 얇은 환경)
 **트리거 (상태 기반 — 부재 문장을 쓸 계획이 있든 없든 무관)**: 다음 중 하나면 **답변을 쓰기 전에** 아래 3단을 실행한다.

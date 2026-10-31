@@ -16,7 +16,7 @@ description: vault 통합 검색 — GraphRAG(있으면) → Obsidian CLI → (O
 > 둘 다 봐야 하는 질문이라면 **지금 기준·현재 상태는 문서 쪽**, **원래 발언·결정 경위는 대화 기록 쪽**을 우선하세요. 두 결과가 어긋나면 감추지 말고 `현재 기준`과 `과거 경위`로 나눠 적는 편이 낫습니다.
 > 그리고 **한쪽에서 안 나왔다고 다른 쪽에도 없다고 단정하지 마세요** — 서로 다른 코퍼스입니다.
 
-> 🚨 **실행 순서 계약 (고정 — 첫 행동을 여기서 정한다)**: ① Phase -1 로 설정 2개(`VAULT_PATH`·`SEARCH_ENDPOINT`)를 읽는다 → ② **곧바로 Tier 1 서버 검색 curl 을 실행한다.** 이 ①② 보다 먼저 vault 파일을 검색·나열·읽기(rg / grep / find / ls / Read) ❌ — 검색의 1차 수단은 서버이고, 로컬 파일은 Tier 1 의 원문 확보 계약(`VAULT_MODE=same`)이 허용할 때 또는 Tier 1 이 실패로 판정된 뒤(Tier 2~4)에만 연다. "vault 를 확인해보겠다"며 로컬부터 뒤지는 첫 행동 = 이 계약 위반이다.
+> 🚨 **실행 순서 계약 (고정 — 첫 행동을 여기서 정한다)**: ① Phase -1 로 설정 2개(`VAULT_PATH`·`SEARCH_ENDPOINT`)를 읽는다 → ② **곧바로 Tier 1 서버 검색 curl 을 실행한다(스위치 꺼짐이면 Tier 2).** 이 ①② 보다 먼저 vault 파일을 검색·나열·읽기(rg / grep / find / ls / Read) ❌ — 검색의 1차 수단은 서버이고, 로컬 파일은 Tier 1 의 원문 확보 계약(`VAULT_MODE=same`)이 허용할 때 또는 Tier 1 이 실패로 판정된 뒤(Tier 2~4)에만 연다. "vault 를 확인해보겠다"며 로컬부터 뒤지는 첫 행동 = 이 계약 위반이다.
 
 ## Phase -1: 설정 읽기
 
@@ -63,31 +63,6 @@ IF query가 비어있으면:
 - DEEP: 문장형 5단어+, "~하려면/방법/비교/차이/관계/영향", 분석 요청("설명해줘/정리해줘"), 복수 개념("A vs B"), 방법론("어떻게/왜")
 - QUICK: 그 외 (키워드 1-3개, 정의형 "~란?", 노트 찾기)
 
-## Phase 0.4: 구조 문서 축 (000-START-HERE)
-
-셋업이 만든 3문서(`START-HERE`·`VAULT-STRUCTURE`·`MOC-Map`)는 **어느 티어든 본 검색 전에 먼저 참조**한다 — 있으면 `MOC-Map` 을 Read(≤130줄)해서 질문을 허브에 매핑한 뒤 검색에 들어간다.
-입력 변수는 `VAULT_PATH` 와 `QUERY_KEYWORDS`(핵심 키워드 1~3개, 공백 구분) 둘이고, 아래 블록은 그대로 실행할 수 있다.
-
-```bash
-STRUCT_DIR="${VAULT_PATH}/000-START-HERE"; STRUCT_DOCS=0; STRUCT_MISSING=""
-for f in START-HERE VAULT-STRUCTURE MOC-Map; do
-  if [ -f "$STRUCT_DIR/$f.md" ]; then STRUCT_DOCS=$((STRUCT_DOCS+1)); else STRUCT_MISSING="$STRUCT_MISSING $f"; fi
-done
-echo "STRUCT_DOCS=${STRUCT_DOCS}/3 missing=[${STRUCT_MISSING# }]"
-# 허브 매핑: MOC-Map 앞 130줄의 표 행에서 질의 키워드와 겹치는 [[허브]] ≤3
-ROUTE_HUBS=""
-if [ -f "$STRUCT_DIR/MOC-Map.md" ]; then
-  for kw in $QUERY_KEYWORDS; do
-    ROUTE_HUBS="$ROUTE_HUBS $(head -130 "$STRUCT_DIR/MOC-Map.md" | grep -i -- "$kw" | grep -o '\[\[[^]|#]*' | sed 's/^\[\[//')"
-  done
-  ROUTE_HUBS="$(echo $ROUTE_HUBS | tr ' ' '\n' | awk 'NF' | sort -u | head -3 | tr '\n' ' ')"
-fi
-ROUTE_HUB_COUNT=$(echo $ROUTE_HUBS | wc -w | tr -d ' ')
-echo "ROUTE_HUBS=[${ROUTE_HUBS% }] count=${ROUTE_HUB_COUNT}"
-```
-
-- `STRUCT_DOCS` 가 3 미만이면 답변에 「구조 문서 없음(<빠진 것>) — Claude Code 의 `/km:setup`(Phase 5.5)으로 생성. Codex 의 `km-setup` 스킬과 `install-to-project.sh` 는 이 문서를 만들지 않음」 1줄을 적고 **그대로 계속 진행**한다(멈춤 ❌).
-
 ## Phase 0.5: MOC 우선 라우팅
 
 검색 결과 중 MOC 성격 노트(frontmatter `type`/`tags`에 MOC 포함, 또는 파일명에 `-MOC`)를 최상위로 고정한다:
@@ -110,24 +85,41 @@ Tier 2 의 0-β 분해 JSON 을 **여기서 먼저** 산출한다(스폰 ❌ · 
 
 ## Tier 0 — 메모리뱅크 축 (v1.8.0 · 2026-09-14 · 재경님 1548711800 「우리 판 km:search 는 메모리뱅크도 함께 봐야」)
 
-Tier 1 «앞에» 같은 질의로 과거 대화·결정 경위를 1회 조회한다(memory.md 축⑥: 과거 경위 = 메모리뱅크 / 현재 정본 = vault). 결과는 vault 결과와 **합치지 않고** 별도 절 `🧠 메모리뱅크 (과거 대화)` 에 ≤3건 병기, 각 줄 라벨 `[mb]`. CLI 부재·오류·0건 = 1줄 표기 후 **그대로 계속**(멈춤 ❌ · Tier 1 결과 불변).
+Tier 1 «앞에» 같은 질의로 과거 대화·결정 경위를 1회 조회한다(memory.md 축⑥: 과거 경위 = 메모리뱅크 / 현재 정본 = vault). 결과는 vault 결과와 **합치지 않고** 별도 절 `🧠 메모리뱅크 (과거 대화)` 에 ≤3건 병기, 각 줄 라벨 `[mb:의미]` 또는 `[mb:글자]`. CLI 부재·오류·0건 = 1줄 표기 후 **그대로 계속**(멈춤 ❌ · Tier 1 결과 불변).
+
+1.8.5: memory-bank `search` 의 기본(both) 모드는 의미 검색 상위 N + 글자 검색 상위 N 을 합친 뒤 자르지 않아 `--limit 3` 에 최대 6건을 낸다. 그래서 의미(`--vector --limit 2`)와 글자(`--text --limit 1`)를 따로 1번씩 부르고, 블록을 `Lines A-B in <jsonl 경로>` 로 중복 제거해 합계 ≤3 으로 고정한다(겹치면 점수가 있는 의미 쪽을 남긴다). 블록은 이 bash 출력에 그대로 찍힌다.
 
 ```bash
 MB_CLI="$(ls -d "$HOME/.claude/plugins/cache/memory-bank-dev/memory-bank"/*/cli/memory-bank.js 2>/dev/null | sort -V | tail -1)"
 MB_OUT=""; MB_STATE=absent; MB_HITS=0
 if [ -n "$MB_CLI" ]; then
-  MB_OUT="$(node "$MB_CLI" search "${QUERY}" --limit 3 2>/dev/null | grep -vE '^(Loading|Embedding)')" && MB_STATE=ok || MB_STATE=error
-  MB_HITS=$(printf '%s\n' "$MB_OUT" | grep -cE '^[0-9]+\. \[' || true)
+  MB_V="$(node "$MB_CLI" search "${QUERY}" --vector --limit 2 2>/dev/null)"; MB_RV=$?
+  MB_T="$(node "$MB_CLI" search "${QUERY}" --text --limit 1 2>/dev/null)"; MB_RT=$?
+  if [ "$MB_RV" -eq 0 ] && [ "$MB_RT" -eq 0 ]; then MB_STATE=ok; else MB_STATE=error; fi
+  MB_OUT="$( { printf '%s\n' "$MB_V" | awk '{print "V\t" $0}'; printf '%s\n' "$MB_T" | awk '{print "T\t" $0}'; } | awk '
+    function flush() { if (blk != "" && (key == "" || !(key in seen)) && n < 3) { if (key != "") seen[key] = 1; n++; print blk } blk = ""; key = "" }
+    { src = substr($0, 1, 1); line = substr($0, 3) }
+    src != cur { flush(); cur = src }
+    line ~ /^[0-9]+\. \[/ { flush(); sub(/^[0-9]+\. /, "", line); blk = (src == "V" ? "[mb:의미] " : "[mb:글자] ") line; next }
+    blk != "" && line ~ /^ *Lines [0-9]+-[0-9]+ in / { key = line; sub(/^ */, "", key); sub(/ \([^()]*\)$/, "", key) }
+    blk != "" && line != "" { blk = blk "\n" line }
+    END { flush() }')"
+  MB_HITS=$(printf '%s\n' "$MB_OUT" | grep -c '^\[mb:' || true)
 fi
+[ -n "$MB_OUT" ] && printf '%s\n' "$MB_OUT"
 echo "MB_STATE=${MB_STATE} mb_hits=${MB_HITS}"
 ```
-- 출력 규약: `[mb] <프로젝트, 날짜> — <첫 문장 ≤80자> (<jsonl 경로>:<Lines>)` ≤3줄. 메모리뱅크 히트는 «과거 경위»이지 현재 정본이 아니다 — 사실 주장은 vault 결과(Tier 1~4)가 이기고, 「왜 그렇게 결정했나·전에 어떻게 했나」 질문은 [mb] 가 1순위(memory.md 「주입 ≠ 조회 · 조회가 이김」과 동축).
+- 출력 규약: `[mb:의미] <프로젝트, 날짜> (<N>% 의미 유사도) — <첫 문장 ≤80자> (<jsonl 경로>:<Lines>)` · `[mb:글자] <프로젝트, 날짜> (글자 그대로 일치 · 점수 없음) — …` ≤3줄(`MB_HITS` = 중복 제거 뒤 블록 수). 글자 검색 블록에는 «% match» 가 없다 — 점수를 지어내지 않는다. 메모리뱅크 히트는 «과거 경위»이지 현재 정본이 아니다 — 사실 주장은 vault 결과(Tier 1~4)가 이기고, 「왜 그렇게 결정했나·전에 어떻게 했나」 질문은 [mb] 가 1순위(memory.md 「주입 ≠ 조회 · 조회가 이김」과 동축).
 - 마커: 답변 마지막 티어 줄에 `+ 메모리뱅크(<MB_STATE>·<MB_HITS>건)` 병기. 부재 단정 발화 전엔 [mb] 0건도 함께 적는다(두 코퍼스는 서로 부재를 증명하지 않는다).
 
 ## 검색 엔진 — 4단계 자동 폴백 (Tier 0 뒤에 실행)
 
 ### Tier 1 — GraphRAG 서버 (설치된 경우, 의미 기반 하이브리드 검색)
+> 스위치 파일 `~/.claude-state/km-search-graphrag-off` 가 있으면 Tier 1 을 건너뛰고(`GRAPHRAG_STATE=disabled`) Tier 2 로 간다 — 되돌리기 = 그 파일 삭제.
 ```bash
+if [ -e "$HOME/.claude-state/km-search-graphrag-off" ]; then
+GRAPHRAG_STATE=disabled; TIER1_RC=skip; ENDPOINT_SWITCHED=none
+else
 # 1.8.1: target_status=resolved 이면 질의 = 대상 + 핵심어(≤7단어) · unspecified 면 원문 질의 그대로 · KM_SEARCH_RUN_DIR 가 있으면 tier1-query.txt 에 기록
 T1_QUERY="${QUERY}"
 [ "${TARGET_STATUS:-unspecified}" = "resolved" ] && [ -n "${TARGETS:-}" ] && T1_QUERY="${TARGETS} ${KEYWORDS_TOP:-}"
@@ -175,6 +167,7 @@ if [ "$GRAPHRAG_STATE" = "absent" ] && [ -r /proc/net/tcp ] \
    && [ "$(wc -l < /proc/net/tcp)" -le 1 ]; then
   GRAPHRAG_STATE=blocked
 fi
+fi
 echo "GRAPHRAG_STATE=${GRAPHRAG_STATE} endpoint=${SEARCH_ENDPOINT} rc=${TIER1_RC}"
 echo "ENDPOINT_SWITCHED=${ENDPOINT_SWITCHED:-none}"
 ```
@@ -194,6 +187,31 @@ echo "ENDPOINT_SWITCHED=${ENDPOINT_SWITCHED:-none}"
 - **`/health` 200 을 서버 정상의 근거로 쓰지 말 것** — `/health` 는 200 인데 `/api/search` 만 막히는 형태가 실제로 관측된다. 판정은 위처럼 **검색 경로 자체**로 한다.
 - 서버 미기동/미설치 → 조용히 Tier 2로. (같은 플러그인의 `/tofugraph` 명령으로 GraphRAG 스택을 구축하면 이 티어가 자동으로 살아난다.)
 - **질의 형식(참고)**: 의미 기반 검색이라 문장을 통째로 넣어도 받지만, **3~7단어 키워드형**이 무난하다. 빈손이어도 **같은 질의를 그대로 다시 던지지 말 것** — 결과가 바뀌지 않는다. 표현을 한 번 바꿔 보고(별칭·영/한 표기 변형 포함), 그래도 안 나오면 다음 티어로 넘어가는 편이 빠르다.
+
+#### Phase 0.4: 구조 문서 축 (000-START-HERE)
+
+셋업이 만든 3문서(`START-HERE`·`VAULT-STRUCTURE`·`MOC-Map`)는 **어느 티어든 본 검색 전에 먼저 참조**한다 — 있으면 `MOC-Map` 을 Read(≤130줄)해서 질문을 허브에 매핑한 뒤 검색에 들어간다.
+입력 변수는 `VAULT_PATH` 와 `QUERY_KEYWORDS`(핵심 키워드 1~3개, 공백 구분) 둘이고, 아래 블록은 그대로 실행할 수 있다.
+
+```bash
+STRUCT_DIR="${VAULT_PATH}/000-START-HERE"; STRUCT_DOCS=0; STRUCT_MISSING=""
+for f in START-HERE VAULT-STRUCTURE MOC-Map; do
+  if [ -f "$STRUCT_DIR/$f.md" ]; then STRUCT_DOCS=$((STRUCT_DOCS+1)); else STRUCT_MISSING="$STRUCT_MISSING $f"; fi
+done
+echo "STRUCT_DOCS=${STRUCT_DOCS}/3 missing=[${STRUCT_MISSING# }]"
+# 허브 매핑: MOC-Map 앞 130줄의 표 행에서 질의 키워드와 겹치는 [[허브]] ≤3
+ROUTE_HUBS=""
+if [ -f "$STRUCT_DIR/MOC-Map.md" ]; then
+  for kw in $QUERY_KEYWORDS; do
+    ROUTE_HUBS="$ROUTE_HUBS $(head -130 "$STRUCT_DIR/MOC-Map.md" | grep -i -- "$kw" | grep -o '\[\[[^]|#]*' | sed 's/^\[\[//')"
+  done
+  ROUTE_HUBS="$(echo $ROUTE_HUBS | tr ' ' '\n' | awk 'NF' | sort -u | head -3 | tr '\n' ' ')"
+fi
+ROUTE_HUB_COUNT=$(echo $ROUTE_HUBS | wc -w | tr -d ' ')
+echo "ROUTE_HUBS=[${ROUTE_HUBS% }] count=${ROUTE_HUB_COUNT}"
+```
+
+- `STRUCT_DOCS` 가 3 미만이면 답변에 「구조 문서 없음(<빠진 것>) — Claude Code 의 `/km:setup`(Phase 5.5)으로 생성. Codex 의 `km-setup` 스킬과 `install-to-project.sh` 는 이 문서를 만들지 않음」 1줄을 적고 **그대로 계속 진행**한다(멈춤 ❌).
 
 #### Tier 1-S — 신선도 보강 (v1.5.1 · P2 · 서버 무변경 · Tier 1 결과 불변)
 Tier 1 이 `GRAPHRAG_STATE=ok` 로 끝난 «직후» 1회 실행한다. 색인 세대 밖(최근 생성·수정) 노트를 «부재»로 읽지 않기 위한 완충 — Tier 1 결과에 없는 최근 노트를 Tier 2 명령으로 «보강»한다(폴백 아님).
@@ -311,6 +329,7 @@ grep -rn "${QUERY}" "${VAULT_PATH}" --include="*.md" -l | head -20
   - `absent` → **"의미 검색 엔진 미설치로 텍스트 검색 결과입니다"**
   - `unreachable` → **"GraphRAG 서버(`${SEARCH_ENDPOINT}`)가 응답하지 않아 텍스트 검색으로 대체했습니다 — 결과가 평소보다 부정확할 수 있습니다"**
   - `blocked` → **"이 세션은 네트워크가 막혀 있어 GraphRAG 서버에 접속할 수 없습니다 — 서버 문제가 아닙니다. 에이전트 실행 시 네트워크를 허용하면(codex: `-c sandbox_workspace_write.network_access=true`) 의미 검색이 살아납니다"**
+  - `disabled` → **"검색 수리 스위치(`~/.claude-state/km-search-graphrag-off`)로 GraphRAG 를 일부러 꺼 둔 상태라 텍스트 검색으로 찾았습니다 — 서버 장애가 아닙니다. 되돌리기 = 그 파일 삭제"**
   - ⚠️ 엔진이 **설치돼 있는데 응답만 없는** 경우에 "미설치"라고 쓰면 사용자는 원인을 영영 못 찾는다. 두 경우는 처방이 다르다(설치 vs 서버 점검).
 
 ### 모드별 파라미터
@@ -339,7 +358,7 @@ grep -rn "${QUERY}" "${VAULT_PATH}" --include="*.md" -l | head -20
 - `related:` · `parent:` · 본문 `[[링크]]` → 추가 Read 후보(질문과 키워드가 겹치는 것 1~2개).
 
 ### B. backlinks 1-hop (DEEP 필수 · QUICK 은 top hit 이 얇을 때)
-top 1~2 노트에 대해 **backlink(그 노트를 가리키는 노트)** 와 **outlink(그 노트가 가리키는 노트)** 를 실측한다:
+top 1~2 노트에 대해 **backlink(그 노트를 가리키는 노트)** 와 **outlink(그 노트가 가리키는 노트)** 를 실측한다. **DEEP 이고 `VAULT_MODE` 가 `other` 가 아니면(= `same`, 또는 Tier 1 실패 뒤 로컬 검색) 이 블록은 생략할 수 없다**(1.8.5 · 참조 파일 Read 없이 본문에서 실행):
 ```bash
 # 집행 계약: DEEP 모드에서 top 1~2 노트에 반드시 실행. backlinks = 전 플랫폼 grep 근사 —
 # Obsidian CLI 의 backlinks 서브커맨드가 있으면(맥 데스크톱) 그걸 우선, 부재·오류 시 아래가 항상 동작한다.
@@ -348,12 +367,19 @@ top 1~2 노트에 대해 **backlink(그 노트를 가리키는 노트)** 와 **o
 # 변수 규약: NOTE_PATH = VAULT_PATH 기준 상대경로. (절대경로가 들어와도 아래 NOTE_FILE 라인이 흡수한다.)
 NOTE_FILE="${VAULT_PATH}/${NOTE_PATH}"; [ -f "$NOTE_FILE" ] || NOTE_FILE="${NOTE_PATH}"
 STEM="$(basename "${NOTE_PATH}" .md)"
-grep -rl --include="*.md" -F "[[${STEM}" "${VAULT_PATH}" | head -10
-grep -o '\[\[[^]|#]*' "${NOTE_FILE}" | sed 's/^\[\[//' | sort -u | head -15
+if [ -z "$STEM" ]; then GRAPH_EXPANSION="skipped:no-top-note"; BACKLINKS_N=""
+else
+  # 계수 = 목록을 자르기(head) «전» 전체 파일 수 · 0 도 그대로 0 으로 적는다
+  BACKLINKS_N=$(grep -rl --include="*.md" -F "[[${STEM}" "${VAULT_PATH}" | wc -l | tr -d ' ')
+  grep -rl --include="*.md" -F "[[${STEM}" "${VAULT_PATH}" | head -10
+  grep -o '\[\[[^]|#]*' "${NOTE_FILE}" | sed 's/^\[\[//' | sort -u | head -15
+  GRAPH_EXPANSION=done
+fi
+echo "GRAPH_EXPANSION=${GRAPH_EXPANSION} BACKLINKS_N=${BACKLINKS_N}"
 ```
 - backlinks 가 많은 노트 = 허브 → 답변 진입점으로 우선한다.
 - backlinks/outlinks 중 질문과 겹치는 노트 1~2개를 추가 Read → 답변의 "🔗 연결 맥락"에 반영.
-- **backlink grep 결과 줄 수를 센다(`| wc -l`) → 이 정수 N 이 답변 마지막 줄 `그래프 확장(backlinks N)` 에 들어간다** (제약 §"사용 티어 명시" 형식 고정과 1:1).
+- **`BACKLINKS_N`(backlink grep 결과 파일 수 · 실측 정수) 이 답변 마지막 줄 `그래프 확장(backlinks N)` 의 N 이다** (top 2 노트를 돌렸으면 두 값의 합 · 제약 §"사용 티어 명시" 형식 고정과 1:1). 블록이 찍은 `GRAPH_EXPANSION`·`BACKLINKS_N` 은 영수증 블록에 다시 할당해 넘긴다(Bash 호출이 나뉘면 셸 변수가 이어지지 않는다).
 
 ### C. 부재 발화 전 3단 재질의 (특히 Codex 등 도구가 얇은 환경)
 **트리거 (상태 기반 — 부재 문장을 쓸 계획이 있든 없든 무관)**: 다음 중 하나면 **답변을 쓰기 전에** 아래 3단을 실행한다.
@@ -422,7 +448,7 @@ grep -rln --include="*.md" -F "[[${KEYWORD}" "${VAULT_PATH}" | head -10
 - **읽기 전용**: 노트 생성/수정 금지
 - **hallucination 금지**: 반드시 실제 노트 내용 기반. 노트에 없는 내용은 "vault에 관련 자료가 없습니다" 명시 (Tier 1 에서는 `/api/note` 의 `body` 와 `source_note` 경로의 원문이 '실제 노트 내용'이다 — 둘 다 그 vault 노트에서 나온다. 로컬 원문 Read 는 경로가 실재할 때의 보강이지, Read 실패가 답변을 막는 게이트가 아니다)
 - **출처 필수 (볼트 병기)**: 실제 읽은 노트 경로 표기. **답변 말미에 「📍 볼트: {검색한 볼트 루트(절대 경로 또는 프로젝트 폴더명)}」 1줄 의무** — 출처의 `경로` 는 그 볼트 기준 상대 경로다. 사용자는 이 줄로 자료가 «어떤 볼트의 어디에» 있는지 즉시 안다. 이 줄이 없는 답변 = 미완이다.
-- **사용 티어 명시 (형식 고정)**: 답변 마지막 줄은 정확히 이 형식으로 쓴다 — `검색: <티어명> + 구조 문서(<D>/3 참조 · 허브 <k>) + 그래프 확장(backlinks N)`. **D = Phase 0.4 의 `STRUCT_DOCS`, k = `ROUTE_HUB_COUNT`(둘 다 실측 정수)** · backlinks N = Phase 2.5-B backlink grep 결과 줄 수(실측 정수, 생략·"1-hop" 같은 서술 대체 ❌). 그래프 확장을 안 한 답변(QUICK 얕은 질의, 또는 Tier 1 `VAULT_MODE=other` 로 Phase 2.5 를 생략한 경우)은 `검색: <티어명> + 구조 문서(<D>/3 참조 · 허브 <k>)` 까지 허용.
+- **사용 티어 명시 (형식 고정)**: 답변 마지막 줄은 정확히 이 형식으로 쓴다 — `검색: <티어명> + 구조 문서(<D>/3 참조 · 허브 <k>) + 그래프 확장(backlinks N)`. **D = Phase 0.4 의 `STRUCT_DOCS`, k = `ROUTE_HUB_COUNT`(둘 다 실측 정수)** · backlinks N = Phase 2.5-B 의 `BACKLINKS_N`(실측 정수 · 0 이면 0, 생략·"1-hop" 같은 서술 대체 ❌). **DEEP 이고 `VAULT_MODE` 가 `other` 가 아니면 `+ 그래프 확장(backlinks N)` 생략 ❌**(1.8.5). 생략은 QUICK(2.5-B 를 안 돌린 경우) 또는 Tier 1 `VAULT_MODE=other`(Phase 2.5 전체 생략)일 때만 `검색: <티어명> + 구조 문서(<D>/3 참조 · 허브 <k>)` 까지 허용.
 - **질문/스킬/에이전트 스폰 금지**: 직접 검색만 수행 — 예외 1 = 0-β 분해(`--decomp=sub` 시 헤드리스 haiku 1회, 도구 0·질문 0), 그 외 스폰 ❌
 - 상태 메시지 없이 바로 결과 출력 · Read 실패 시 다음 노트로
 - QUICK: 5줄 이내 + 출처 1-2개 / DEEP: 제한 없음 + 출처 3-5개
@@ -433,12 +459,26 @@ grep -rln --include="*.md" -F "[[${KEYWORD}" "${VAULT_PATH}" | head -10
 
 ```bash
 RCPT="$HOME/obsidian-ai-vault/.claude/scripts/km-search-receipt.py"
+GRAPH_ARGS=()
+if [ "${KM_MODE:-}" = DEEP ]; then
+  [ -n "${GRAPH_EXPANSION:-}" ] && GRAPH_ARGS+=(--graph-expansion "$GRAPH_EXPANSION")
+  [ -n "${BACKLINKS_N:-}" ] && GRAPH_ARGS+=(--backlinks "$BACKLINKS_N")
+fi
 if [ -f "$RCPT" ]; then
+  # 그래프 칸(1.8.5): 받는 helper 가 두 인자를 모르면 넘기지 않는다(모르는 인자 = argparse 오류로 영수증 자체가 깨짐).
+  if [ ${#GRAPH_ARGS[@]} -gt 0 ]; then
+    RCPT_HELP="$(python3 "$RCPT" --help 2>/dev/null)"
+    if ! { printf '%s\n' "$RCPT_HELP" | grep -q -- '--graph-expansion' && printf '%s\n' "$RCPT_HELP" | grep -q -- '--backlinks'; }; then
+      GRAPH_ARGS=()
+      echo "KM_RECEIPT_GRAPH_FIELDS=unsupported"
+    fi
+  fi
   python3 "$RCPT" --session-id "${CLAUDE_CODE_SESSION_ID:-${CODEX_COMPANION_SESSION_ID:-unknown}}" \
     --query "${QUERY}" --tiers-tried "mb:${MB_STATE:-skip},t1:${GRAPHRAG_STATE:-skip}" \
-    --top-hit "<상위 1건 source_note 경로 또는 no-hit>" --n-hits <Tier 1~4 히트 수 정수>
+    --top-hit "<상위 1건 source_note 경로 또는 no-hit>" --n-hits <Tier 1~4 히트 수 정수> "${GRAPH_ARGS[@]}"
 fi
 ```
+- 그래프 칸(1.8.5): `KM_MODE`(이번 판정 QUICK|DEEP) 가 DEEP 이면 Phase 2.5-B 가 찍은 `GRAPH_EXPANSION`(`done` · 못 돌렸으면 `skipped:<사유>`)·`BACKLINKS_N` 을 재할당해 `--graph-expansion`·`--backlinks` 로 넘긴다. helper `--help` 에 두 인자가 없으면 넘기지 않고 `KM_RECEIPT_GRAPH_FIELDS=unsupported` 1줄만 찍는다(영수증 기록은 그대로).
 - 영수증 = `~/.claude-state/km-search-receipts.jsonl` 1행(ts·session_id·bot·query·tiers_tried·top_hit·n_hits). no-hit 도 영수증이다(검색을 «했다»는 기록이지 «찾았다»는 기록이 아니다).
 - 스킬을 거치지 않고 curl 만 던진 검색은 영수증이 없다 — 그건 게이트가 의도한 대로 막는다.
 

@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.8.5 (2026-10-31) — km:search 규칙 원본 단계 · 메모리뱅크 3건 고정 · 깊음 모드 그래프 확장
+- 규칙 원본 축(구 Tier 1-R)을 Tier 0 블록(메모리뱅크 블록과 같은 Bash 호출)으로 옮김. 돌릴지 판정을 모델이 넘기는 `VAULT_MODE` 대신 `km_rules_route.py --auto` 가 직접 함(끔 스위치·서버 응답·결과 source_note 의 vault 실재) — `other` 확정 때만 건너뜀. 실측: 옛 판은 모델이 블록 자체를 안 돌린 회차가 15 중 11.
+- 순위: rg 축 길이 정규화(BM25 꼴) · 조사 떼기 = 남는 줄기 2자 이상일 때만 · 루트 AGENTS.md·CLAUDE.md 를 코퍼스에 늘 포함. 원본 우선 원칙(규칙·절차 질문이면 후보 원본 최소 1개 Read · 원본 = 현재 기준).
+- 끝 결정까지 읽기: 규칙 원본 후보마다 그 파일의 결정 표지(해제·대체·정정·철회) 줄 번호를 들여쓴 한 줄로 덧붙임 — 질문 낱말 겹침이 가장 큰 제목 절의 줄 범위 + 그 절 안 표지 줄 + 파일 마지막 표지 + «그 줄까지 읽고 날짜가 가장 늦은 결정 = 현재 기준». 실측 동기: 원본을 열고도 앞 «재개» 문단만 읽고 몇 줄 아래 «해제» 문단을 놓친 회차(9문항 중 1).
+- 노트 미리 찾기: 후보 원본 안 `[[노트]]`(+ 백틱 `이름.md` · vault 에 실재하는 백틱 슬러그)를 대본이 vaultPath 안 파일 이름(`rg --files` · 없으면 os.walk · 시한 20초)으로 미리 풀어 `↳ 가리키는 노트` 줄로 덧붙임 — 경로 · «규칙 원본» · «볼트에 없음» · 찾기 실패는 «노트 찾기 못 함(부재 아님)» · 늘 «레포 전체 훑기 ❌». 고른 절 안 링크 먼저, 파일 전체 ≤12 · «못 함» 줄 끝 = vault 한정 `rg --files --hidden -g '<이름>.md' '<vaultPath>'`. 실측 동기: 노트 1개를 찾으려 레포 루트에서 prune 없는 find·grep -r 로 문항 시한 초과(4칸 중 3칸). 두 판 번갈아 3회 × 켬·끔: 첫 시도 시한 4/6 → 0/6.
+- 영수증 절 vault-lookup = 시한 20초(`KM_VL_TIMEOUT`) — perl 로 감싸 프로세스 묶음째 끔 · 넘기면 `VL_HITS=timeout` + 기존 «VL_UNAVAILABLE=1 — 부재 단정 금지»(timeout = 부재 증거 아님). 실측 동기: 부하 때 vault-lookup 단독 183–221초.
+- Tier 1 끔 스위치(`~/.claude-state/km-search-graphrag-off` 있으면 Tier 1 건너뜀 · `GRAPHRAG_STATE=disabled` · 실패 상태로 셈 · tier4 안내 문구 · Codex 쪽 km-search SKILL 같은 스위치) — 그동안 설치 캐시에만 있던 로컬 손질을 원본에 들임.
+- 경로 줄 `${CLAUDE_PLUGIN_ROOT:-}` → `${CLAUDE_PLUGIN_ROOT}`(Claude Code 가 명령 본문의 `${CLAUDE_PLUGIN_ROOT}` 만 절대 경로로 바꿔 넣음 · `:-` 꼴은 그대로 남아 find 폴백으로 빠짐) — 규칙 원본 줄 · Tier 1-S `KM_CLI_Q` 줄 · 영수증 helper 줄.
+- 영수증 helper 는 플러그인에 싣지 않는다 — 착수 게이트(vault 훅)와 짝인 vault 사본 하나가 정본이고 그쪽이 보통 길(사본이 둘이면 서로 어긋난다). helper 가 구판(`--km-mode` 모름)이면 `tiers_tried` 끝에 `rcpt:repo-legacy` + `RECEIPT_FALLBACK=repo-legacy` 줄(`src` 는 그대로 — 착수 게이트가 `src=manual` 만 셈).
+- Tier 0(메모리뱅크): `--limit 3` 인데 6건이 나오던 문제 수리. memory-bank `search` 의 기본(both) 모드는 의미 검색 상위 N 과 글자 검색 상위 N 을 합친 뒤 자르지 않아 최대 2N 을 낸다. 이제 의미(`--vector --limit 2`)와 글자(`--text --limit 1`)를 따로 1번씩 부르고 `Lines A-B in <jsonl 경로>` 로 중복을 지워 합계 ≤3 으로 고정한다(겹치면 점수가 있는 의미 쪽을 남김). 라벨 `[mb:의미]`(% = 의미 유사도) · `[mb:글자]`(글자 그대로 일치 · 점수 없음). `MB_HITS` = 중복 제거 뒤 블록 수.
+- Tier 0: 종료 코드를 `grep` 이 아니라 `node` 에서 받는다(옛 블록은 파이프 끝 `grep -v` 의 종료 코드로 ok/error 를 갈랐다). 한쪽만 실패해도 `error`, 살아 있는 쪽 블록은 그대로 보인다. 걸러 낸 블록을 bash 출력에 찍는다(옛 블록은 상태 줄만 찍어 결과 블록이 모델에 닿지 않았다).
+- Phase 2.5-B(그래프 확장): backlinks 계수 명령과 정수 `BACKLINKS_N` 을 참조 파일(`search-references/phase-2.5-graph.txt`)에서 본문으로 옮김 — DEEP 이 참조 파일을 읽지 않아도 돈다. 계수 = 목록 자르기 전 전체 파일 수 · 0 도 0. 참조 파일엔 «본문으로 옮김» 1줄과 링크 추적 예산만 남김. 정상 QUICK 경로의 참조 Read = 0 은 그대로.
+- 끝 줄 형식: DEEP 이고 `VAULT_MODE` 가 `other` 가 아니면 `+ 그래프 확장(backlinks N)` 생략 금지. 생략은 QUICK(2.5-B 안 돌림)·`other` 만. 같은 규칙을 적어 둔 참조 파일(`search-references/modes-output.txt`)도 맞춤 · `tier2-cli.txt` 의 «2.5-B backlinks 호출 = 1단 ② 로 대체»에 «grep 계수는 그대로» 덧붙임.
+- 영수증: DEEP 이면 `--graph-expansion <done|skipped:사유>` · `--backlinks <N>` 을 넘긴다 — 단 helper `--help` 에 두 인자가 있을 때만(모르는 helper 에 넘기면 argparse 오류로 영수증이 깨진다). 없으면 `KM_RECEIPT_GRAPH_FIELDS=unsupported` 1줄.
+- Phase 0.4(구조 문서 축) 절을 Tier 1 성공 계약 뒤(Tier 1-S 앞)로 옮김 — 실행 순서 계약(Tier 1 curl 전 vault 접근 금지)과 문서 차례를 맞춤. 본문 그대로, 제목 단계만 `##`→`####`(Tier 1 아래로 들어가게).
+- 두 진입 파일(commands/search.md · .agent/skills/km-search/SKILL.md) 같은 뜻으로 수정.
+- 시험: `scripts/tests/test_km_rules_route.py`(규칙 원본 대본) · `test_search_tier0_mb.sh`(가짜 memory-bank CLI · 의미 2+글자 1 → 3 · 겹침 → 2 · CLI 없음 → absent · 오류 → error · 결과 없음 → 0 · `--limit` 무시 CLI → 3 · 같은 가짜로 옛 블록 → 6) · `test_search_graph_expansion.sh`(링크 있는 노트 → 독립 계수와 같음 · 고아 노트 → 0 · 영수증 새/옛/반쪽 helper · 절 차례). 두 셸 시험은 bash 와 zsh 에서 돌리고 CI 에 추가.
+- 매니페스트: .claude-plugin 1.8.4→1.8.5 · .codex-plugin 1.8.4→1.8.5(동시) · tier2 시험 버전 고정 2줄 1.8.5.
+
 ## 1.8.4 (2026-10-14)
 - 브라우저가 필요한 자리(Scrapling 으로는 안 열리지만 브라우저로는 누구나 볼 수 있는 공개 페이지 · SNS · 브라우저 조작)는 Playwright 대신 Aside(`aside exec` · WSL `aside.exe exec`)를 먼저 쓴다. 일반 페이지는 기존 순서(Scrapling → … → WebFetch) 그대로. Aside 가 없거나 실패하면 그 이유를 남기고 Playwright 등 기존 순서로 넘어간다. km-config `browser.provider`(브라우저가 필요할 때의 공급자) 기본 aside.
 

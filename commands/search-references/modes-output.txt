@@ -51,7 +51,7 @@
 - **읽기 전용**: 노트 생성/수정 금지
 - **hallucination 금지**: 반드시 실제 노트 내용 기반. 노트에 없는 내용은 "vault에 관련 자료가 없습니다" 명시 (Tier 1 에서는 `/api/note` 의 `body` 와 `source_note` 경로의 원문이 '실제 노트 내용'이다 — 둘 다 그 vault 노트에서 나온다. 로컬 원문 Read 는 경로가 실재할 때의 보강이지, Read 실패가 답변을 막는 게이트가 아니다)
 - **출처 필수**: 실제 읽은 노트 경로 표기
-- **사용 티어 명시 (형식 고정)**: 답변 마지막 줄은 정확히 이 형식으로 쓴다 — `검색: <티어명> + 구조 문서(<D>/3 참조 · 허브 <k>) + 그래프 확장(backlinks N)`. **D = Phase 0.4 의 `STRUCT_DOCS`, k = `ROUTE_HUB_COUNT`(둘 다 실측 정수)** · backlinks N = Phase 2.5-B backlink grep 결과 줄 수(실측 정수, 생략·"1-hop" 같은 서술 대체 ❌). 그래프 확장을 안 한 답변(QUICK 얕은 질의, 또는 Tier 1 `VAULT_MODE=other` 로 Phase 2.5 를 생략한 경우)은 `검색: <티어명> + 구조 문서(<D>/3 참조 · 허브 <k>)` 까지 허용.
+- **사용 티어 명시 (형식 고정)**: 답변 마지막 줄은 정확히 이 형식으로 쓴다 — `검색: <티어명> + 구조 문서(<D>/3 참조 · 허브 <k>) + 그래프 확장(backlinks N)`. **D = Phase 0.4 의 `STRUCT_DOCS`, k = `ROUTE_HUB_COUNT`(둘 다 실측 정수)** · backlinks N = Phase 2.5-B 의 `BACKLINKS_N`(실측 정수 · 0 이면 0, 생략·"1-hop" 같은 서술 대체 ❌). **DEEP 이고 `VAULT_MODE` 가 `other` 가 아니면 `+ 그래프 확장(backlinks N)` 생략 ❌**(1.8.5). 생략은 QUICK(2.5-B 를 안 돌린 경우) 또는 Tier 1 `VAULT_MODE=other`(Phase 2.5 전체 생략)일 때만 `검색: <티어명> + 구조 문서(<D>/3 참조 · 허브 <k>)` 까지 허용.
 - **질문/스킬/에이전트 스폰 금지**: 직접 검색만 수행 — 예외 1 = 0-β 분해(`--decomp=sub` 시 헤드리스 haiku 1회, 도구 0·질문 0), 그 외 스폰 ❌
 - 상태 메시지 없이 바로 결과 출력 · Read 실패 시 다음 노트로
 - QUICK: 5줄 이내 + 출처 1-2개 / DEEP: 제한 없음 + 출처 3-5개
