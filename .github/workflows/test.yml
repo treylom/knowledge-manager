@@ -22,14 +22,20 @@ jobs:
         run: bash scripts/tests/test_configure_vault_paths.sh
       - name: zsh for the search block contracts (Claude Code runs blocks in the user's shell)
         run: sudo apt-get update -qq && sudo apt-get install -y -qq zsh
-      - name: search Tier 0 memory-bank contract
-        run: bash scripts/tests/test_search_tier0_mb.sh
+      # verdict = sealed manifest outside the suites (cell ids + region hashes); the manifest sha256 is pinned in the
+      # repository variable KM_TEST_MANIFEST_SEAL (repo settings, not in the tree) — set it when cells.manifest is resealed.
+      - name: search Tier 0 memory-bank contract (sealed)
+        run: python3 -I -B scripts/tests/seal_cells.py check scripts/tests/test_search_tier0_mb.sh
         env:
           KM_TEST_REQUIRE_SHELLS: bash zsh
-      - name: search graph expansion contract
-        run: bash scripts/tests/test_search_graph_expansion.sh
+          KM_TEST_REQUIRE_SEAL: "1"
+          KM_TEST_MANIFEST_SEAL: ${{ vars.KM_TEST_MANIFEST_SEAL }}
+      - name: search graph expansion contract (sealed)
+        run: python3 -I -B scripts/tests/seal_cells.py check scripts/tests/test_search_graph_expansion.sh
         env:
           KM_TEST_REQUIRE_SHELLS: bash zsh
+          KM_TEST_REQUIRE_SEAL: "1"
+          KM_TEST_MANIFEST_SEAL: ${{ vars.KM_TEST_MANIFEST_SEAL }}
       - name: search rules route contract
         run: python3 -I -B scripts/tests/test_km_rules_route.py
       - name: km-tools pytest

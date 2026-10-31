@@ -327,21 +327,38 @@ top 1~2 노트에 대해 **backlink(그 노트를 가리키는 노트)** 와 **o
 # vault 는 실제 경로(cd -P)로 훑는다 — 심볼릭 링크 vault 를 grep -r 이 안 내려가 0 으로 세던 문제.
 # 줄바꿈 든 경로는 받지 않는다($(…) 가 끝 줄바꿈을 지워 옆 폴더가 vault 로 풀리고 grep -F 가 줄마다 패턴으로 나눔).
 # 훑기 = `command grep` — 하네스가 grep 을 셸 함수(무시 파일 존중 등)로 덮어도 실제 grep 으로 센다.
-GRAPH_EXPANSION=""; BACKLINKS_N=""; OUTLINKS_N=""; BL_RC=skip; OL_RC=skip; NOTE_FILE=""; IN_VAULT=no
+# 노트 = 마지막 칸까지 푼다(심볼릭 링크면 readlink 로 따라감 · 최대 8번) → 푼 실제 폴더가 vault 안일 때만 받는다.
+# 읽기 = 그 실제 폴더로 들어가(cd -P · 현재 폴더 = 확인한 그 폴더) pwd -P 재확인 뒤 perl O_NOFOLLOW 로 «한 번» 연 그 파일 바이트만
+#   (vault 밖 대상 = failed:no-note · 확인 뒤 바꿔치기 = 열기 실패 · 읽기 불가 = failed:unreadable-note · 그 밖 = failed:outlink-scan).
+GRAPH_EXPANSION=""; BACKLINKS_N=""; OUTLINKS_N=""; BL_RC=skip; OL_RC=skip; NT_RC=skip; NOTE_FILE=""; NOTE_REAL=""; IN_VAULT=no
 NL_IN_VAULT=$(printf '%s' "${VAULT_PATH}" | wc -l | tr -d ' '); NL_IN_NOTE=$(printf '%s' "${NOTE_PATH}" | wc -l | tr -d ' ')
 VAULT_REAL="$(CDPATH= cd -P -- "${VAULT_PATH:-/nonexistent-vault}" 2>/dev/null && pwd -P)"
 STEM="${NOTE_PATH##*/}"; STEM="${STEM%.md}"
 case "${NOTE_PATH}" in /*) NOTE_FILE="${NOTE_PATH}" ;; ?*) NOTE_FILE="${VAULT_REAL}/${NOTE_PATH}" ;; esac
-NOTE_DIR_REAL="$(CDPATH= cd -P -- "${NOTE_FILE%/*}/" 2>/dev/null && pwd -P)"
-[ -n "$VAULT_REAL" ] && [ -n "$NOTE_DIR_REAL" ] && case "${NOTE_DIR_REAL%/}/" in "${VAULT_REAL%/}"/*) IN_VAULT=yes ;; esac
+NOTE_REAL="${NOTE_FILE}"; NOTE_HOPS=0
+while [ -n "$NOTE_REAL" ] && [ -L "$NOTE_REAL" ] && [ "$NOTE_HOPS" -lt 8 ]; do
+  NOTE_LINK="$(readlink -- "$NOTE_REAL")"; NOTE_HOPS=$((NOTE_HOPS + 1))
+  case "$NOTE_LINK" in /*) NOTE_REAL="$NOTE_LINK" ;; ?*) NOTE_REAL="${NOTE_REAL%/*}/${NOTE_LINK}" ;; *) NOTE_REAL="" ;; esac
+done
+NOTE_BASE="${NOTE_REAL##*/}"
+NOTE_DIR_REAL="$(CDPATH= cd -P -- "${NOTE_REAL%/*}/" 2>/dev/null && pwd -P)"
+[ -n "$VAULT_REAL" ] && [ -n "$NOTE_DIR_REAL" ] && [ -n "$NOTE_BASE" ] && [ ! -L "$NOTE_REAL" ] && case "${NOTE_DIR_REAL%/}/" in "${VAULT_REAL%/}"/*) IN_VAULT=yes ;; esac
 if [ -z "${NOTE_PATH}" ]; then GRAPH_EXPANSION="skipped:no-top-note"
 elif [ -z "${VAULT_PATH}" ] || [ "$NL_IN_VAULT" != 0 ] || [ -z "$VAULT_REAL" ] || [ ! -r "$VAULT_REAL" ]; then GRAPH_EXPANSION="failed:no-vault"
-elif [ -z "$STEM" ] || [ "$NL_IN_NOTE" != 0 ] || [ "$IN_VAULT" != yes ] || [ ! -f "$NOTE_FILE" ]; then GRAPH_EXPANSION="failed:no-note"
-elif [ ! -r "$NOTE_FILE" ]; then GRAPH_EXPANSION="failed:unreadable-note"
+elif [ -z "$STEM" ] || [ "$NL_IN_NOTE" != 0 ] || [ "$IN_VAULT" != yes ] || [ ! -f "$NOTE_REAL" ]; then GRAPH_EXPANSION="failed:no-note"
+elif [ ! -r "$NOTE_REAL" ]; then GRAPH_EXPANSION="failed:unreadable-note"
 else
   BL_LIST="$(command grep -rl -D skip --include="*.md" -F "[[${STEM}" "${VAULT_REAL}")"; BL_RC=$?
-  OL_RAW="$(command grep -a -o '\[\[[^]|#]*' "${NOTE_FILE}")"; OL_RC=$?
+  NOTE_TXT="$(CDPATH= cd -P -- "$NOTE_DIR_REAL" 2>/dev/null || exit 3; case "$(pwd -P)/" in ("${VAULT_REAL%/}"/*) ;; (*) exit 3 ;; esac
+    command perl -MFcntl -e 'sysopen(my $f, $ARGV[0], O_RDONLY | O_NOFOLLOW | O_NONBLOCK) or exit($!{EACCES} ? 5 : 4); -f $f or exit 4; binmode $f; binmode STDOUT; local $/; my $b = <$f>; defined $b or exit 6; print $b' -- "./${NOTE_BASE}")"; NT_RC=$?
   if [ "$BL_RC" -gt 1 ]; then GRAPH_EXPANSION="failed:backlink-scan"
+  elif [ "$NT_RC" = 4 ]; then GRAPH_EXPANSION="failed:no-note"
+  elif [ "$NT_RC" = 5 ]; then GRAPH_EXPANSION="failed:unreadable-note"
+  elif [ "$NT_RC" != 0 ]; then GRAPH_EXPANSION="failed:outlink-scan"
+  else
+    OL_RAW="$(printf '%s\n' "$NOTE_TXT" | command grep -a -o '\[\[[^]|#]*')"; OL_RC=$?
+  fi
+  if [ -n "$GRAPH_EXPANSION" ]; then :
   elif [ "$OL_RC" -gt 1 ]; then GRAPH_EXPANSION="failed:outlink-scan"
   else
     # 계수 = 목록을 자르기(head) «전» 전체 수 · 0 도 그대로 0 으로 적는다
@@ -395,7 +412,8 @@ elif [ -f "$HOME/obsidian-ai-vault/.claude/scripts/km-search-receipt.py" ]; then
 fi
 MARKER_ARGS=(); RCPT_TAG=""
 [ -n "${KM_MODE:-}" ] && MARKER_ARGS+=(--km-mode "$KM_MODE")
-[ -n "${VAULT_MODE:-}" ] && MARKER_ARGS+=(--vault-mode "$VAULT_MODE")
+# vault_mode 미관측(Tier 1 실패 등) = `unknown` 으로 넘긴다 — 빼면 helper 가 DEEP 미완을 못 가린다(same|other|unknown 만 받음)
+[ -n "${KM_MODE:-}" ] && MARKER_ARGS+=(--vault-mode "${VAULT_MODE:-unknown}")
 [ -n "${KM_HITS:-}" ] && MARKER_ARGS+=(--km-hits "$KM_HITS")
 GRAPH_ARGS=()
 if [ "${KM_MODE:-}" = DEEP ]; then

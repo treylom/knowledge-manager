@@ -5,7 +5,9 @@
 # Pair in the same run: the pre-1.8.5 block (default both mode, --limit 3) on the same fake
 # must give 6 — that is the bug this block fixes.
 # Spec: CHANGELOG.md 1.8.5. Needs node (missing node = FAIL rc 1); runs each block under bash, and under zsh
-# when present. Population authority: recorded cell ids must equal expected_ids() exactly.
+# when present. Population + body authority = OUTSIDE this file: scripts/tests/cells.manifest (canonical cell
+# ids and the sha256 of every `# @cell` region of this file), judged by scripts/tests/seal_cells.py check <this file>.
+# This file only emits one `@@CELL<TAB>PASS|FAIL<TAB><id>` line per cell; it does not judge its own population.
 
 set -uo pipefail
 
@@ -15,9 +17,8 @@ cd "${REPO_ROOT}"
 
 PASS_COUNT=0
 FAIL_COUNT=0
-SEEN_IDS=""
-pass() { SEEN_IDS="${SEEN_IDS}${1}"$'\n'; echo "PASS ${1}${2:+ (${2})}"; PASS_COUNT=$(( PASS_COUNT + 1 )); }
-fail() { SEEN_IDS="${SEEN_IDS}${1}"$'\n'; echo "FAIL ${1} — ${2}" >&2; FAIL_COUNT=$(( FAIL_COUNT + 1 )); }
+pass() { printf '@@CELL\tPASS\t%s\n' "$1"; echo "PASS ${1}${2:+ (${2})}"; PASS_COUNT=$(( PASS_COUNT + 1 )); }
+fail() { printf '@@CELL\tFAIL\t%s\n' "$1"; echo "FAIL ${1} — ${2}" >&2; FAIL_COUNT=$(( FAIL_COUNT + 1 )); }
 
 # node is required: a missing runtime is a failed contract run, not a pass (no SKIP rc 0).
 if ! command -v node >/dev/null 2>&1; then
@@ -26,6 +27,7 @@ if ! command -v node >/dev/null 2>&1; then
   exit 1
 fi
 
+# @cell setup
 A="commands/search.md"
 B=".agent/skills/km-search/SKILL.md"
 FAKE="${SCRIPT_DIR}/fixtures/fake-memory-bank.js"
@@ -60,6 +62,7 @@ run_block() {
 state_of() { printf '%s\n' "$1" | sed -n 's/^MB_STATE=\([a-z]*\) mb_hits=\([0-9]*\)$/\1 \2/p' | tail -1; }
 count_of() { printf '%s\n' "$1" | grep -c -e "$2" || true; }
 
+# @cell helpers
 expect() {
   # expect <label> <output> <want "state hits"> [<want vec> <want txt>]
   local label="$1" out="$2" want="$3" got
@@ -80,24 +83,7 @@ for _req in ${KM_TEST_REQUIRE_SHELLS:-}; do
   case " ${SHELLS} " in *" ${_req} "*) ;; *) echo "FAIL required shell missing: ${_req} (KM_TEST_REQUIRE_SHELLS)" >&2; echo "PASS_COUNT=0 FAIL_COUNT=1"; exit 1 ;; esac
 done
 
-# Population authority: every cell records its fixed id; the run fails unless the recorded ids equal
-# this list exactly (same set, same count) — deleting or skipping a cell turns the run RED.
-expected_ids() {
-  local F SH tag c
-  for F in "$A" "$B"; do
-    echo "extract ${F}"
-    for SH in $SHELLS; do
-      tag="${F}@${SH}"
-      echo "s1-calls ${tag}"; echo "s1-score-only-on-vector ${tag}"; echo "s1-no-chatter ${tag}"
-      for c in s1-no-overlap s2-overlap s3-absent s4-error s4b-partial-error s4c-vector-error s6-cli-ignores-limit s5-empty; do
-        echo "${c} ${tag}"; echo "${c} ${tag} labels"
-      done
-    done
-  done
-  for SH in $SHELLS; do echo "old-block-both-limit3 @${SH}"; done
-  echo "copy-parity-tier0-mb"
-}
-
+# @cell scenarios
 for F in "$A" "$B"; do
   BLK="${WORK}/$(basename "$(dirname "$F")")-tier0.sh"
   extract_tier0_block "$F" > "$BLK"
@@ -140,6 +126,7 @@ for F in "$A" "$B"; do
   done
 done
 
+# @cell old-block-pair
 # Negative pair: the pre-1.8.5 block on the same fake gives 6 for --limit 3.
 OLD="${WORK}/old-tier0.sh"
 printf '%s\n' "$OLD_BLOCK" > "$OLD"
@@ -148,6 +135,7 @@ for SH in $SHELLS; do
   expect "old-block-both-limit3 @${SH}" "$OUT" "ok 6"
 done
 
+# @cell parity
 # Parity: the memory-bank part of Tier 0 is identical in both files — the bash block up to its
 # MB_STATE line, plus every prose line about [mb]/MB_/메모리뱅크. The rules-corpus axis (km_rules_route,
 # RULES: lines) lives in the same section of commands/search.md only (Claude Code entry), so it is
@@ -160,17 +148,7 @@ DIFF0="$(diff <(mb_part "$A") <(mb_part "$B"))"
 n_mb="$(mb_part "$A" | grep -c -e 'MB_STATE=' -e '\[mb:의미\]' || true)"
 [ -z "$DIFF0" ] && [ "$n_mb" -ge 3 ] && pass "copy-parity-tier0-mb" "A/B memory-bank part diff 0 · anchors ${n_mb}" || fail "copy-parity-tier0-mb" "${DIFF0:-anchors ${n_mb} < 3}"
 
-expected_ids | sort > "${WORK}/ids.want"
-printf '%s' "$SEEN_IDS" | sort > "${WORK}/ids.got"
-NWANT=$(grep -c . "${WORK}/ids.want"); NGOT=$(grep -c . "${WORK}/ids.got")
-if diff "${WORK}/ids.want" "${WORK}/ids.got" > "${WORK}/ids.diff"; then
-  echo "POPULATION exact: ${NGOT}/${NWANT} cell ids (shells=${SHELLS})"
-else
-  echo "FAIL population — recorded ${NGOT} ids, expected ${NWANT}:" >&2
-  sed 's/^/  /' "${WORK}/ids.diff" >&2
-  FAIL_COUNT=$(( FAIL_COUNT + 1 ))
-fi
-
+# @cell tail
 echo "----"
 echo "PASS_COUNT=${PASS_COUNT} FAIL_COUNT=${FAIL_COUNT}"
 [ "$FAIL_COUNT" -eq 0 ]

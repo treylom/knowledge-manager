@@ -1,0 +1,268 @@
+# km test cell manifest — canonical cell ids and region hashes. Do not edit by hand.
+# Regenerate: python3 scripts/tests/seal_cells.py seal · its sha256 is pinned outside the repo copy
+# (CI repository variable KM_TEST_MANIFEST_SEAL).
+tool b1357070d12e1091f909dcc0fa6a9f2b758fc0bff096c5cd64a2a70a1842f6aa
+body scripts/tests/test_search_tier0_mb.sh prelude 271d6d5bdaa01bcf1dd168b58d3093e25c948adbdeb76f8913adb011d9c19304
+body scripts/tests/test_search_tier0_mb.sh setup 910cf08b142d8de62621d460fe1bce5adeb66c8d533b584d98922fb27e4b2276
+body scripts/tests/test_search_tier0_mb.sh helpers 5ffe5ee142b9c6c7581bdfec1864ebe114e953123c25eb3f6e28756efb8c5c9f
+body scripts/tests/test_search_tier0_mb.sh scenarios bccbb20ce9fd7843eab3c3521c227c1a55a12736228c5cafbf537a77e53b64a1
+body scripts/tests/test_search_tier0_mb.sh old-block-pair 090e92a5e275767039da6ea85afd06213bc801b7243ab707fbbbdc0bdb97d088
+body scripts/tests/test_search_tier0_mb.sh parity 30574c6c3c9a5e83475dde7cdf84e7566fe10c43931c9d1c5a0cebc2f5698508
+body scripts/tests/test_search_tier0_mb.sh tail f91ce759f6ea917f1c19eb729c9b1c417267bd130af1bff4034a78846196c8db
+id scripts/tests/test_search_tier0_mb.sh extract commands/search.md
+id scripts/tests/test_search_tier0_mb.sh s1-no-overlap commands/search.md@bash
+id scripts/tests/test_search_tier0_mb.sh s1-no-overlap commands/search.md@bash labels
+id scripts/tests/test_search_tier0_mb.sh s1-calls commands/search.md@bash
+id scripts/tests/test_search_tier0_mb.sh s1-score-only-on-vector commands/search.md@bash
+id scripts/tests/test_search_tier0_mb.sh s1-no-chatter commands/search.md@bash
+id scripts/tests/test_search_tier0_mb.sh s2-overlap commands/search.md@bash
+id scripts/tests/test_search_tier0_mb.sh s2-overlap commands/search.md@bash labels
+id scripts/tests/test_search_tier0_mb.sh s3-absent commands/search.md@bash
+id scripts/tests/test_search_tier0_mb.sh s3-absent commands/search.md@bash labels
+id scripts/tests/test_search_tier0_mb.sh s4-error commands/search.md@bash
+id scripts/tests/test_search_tier0_mb.sh s4-error commands/search.md@bash labels
+id scripts/tests/test_search_tier0_mb.sh s4b-partial-error commands/search.md@bash
+id scripts/tests/test_search_tier0_mb.sh s4b-partial-error commands/search.md@bash labels
+id scripts/tests/test_search_tier0_mb.sh s4c-vector-error commands/search.md@bash
+id scripts/tests/test_search_tier0_mb.sh s4c-vector-error commands/search.md@bash labels
+id scripts/tests/test_search_tier0_mb.sh s6-cli-ignores-limit commands/search.md@bash
+id scripts/tests/test_search_tier0_mb.sh s6-cli-ignores-limit commands/search.md@bash labels
+id scripts/tests/test_search_tier0_mb.sh s5-empty commands/search.md@bash
+id scripts/tests/test_search_tier0_mb.sh s5-empty commands/search.md@bash labels
+id scripts/tests/test_search_tier0_mb.sh s1-no-overlap commands/search.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s1-no-overlap commands/search.md@zsh labels
+id scripts/tests/test_search_tier0_mb.sh s1-calls commands/search.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s1-score-only-on-vector commands/search.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s1-no-chatter commands/search.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s2-overlap commands/search.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s2-overlap commands/search.md@zsh labels
+id scripts/tests/test_search_tier0_mb.sh s3-absent commands/search.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s3-absent commands/search.md@zsh labels
+id scripts/tests/test_search_tier0_mb.sh s4-error commands/search.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s4-error commands/search.md@zsh labels
+id scripts/tests/test_search_tier0_mb.sh s4b-partial-error commands/search.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s4b-partial-error commands/search.md@zsh labels
+id scripts/tests/test_search_tier0_mb.sh s4c-vector-error commands/search.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s4c-vector-error commands/search.md@zsh labels
+id scripts/tests/test_search_tier0_mb.sh s6-cli-ignores-limit commands/search.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s6-cli-ignores-limit commands/search.md@zsh labels
+id scripts/tests/test_search_tier0_mb.sh s5-empty commands/search.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s5-empty commands/search.md@zsh labels
+id scripts/tests/test_search_tier0_mb.sh extract .agent/skills/km-search/SKILL.md
+id scripts/tests/test_search_tier0_mb.sh s1-no-overlap .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_tier0_mb.sh s1-no-overlap .agent/skills/km-search/SKILL.md@bash labels
+id scripts/tests/test_search_tier0_mb.sh s1-calls .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_tier0_mb.sh s1-score-only-on-vector .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_tier0_mb.sh s1-no-chatter .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_tier0_mb.sh s2-overlap .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_tier0_mb.sh s2-overlap .agent/skills/km-search/SKILL.md@bash labels
+id scripts/tests/test_search_tier0_mb.sh s3-absent .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_tier0_mb.sh s3-absent .agent/skills/km-search/SKILL.md@bash labels
+id scripts/tests/test_search_tier0_mb.sh s4-error .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_tier0_mb.sh s4-error .agent/skills/km-search/SKILL.md@bash labels
+id scripts/tests/test_search_tier0_mb.sh s4b-partial-error .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_tier0_mb.sh s4b-partial-error .agent/skills/km-search/SKILL.md@bash labels
+id scripts/tests/test_search_tier0_mb.sh s4c-vector-error .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_tier0_mb.sh s4c-vector-error .agent/skills/km-search/SKILL.md@bash labels
+id scripts/tests/test_search_tier0_mb.sh s6-cli-ignores-limit .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_tier0_mb.sh s6-cli-ignores-limit .agent/skills/km-search/SKILL.md@bash labels
+id scripts/tests/test_search_tier0_mb.sh s5-empty .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_tier0_mb.sh s5-empty .agent/skills/km-search/SKILL.md@bash labels
+id scripts/tests/test_search_tier0_mb.sh s1-no-overlap .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s1-no-overlap .agent/skills/km-search/SKILL.md@zsh labels
+id scripts/tests/test_search_tier0_mb.sh s1-calls .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s1-score-only-on-vector .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s1-no-chatter .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s2-overlap .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s2-overlap .agent/skills/km-search/SKILL.md@zsh labels
+id scripts/tests/test_search_tier0_mb.sh s3-absent .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s3-absent .agent/skills/km-search/SKILL.md@zsh labels
+id scripts/tests/test_search_tier0_mb.sh s4-error .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s4-error .agent/skills/km-search/SKILL.md@zsh labels
+id scripts/tests/test_search_tier0_mb.sh s4b-partial-error .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s4b-partial-error .agent/skills/km-search/SKILL.md@zsh labels
+id scripts/tests/test_search_tier0_mb.sh s4c-vector-error .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s4c-vector-error .agent/skills/km-search/SKILL.md@zsh labels
+id scripts/tests/test_search_tier0_mb.sh s6-cli-ignores-limit .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s6-cli-ignores-limit .agent/skills/km-search/SKILL.md@zsh labels
+id scripts/tests/test_search_tier0_mb.sh s5-empty .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_tier0_mb.sh s5-empty .agent/skills/km-search/SKILL.md@zsh labels
+id scripts/tests/test_search_tier0_mb.sh old-block-both-limit3 @bash
+id scripts/tests/test_search_tier0_mb.sh old-block-both-limit3 @zsh
+id scripts/tests/test_search_tier0_mb.sh copy-parity-tier0-mb
+body scripts/tests/test_search_graph_expansion.sh prelude 59450165c4215fe4b23c1a6b9270b7bfe05925c63efee9a23ba688b2aec7677b
+body scripts/tests/test_search_graph_expansion.sh helpers 09987fca2ab1fb4244228eae8602a3daf2b325fc225dbc54b568e0e8f93e23f0
+body scripts/tests/test_search_graph_expansion.sh graph-fixtures 8eb4ca5a59fab454e52acf2f112c58a3b433331ece3c74e36cf1cd226bd5f86c
+body scripts/tests/test_search_graph_expansion.sh graph-block 4e6b03c8838ad147f8f32c9088c3784666406c513d09a07788248c700956dce4
+body scripts/tests/test_search_graph_expansion.sh graph-final-component 9cccb9ba826b117ff5651dc26c9313a716a24bd4b0dc32066aaa3433e2b05ceb
+body scripts/tests/test_search_graph_expansion.sh graph-shadow-and-pairs c177536385d58eb27f71b15f567c7e42c7ba964caadcb05aa619fd97061d4254
+body scripts/tests/test_search_graph_expansion.sh receipt-block 0874a5b58dc757629f886a7874882f1b28105e49a5e294793e17f0393451f80a
+body scripts/tests/test_search_graph_expansion.sh order fe0e1918c50cd4b8d9e75297cba6f793a8bd4abe91d1c86964e596952c07580b
+body scripts/tests/test_search_graph_expansion.sh final-line 81b92cf120d71a72f39aae6bcedc04b98bae1056e9df5f93d9c20751d75e7848
+body scripts/tests/test_search_graph_expansion.sh tail f91ce759f6ea917f1c19eb729c9b1c417267bd130af1bff4034a78846196c8db
+id scripts/tests/test_search_graph_expansion.sh graph-block-present commands/search.md
+id scripts/tests/test_search_graph_expansion.sh graph-closed-values commands/search.md
+id scripts/tests/test_search_graph_expansion.sh graph-backlinks commands/search.md@bash note-a1
+id scripts/tests/test_search_graph_expansion.sh graph-outlinks commands/search.md@bash note-a1
+id scripts/tests/test_search_graph_expansion.sh graph-backlinks commands/search.md@bash orphan-zz
+id scripts/tests/test_search_graph_expansion.sh graph-outlinks commands/search.md@bash orphan-zz
+id scripts/tests/test_search_graph_expansion.sh graph-backlinks commands/search.md@bash hub-zz
+id scripts/tests/test_search_graph_expansion.sh graph-outlinks commands/search.md@bash hub-zz
+id scripts/tests/test_search_graph_expansion.sh graph-backlinks commands/search.md@bash leaf-1
+id scripts/tests/test_search_graph_expansion.sh graph-outlinks commands/search.md@bash leaf-1
+id scripts/tests/test_search_graph_expansion.sh graph-backlinks commands/search.md@bash -dash-zz
+id scripts/tests/test_search_graph_expansion.sh graph-outlinks commands/search.md@bash -dash-zz
+id scripts/tests/test_search_graph_expansion.sh graph-no-note commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-missing-note commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-missing-vault commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-unreadable-note commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-unreadable-subtree commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-symlinked-vault commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-absolute-in-vault commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-absolute-outside-vault commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-dotdot-outside-vault commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-cwd-decoy commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-newline-note commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-newline-vault-sibling commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-final-regular-inside commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-final-symlink-outside commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-final-symlink-outside-abs commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-dir-symlink-outside commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-final-symlink-loop commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-final-symlink-inside commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-swap-after-check commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-outlink-scan-failed commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-backlinks commands/search.md@zsh note-a1
+id scripts/tests/test_search_graph_expansion.sh graph-outlinks commands/search.md@zsh note-a1
+id scripts/tests/test_search_graph_expansion.sh graph-backlinks commands/search.md@zsh orphan-zz
+id scripts/tests/test_search_graph_expansion.sh graph-outlinks commands/search.md@zsh orphan-zz
+id scripts/tests/test_search_graph_expansion.sh graph-backlinks commands/search.md@zsh hub-zz
+id scripts/tests/test_search_graph_expansion.sh graph-outlinks commands/search.md@zsh hub-zz
+id scripts/tests/test_search_graph_expansion.sh graph-backlinks commands/search.md@zsh leaf-1
+id scripts/tests/test_search_graph_expansion.sh graph-outlinks commands/search.md@zsh leaf-1
+id scripts/tests/test_search_graph_expansion.sh graph-backlinks commands/search.md@zsh -dash-zz
+id scripts/tests/test_search_graph_expansion.sh graph-outlinks commands/search.md@zsh -dash-zz
+id scripts/tests/test_search_graph_expansion.sh graph-no-note commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-missing-note commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-missing-vault commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-unreadable-note commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-unreadable-subtree commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-symlinked-vault commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-absolute-in-vault commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-absolute-outside-vault commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-dotdot-outside-vault commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-cwd-decoy commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-newline-note commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-newline-vault-sibling commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-final-regular-inside commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-final-symlink-outside commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-final-symlink-outside-abs commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-dir-symlink-outside commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-final-symlink-loop commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-final-symlink-inside commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-swap-after-check commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-outlink-scan-failed commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-block-present .agent/skills/km-search/SKILL.md
+id scripts/tests/test_search_graph_expansion.sh graph-closed-values .agent/skills/km-search/SKILL.md
+id scripts/tests/test_search_graph_expansion.sh graph-backlinks .agent/skills/km-search/SKILL.md@bash note-a1
+id scripts/tests/test_search_graph_expansion.sh graph-outlinks .agent/skills/km-search/SKILL.md@bash note-a1
+id scripts/tests/test_search_graph_expansion.sh graph-backlinks .agent/skills/km-search/SKILL.md@bash orphan-zz
+id scripts/tests/test_search_graph_expansion.sh graph-outlinks .agent/skills/km-search/SKILL.md@bash orphan-zz
+id scripts/tests/test_search_graph_expansion.sh graph-backlinks .agent/skills/km-search/SKILL.md@bash hub-zz
+id scripts/tests/test_search_graph_expansion.sh graph-outlinks .agent/skills/km-search/SKILL.md@bash hub-zz
+id scripts/tests/test_search_graph_expansion.sh graph-backlinks .agent/skills/km-search/SKILL.md@bash leaf-1
+id scripts/tests/test_search_graph_expansion.sh graph-outlinks .agent/skills/km-search/SKILL.md@bash leaf-1
+id scripts/tests/test_search_graph_expansion.sh graph-backlinks .agent/skills/km-search/SKILL.md@bash -dash-zz
+id scripts/tests/test_search_graph_expansion.sh graph-outlinks .agent/skills/km-search/SKILL.md@bash -dash-zz
+id scripts/tests/test_search_graph_expansion.sh graph-no-note .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-missing-note .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-missing-vault .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-unreadable-note .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-unreadable-subtree .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-symlinked-vault .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-absolute-in-vault .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-absolute-outside-vault .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-dotdot-outside-vault .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-cwd-decoy .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-newline-note .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-newline-vault-sibling .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-final-regular-inside .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-final-symlink-outside .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-final-symlink-outside-abs .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-dir-symlink-outside .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-final-symlink-loop .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-final-symlink-inside .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-swap-after-check .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-outlink-scan-failed .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh graph-backlinks .agent/skills/km-search/SKILL.md@zsh note-a1
+id scripts/tests/test_search_graph_expansion.sh graph-outlinks .agent/skills/km-search/SKILL.md@zsh note-a1
+id scripts/tests/test_search_graph_expansion.sh graph-backlinks .agent/skills/km-search/SKILL.md@zsh orphan-zz
+id scripts/tests/test_search_graph_expansion.sh graph-outlinks .agent/skills/km-search/SKILL.md@zsh orphan-zz
+id scripts/tests/test_search_graph_expansion.sh graph-backlinks .agent/skills/km-search/SKILL.md@zsh hub-zz
+id scripts/tests/test_search_graph_expansion.sh graph-outlinks .agent/skills/km-search/SKILL.md@zsh hub-zz
+id scripts/tests/test_search_graph_expansion.sh graph-backlinks .agent/skills/km-search/SKILL.md@zsh leaf-1
+id scripts/tests/test_search_graph_expansion.sh graph-outlinks .agent/skills/km-search/SKILL.md@zsh leaf-1
+id scripts/tests/test_search_graph_expansion.sh graph-backlinks .agent/skills/km-search/SKILL.md@zsh -dash-zz
+id scripts/tests/test_search_graph_expansion.sh graph-outlinks .agent/skills/km-search/SKILL.md@zsh -dash-zz
+id scripts/tests/test_search_graph_expansion.sh graph-no-note .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-missing-note .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-missing-vault .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-unreadable-note .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-unreadable-subtree .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-symlinked-vault .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-absolute-in-vault .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-absolute-outside-vault .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-dotdot-outside-vault .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-cwd-decoy .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-newline-note .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-newline-vault-sibling .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-final-regular-inside .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-final-symlink-outside .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-final-symlink-outside-abs .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-dir-symlink-outside .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-final-symlink-loop .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-final-symlink-inside .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-swap-after-check .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-outlink-scan-failed .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh graph-grep-function-shadow commands/search.md
+id scripts/tests/test_search_graph_expansion.sh graph-grep-function-shadow .agent/skills/km-search/SKILL.md
+id scripts/tests/test_search_graph_expansion.sh graph-pair-is-a-pair
+id scripts/tests/test_search_graph_expansion.sh copy-parity-phase25b
+id scripts/tests/test_search_graph_expansion.sh reference-points-to-body
+id scripts/tests/test_search_graph_expansion.sh receipt-new-helper-deep commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh receipt-new-helper-failed commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh receipt-old-helper-deep commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh receipt-half-helper-deep commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh receipt-quick commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh receipt-vault-unobserved commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh receipt-vault-same commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh receipt-new-helper-deep commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh receipt-new-helper-failed commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh receipt-old-helper-deep commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh receipt-half-helper-deep commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh receipt-quick commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh receipt-vault-unobserved commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh receipt-vault-same commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh receipt-new-helper-deep .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh receipt-new-helper-failed .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh receipt-old-helper-deep .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh receipt-half-helper-deep .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh receipt-quick .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh receipt-vault-unobserved .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh receipt-vault-same .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh receipt-new-helper-deep .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh receipt-new-helper-failed .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh receipt-old-helper-deep .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh receipt-half-helper-deep .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh receipt-quick .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh receipt-vault-unobserved .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh receipt-vault-same .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh receipt-pair-old-helper-direct
+id scripts/tests/test_search_graph_expansion.sh order commands/search.md
+id scripts/tests/test_search_graph_expansion.sh order .agent/skills/km-search/SKILL.md
+id scripts/tests/test_search_graph_expansion.sh final-line-rule commands/search.md
+id scripts/tests/test_search_graph_expansion.sh final-line-old-wording-gone commands/search.md
+id scripts/tests/test_search_graph_expansion.sh final-line-rule .agent/skills/km-search/SKILL.md
+id scripts/tests/test_search_graph_expansion.sh final-line-old-wording-gone .agent/skills/km-search/SKILL.md
+id scripts/tests/test_search_graph_expansion.sh final-line-rule commands/search-references/modes-output.txt
+id scripts/tests/test_search_graph_expansion.sh final-line-old-wording-gone commands/search-references/modes-output.txt
