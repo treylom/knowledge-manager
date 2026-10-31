@@ -227,7 +227,7 @@ make_receipt_block() {
 }
 run_receipt() {
   # run_receipt <shell> <block> <helper> <km_mode> [<graph state> <backlinks>] → stdout; argv lands in $WORK/argv.txt; rc kept in $WORK/rc
-  local sh="$1" blk="$2" helper="$3" mode="$4" ge="${5:-done}" bn="${6-4}" root="${WORK}/plugroot" home="${WORK}/rhome"
+  local sh="$1" blk="$2" helper="$3" mode="$4" ge="${5-done}" bn="${6-4}" root="${WORK}/plugroot" home="${WORK}/rhome"
   rm -rf "$root" "$home" "${WORK}/argv.txt"
   mkdir -p "${root}/scripts" "$home"
   cp "$helper" "${root}/scripts/km-search-receipt.py"
@@ -262,6 +262,9 @@ for F in "$A" "$B"; do
     # R1 shape: VAULT_MODE never observed (Tier 1 failed) → the helper is told «unknown», with DEEP, next to the graph state
     RCPT_VM="" run_receipt "$SH" "$RB" "${FIX}/fake-receipt-new.py" DEEP failed:no-note "" > /dev/null
     if [ "$(cat "${WORK}/rc")" = 0 ] && has_pair --vault-mode unknown && has_pair --km-mode DEEP && has_pair --graph-expansion failed:no-note && [ "$(grep -cx -- '--vault-mode' "${WORK}/argv.txt")" = 1 ]; then pass "receipt-vault-unobserved ${tag}" "--vault-mode unknown once"; else fail "receipt-vault-unobserved ${tag}" "argv=$(tr '\n' ' ' < "${WORK}/argv.txt" 2>/dev/null)"; fi
+    # DEEP with no graph result (block not run): mode and vault still reach the helper, no graph args → helper records «미완»
+    RCPT_VM="" run_receipt "$SH" "$RB" "${FIX}/fake-receipt-new.py" DEEP "" "" > /dev/null
+    if [ "$(cat "${WORK}/rc")" = 0 ] && has_pair --km-mode DEEP && has_pair --vault-mode unknown && ! grep -q -- '--graph-expansion\|--backlinks' "${WORK}/argv.txt"; then pass "receipt-deep-no-graph ${tag}" "mode+vault passed, no graph args"; else fail "receipt-deep-no-graph ${tag}" "argv=$(tr '\n' ' ' < "${WORK}/argv.txt" 2>/dev/null)"; fi
     RCPT_VM=same run_receipt "$SH" "$RB" "${FIX}/fake-receipt-new.py" DEEP > /dev/null
     if [ "$(cat "${WORK}/rc")" = 0 ] && has_pair --vault-mode same && has_pair --km-mode DEEP && [ "$(grep -cx -- '--vault-mode' "${WORK}/argv.txt")" = 1 ]; then pass "receipt-vault-same ${tag}" "observed value passed once"; else fail "receipt-vault-same ${tag}" "argv=$(tr '\n' ' ' < "${WORK}/argv.txt" 2>/dev/null)"; fi
   done

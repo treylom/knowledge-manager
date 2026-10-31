@@ -500,9 +500,11 @@ grep -rln --include="*.md" -F "[[${KEYWORD}" "${VAULT_PATH}" | head -10
 ```bash
 RCPT="$HOME/obsidian-ai-vault/.claude/scripts/km-search-receipt.py"
 GRAPH_ARGS=()
-if [ "${KM_MODE:-}" = DEEP ] && [ -n "${GRAPH_EXPANSION:-}" ]; then
-  # 그래프 칸은 모드·vault 판정과 한 묶음으로 넘긴다(helper 가 DEEP·vault 와 교차 검증 · 미관측 vault = unknown)
-  GRAPH_ARGS+=(--km-mode DEEP --vault-mode "${VAULT_MODE:-unknown}" --graph-expansion "$GRAPH_EXPANSION")
+if [ "${KM_MODE:-}" = DEEP ]; then
+  # DEEP 이면 모드·vault 판정을 늘 넘기고 그래프 칸은 그 묶음에 붙인다(helper 가 교차 검증 · 미관측 vault = unknown ·
+  # 그래프 칸이 없으면 helper 가 «미완» 으로 적는다)
+  GRAPH_ARGS+=(--km-mode DEEP --vault-mode "${VAULT_MODE:-unknown}")
+  [ -n "${GRAPH_EXPANSION:-}" ] && GRAPH_ARGS+=(--graph-expansion "$GRAPH_EXPANSION")
   [ -n "${BACKLINKS_N:-}" ] && GRAPH_ARGS+=(--backlinks "$BACKLINKS_N")
 fi
 if [ -f "$RCPT" ]; then
@@ -519,7 +521,7 @@ if [ -f "$RCPT" ]; then
     --top-hit "<상위 1건 source_note 경로 또는 no-hit>" --n-hits <Tier 1~4 히트 수 정수> "${GRAPH_ARGS[@]}"
 fi
 ```
-- 그래프 칸(1.8.5): `KM_MODE`(이번 판정 QUICK|DEEP) 가 DEEP 이면 Phase 2.5-B 가 찍은 `GRAPH_EXPANSION`(`done` · 못 돌렸으면 `skipped:<사유>` · 오류면 `failed:<사유>` — 이때 `BACKLINKS_N` 은 빈 값이라 `--backlinks` 를 넘기지 않는다)·`BACKLINKS_N` 을 재할당해 `--km-mode DEEP`·`--vault-mode <VAULT_MODE, 미관측 = unknown>`·`--graph-expansion`·`--backlinks` 로 한 묶음으로 넘긴다. helper `--help` 에 네 인자가 다 있지 않으면 넘기지 않고 `KM_RECEIPT_GRAPH_FIELDS=unsupported` 1줄만 찍는다(영수증 기록은 그대로).
+- 그래프 칸(1.8.5): `KM_MODE`(이번 판정 QUICK|DEEP) 가 DEEP 이면 Phase 2.5-B 가 찍은 `GRAPH_EXPANSION`(`done` · 못 돌렸으면 `skipped:<사유>` · 오류면 `failed:<사유>` — 이때 `BACKLINKS_N` 은 빈 값이라 `--backlinks` 를 넘기지 않는다)·`BACKLINKS_N` 을 재할당해 `--km-mode DEEP`·`--vault-mode <VAULT_MODE, 미관측 = unknown>`·`--graph-expansion`·`--backlinks` 로 한 묶음으로 넘긴다(그래프 칸이 비어도 DEEP 이면 앞의 두 인자는 넘김 → helper 가 «미완» 기록). helper `--help` 에 네 인자가 다 있지 않으면 넘기지 않고 `KM_RECEIPT_GRAPH_FIELDS=unsupported` 1줄만 찍는다(영수증 기록은 그대로).
 - 영수증 = `~/.claude-state/km-search-receipts.jsonl` 1행(ts·session_id·bot·query·tiers_tried·top_hit·n_hits). no-hit 도 영수증이다(검색을 «했다»는 기록이지 «찾았다»는 기록이 아니다).
 - 스킬을 거치지 않고 curl 만 던진 검색은 영수증이 없다 — 그건 게이트가 의도한 대로 막는다.
 

@@ -96,7 +96,7 @@ body scripts/tests/test_search_graph_expansion.sh graph-fixtures c2b52004d004d56
 body scripts/tests/test_search_graph_expansion.sh graph-block 8cc119c6910e12d141c2faf511e4b679077c116b218bd29fabd3c5f32d4b225e
 body scripts/tests/test_search_graph_expansion.sh graph-final-component 5802dc419f9eadc7abd37bde7b257e9cdbef9ddf977173a2dfc22b21062cf183
 body scripts/tests/test_search_graph_expansion.sh graph-shadow-and-pairs c177536385d58eb27f71b15f567c7e42c7ba964caadcb05aa619fd97061d4254
-body scripts/tests/test_search_graph_expansion.sh receipt-block 0874a5b58dc757629f886a7874882f1b28105e49a5e294793e17f0393451f80a
+body scripts/tests/test_search_graph_expansion.sh receipt-block 85d1a80fdbf25f3a3caf853d1b89e3f4f23c688ef5068205035dba2ff0a8a993
 body scripts/tests/test_search_graph_expansion.sh order fe0e1918c50cd4b8d9e75297cba6f793a8bd4abe91d1c86964e596952c07580b
 body scripts/tests/test_search_graph_expansion.sh final-line 81b92cf120d71a72f39aae6bcedc04b98bae1056e9df5f93d9c20751d75e7848
 body scripts/tests/test_search_graph_expansion.sh tail f91ce759f6ea917f1c19eb729c9b1c417267bd130af1bff4034a78846196c8db
@@ -239,6 +239,7 @@ id scripts/tests/test_search_graph_expansion.sh receipt-old-helper-deep commands
 id scripts/tests/test_search_graph_expansion.sh receipt-half-helper-deep commands/search.md@bash
 id scripts/tests/test_search_graph_expansion.sh receipt-quick commands/search.md@bash
 id scripts/tests/test_search_graph_expansion.sh receipt-vault-unobserved commands/search.md@bash
+id scripts/tests/test_search_graph_expansion.sh receipt-deep-no-graph commands/search.md@bash
 id scripts/tests/test_search_graph_expansion.sh receipt-vault-same commands/search.md@bash
 id scripts/tests/test_search_graph_expansion.sh receipt-new-helper-deep commands/search.md@zsh
 id scripts/tests/test_search_graph_expansion.sh receipt-new-helper-failed commands/search.md@zsh
@@ -246,6 +247,7 @@ id scripts/tests/test_search_graph_expansion.sh receipt-old-helper-deep commands
 id scripts/tests/test_search_graph_expansion.sh receipt-half-helper-deep commands/search.md@zsh
 id scripts/tests/test_search_graph_expansion.sh receipt-quick commands/search.md@zsh
 id scripts/tests/test_search_graph_expansion.sh receipt-vault-unobserved commands/search.md@zsh
+id scripts/tests/test_search_graph_expansion.sh receipt-deep-no-graph commands/search.md@zsh
 id scripts/tests/test_search_graph_expansion.sh receipt-vault-same commands/search.md@zsh
 id scripts/tests/test_search_graph_expansion.sh receipt-new-helper-deep .agent/skills/km-search/SKILL.md@bash
 id scripts/tests/test_search_graph_expansion.sh receipt-new-helper-failed .agent/skills/km-search/SKILL.md@bash
@@ -253,6 +255,7 @@ id scripts/tests/test_search_graph_expansion.sh receipt-old-helper-deep .agent/s
 id scripts/tests/test_search_graph_expansion.sh receipt-half-helper-deep .agent/skills/km-search/SKILL.md@bash
 id scripts/tests/test_search_graph_expansion.sh receipt-quick .agent/skills/km-search/SKILL.md@bash
 id scripts/tests/test_search_graph_expansion.sh receipt-vault-unobserved .agent/skills/km-search/SKILL.md@bash
+id scripts/tests/test_search_graph_expansion.sh receipt-deep-no-graph .agent/skills/km-search/SKILL.md@bash
 id scripts/tests/test_search_graph_expansion.sh receipt-vault-same .agent/skills/km-search/SKILL.md@bash
 id scripts/tests/test_search_graph_expansion.sh receipt-new-helper-deep .agent/skills/km-search/SKILL.md@zsh
 id scripts/tests/test_search_graph_expansion.sh receipt-new-helper-failed .agent/skills/km-search/SKILL.md@zsh
@@ -260,6 +263,7 @@ id scripts/tests/test_search_graph_expansion.sh receipt-old-helper-deep .agent/s
 id scripts/tests/test_search_graph_expansion.sh receipt-half-helper-deep .agent/skills/km-search/SKILL.md@zsh
 id scripts/tests/test_search_graph_expansion.sh receipt-quick .agent/skills/km-search/SKILL.md@zsh
 id scripts/tests/test_search_graph_expansion.sh receipt-vault-unobserved .agent/skills/km-search/SKILL.md@zsh
+id scripts/tests/test_search_graph_expansion.sh receipt-deep-no-graph .agent/skills/km-search/SKILL.md@zsh
 id scripts/tests/test_search_graph_expansion.sh receipt-vault-same .agent/skills/km-search/SKILL.md@zsh
 id scripts/tests/test_search_graph_expansion.sh receipt-pair-old-helper-direct
 id scripts/tests/test_search_graph_expansion.sh order commands/search.md
