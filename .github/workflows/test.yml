@@ -38,6 +38,10 @@ jobs:
           KM_TEST_MANIFEST_SEAL: ${{ vars.KM_TEST_MANIFEST_SEAL }}
       - name: browser auto-detect contract (ego lite → Aside → fallback)
         run: python3 -I -B scripts/tests/test_km_browser_detect.py
+      - name: note fragment boundary (2,500-char budget keeps a link that ends one char before it)
+        run: python3 -I -B scripts/tests/test_km_note_fragment_boundary.py
+      - name: same-vault note read stops safely where symlink-safe open is missing (Windows Python)
+        run: python3 -I -B scripts/tests/test_km_note_guard_platform.py
       - name: search rules route contract
         run: python3 -I -B scripts/tests/test_km_rules_route.py
       - name: km-tools pytest
