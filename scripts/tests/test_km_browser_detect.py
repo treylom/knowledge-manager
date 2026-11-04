@@ -254,6 +254,45 @@ class DocsWiring(unittest.TestCase):
         self.assertNotIn("### Playwright 설치 (필수)", s)
         self.assertIn("Playwright 는 설치하지 않아도 돼요", s)
 
+    def test_ego_user_control_is_not_a_failover(self):
+        # a permission prompt hands the ego space to the user: say what to click, resume the same space
+        for rel, word in (("commands/knowledge-manager.md", "다음 칸으로 넘어가지 않는다"),
+                          ("skills/km-browser-abstraction.md", "다음 칸으로 넘어가지 않는다"),
+                          (".agent/skills/km-browser-abstraction/SKILL.md", "do not move to the next slot")):
+            s = self.read(rel)
+            self.assertIn(word, s, rel)
+            self.assertIn("takeOverTaskSpace", s, rel)
+            self.assertIn("Return to agent", s, rel)
+            self.assertIn("Need your action", s, rel)
+            # where to click to watch the agent's space (the hint line, not the taskSpace("km read") code)
+            self.assertTrue("‘km read’ 칸" in s or "‘km read’ space" in s, rel)
+
+    def test_every_browser_failover_line_carries_the_user_control_exception(self):
+        bad = []
+        for top in ("commands", "skills", "agents", ".agent"):
+            for dirpath, _, files in os.walk(os.path.join(self.ROOT, top)):
+                for fn in files:
+                    if not fn.endswith(".md"):
+                        continue
+                    p = os.path.join(dirpath, fn)
+                    lines = open(p, encoding="utf-8").read().splitlines()
+                    for i, ln in enumerate(lines):
+                        if "실패 이유를 남기고 다음 순위로 넘어간다" in ln:
+                            nxt = lines[i + 1] if i + 1 < len(lines) else ""
+                            if "사용자 차례" not in nxt:
+                                bad.append(f"{os.path.relpath(p, self.ROOT)}:{i + 1}")
+        self.assertEqual(bad, [])
+        # positive pair: the lines really exist (4 in this plugin)
+        n = sum(open(os.path.join(self.ROOT, r), encoding="utf-8").read().count("실패 이유를 남기고 다음 순위로 넘어간다")
+                for r in ("agents/knowledge-manager.md", "skills/km-content-extraction.md", "skills/stealth-browsing.md"))
+        self.assertEqual(n, 4)
+
+    def test_never_allow_on_users_behalf(self):
+        for rel, word in (("commands/knowledge-manager.md", "‘허용’하지 않는다"),
+                          ("skills/km-browser-abstraction.md", "‘허용’하지 않는다"),
+                          (".agent/skills/km-browser-abstraction/SKILL.md", "Never click ‘Allow’")):
+            self.assertIn(word, self.read(rel), rel)
+
     def test_new_configs_default_auto(self):
         cfg = json.loads(self.read("km-config.example.json"))
         self.assertEqual(cfg["browser"]["provider"], "auto")

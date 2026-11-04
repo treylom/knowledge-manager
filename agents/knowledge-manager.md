@@ -459,6 +459,7 @@ python3 scripts/scrapling-crawl.py fetch "https://example.com/article" --mode st
 # provider=fallback → 4순위(Playwright CLI)로.
 # 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 어느 브라우저로도 열지 않는다.
 # 실패하면: 실패 이유를 남기고 다음 순위로 넘어간다.
+# 단, ego lite 가 사용자 차례로 멈추면(권한 창 등 · 오류에 permission prompt / user now controls) 넘어가지 않는다 — 자동 탐색 블록의 예외대로 누를 곳을 안내하고 같은 칸에서 이어 간다.
 
 # 4순위 Fallback: Playwright CLI (스크린샷 필요 시)
 playwright-cli open "https://threads.net/@user/post/abc123"
@@ -559,7 +560,7 @@ mcp__notebooklm__ask_question({
 
 ### Playwright 자동화 (노트북 생성 시)
 
-(1.8.6) 브라우저 조작은 브라우저 자동 탐색 결과(ego lite → Aside) 먼저 · playwright 는 자동 탐색 브라우저가 없거나 실패해 그 이유를 남긴 뒤
+(1.8.6) 브라우저 조작은 브라우저 자동 탐색 결과(ego lite → Aside) 먼저 · playwright 는 자동 탐색 브라우저가 없거나 실패해 그 이유를 남긴 뒤(ego lite 가 사용자 차례로 멈춘 것은 실패가 아님 — 자동 탐색 블록의 예외)
 
 **사전 요구사항**: 최초 1회 수동 로그인 (Chrome 프로필에 세션 저장)
 

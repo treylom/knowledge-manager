@@ -32,7 +32,7 @@ if [ -f "$KM_BD" ]; then python3 "$KM_BD" --config "./km-config.json" --config "
 - km-config.json 의 `browser.provider` 는 대본이 `--config` 로 직접 읽는다(없거나 `auto`·`playwright` 면 자동 순서). `ego`·`aside` 를 적어 둔 경우에도 그 도구가 없으면 자동 순서로 넘어간다.
 - 이 문서를 Read 로 읽어 `${CLAUDE_PLUGIN_ROOT}` 가 글자 그대로 남아 있으면, 첫 줄의 그 자리를 «이 문서가 든 플러그인 폴더»(이 파일 경로에서 `commands/`·`skills/` 앞까지)로 바꿔 친다.
 - 출력 = JSON 한 줄. `provider` = `ego` | `aside` | `fallback` | (명시한 `hyperbrowser`·`antigravity`) · `bin` = 실행 파일 절대 경로.
-- **`provider=ego`** → ego lite 로 연다. 명령 이름 자리에 출력된 `bin` 절대 경로를 그대로 쓴다(사용자 PATH 에 그 폴더가 없어도 돈다). ego lite 앱이 꺼져 있어도 이 명령이 앱 창을 띄운다(맥 실측 · 다른 OS 는 확인 전).
+- **`provider=ego`** → ego lite 로 연다. 명령 이름 자리에 출력된 `bin` 절대 경로를 그대로 쓴다(사용자 PATH 에 그 폴더가 없어도 돈다). ego lite 앱이 꺼져 있어도 이 명령이 앱 창을 띄운다(맥 실측 · 다른 OS 는 확인 전). ego lite 는 이 작업을 별도 작업 칸(Space)에서 하므로, 이 대화에서 처음 열 때 사용자에게 한 줄 알린다: «ego lite 창 오른쪽 위 숫자 버튼을 누르고 ‘km read’ 칸을 누르면 제가 읽는 화면을 볼 수 있어요.»
   ```bash
   "<bin>" nodejs -e '
   const task = await taskSpace("km read");
@@ -45,6 +45,7 @@ if [ -f "$KM_BD" ]; then python3 "$KM_BD" --config "./km-config.json" --config "
 - **`provider=aside`** → `"<bin>" exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."`
 - **`provider=fallback`** → 기존 순서 그대로(Playwright CLI → Playwright MCP → WebFetch).
 - 고른 브라우저가 실행 중 실패하면 실패 이유를 한 줄 남기고 다음 칸(ego → aside → fallback)으로 넘어간다.
+- **단, ego lite 가 «사용자 차례»로 멈추면 다음 칸으로 넘어가지 않는다** — 오류에 `permission prompt`·`user now controls`·`takeOverTaskSpace` 가 보이면(사이트의 알림·위치 권한 창, 기기 선택 창 등) 실패가 아니다. 사용자에게 이렇게 안내하고 멈춘다: «ego lite 창 오른쪽 위 숫자 버튼을 누르고 → ‘Need your action’ 표시가 붙은 칸을 눌러 → 뜬 창에서 ‘차단’(또는 필요한 처리)을 누른 뒤 → 아래 ‘Return to agent’ 를 누르고, 여기에 ‘처리했어’라고 말해 주세요.» 사용자가 처리했다고 하면 같은 작업 공간을 `const task = await takeOverTaskSpace(<id>)` 로 다시 잡아 이어 읽는다(`<id>` = 오류·`listTaskSpaces()` 의 `id`). 권한 창을 대신 ‘허용’하지 않는다.
 - 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 어느 브라우저로도 열지 않는다.
 
 ### Aside (자동 탐색 2순위 — ego lite 가 없을 때)
