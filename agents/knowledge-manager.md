@@ -559,7 +559,7 @@ mcp__notebooklm__ask_question({
 
 ### Playwright 자동화 (노트북 생성 시)
 
-(1.8.6) 브라우저 조작은 브라우저 자동 탐색 결과(ego lite → Aside) 먼저 · playwright 는 aside 가 실패해 그 이유를 남긴 뒤
+(1.8.6) 브라우저 조작은 브라우저 자동 탐색 결과(ego lite → Aside) 먼저 · playwright 는 자동 탐색 브라우저가 없거나 실패해 그 이유를 남긴 뒤
 
 **사전 요구사항**: 최초 1회 수동 로그인 (Chrome 프로필에 세션 저장)
 

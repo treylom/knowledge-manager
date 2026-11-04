@@ -9,7 +9,7 @@ Order (first one that is installed AND answers wins):
 The user does not configure anything: km runs this once per task and uses the printed
 absolute path, so it works even when the CLI's folder (~/.local/bin) is not on PATH.
 
-`--prefer` carries `browser.provider` from km-config.json:
+`--config <km-config.json>` (repeatable) reads `browser.provider`; `--prefer` overrides it:
   - "ego" / "aside"            → used first when it is detected; otherwise the auto order.
   - "hyperbrowser"/"antigravity" → explicit opt-in (needs its own key/app) → returned as-is.
   - "auto" / "playwright" / ""  → auto order. ("playwright" and "aside" were the template
@@ -126,14 +126,32 @@ def detect(prefer: str = "auto", do_probe: bool = True, home: str | None = None,
     }
 
 
+def provider_from_config(paths: list[str]) -> str | None:
+    """browser.provider from the first km-config.json that exists and parses."""
+    for p in paths or []:
+        if not p or not os.path.isfile(p):
+            continue
+        try:
+            with open(p, encoding="utf-8") as f:
+                v = (json.load(f).get("browser") or {}).get("provider")
+        except (OSError, ValueError, AttributeError):
+            continue
+        if isinstance(v, str) and v.strip():
+            return v
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--prefer", default=os.environ.get("KM_BROWSER_PROVIDER", "auto"),
-                    help="browser.provider from km-config.json (default auto)")
+    ap.add_argument("--prefer", default=None,
+                    help="browser.provider override (beats --config; default auto)")
+    ap.add_argument("--config", action="append", default=[],
+                    help="km-config.json to read browser.provider from (repeatable; first readable wins)")
     ap.add_argument("--no-probe", action="store_true", help="skip the answer check")
     ap.add_argument("--get", choices=("provider", "bin", "reason"))
     a = ap.parse_args(argv)
-    res = detect(prefer=a.prefer, do_probe=not a.no_probe)
+    prefer = a.prefer or provider_from_config(a.config) or os.environ.get("KM_BROWSER_PROVIDER") or "auto"
+    res = detect(prefer=prefer, do_probe=not a.no_probe)
     if a.get:
         print(res.get(a.get) or "")
     else:

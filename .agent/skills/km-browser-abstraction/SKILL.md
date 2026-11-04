@@ -41,10 +41,11 @@ Run this block once, at the moment a page has to be opened in a real browser (th
 
 ```bash
 KM_BD="${CLAUDE_PLUGIN_ROOT}/scripts/km_browser_detect.py"
-[ -f "$KM_BD" ] || KM_BD="$(find "$HOME/.claude/plugins/cache/knowledge-manager" -name km_browser_detect.py 2>/dev/null | sort | tail -1)"
-if [ -f "$KM_BD" ]; then python3 "$KM_BD" --prefer "auto"; else echo '{"provider":"fallback","reason":"detector missing"}'; fi
+[ -f "$KM_BD" ] || KM_BD="$(find "$HOME/.claude/plugins" "$HOME/.codex/plugins" -name km_browser_detect.py 2>/dev/null | sort | tail -1)"
+if [ -f "$KM_BD" ]; then python3 "$KM_BD" --config "./km-config.json" --config "${VAULT_PATH:-.}/km-config.json"; else echo '{"provider":"fallback","reason":"detector missing"}'; fi
 ```
-- `--prefer` = `browser.provider` from km-config.json (missing, `auto` or `playwright` → keep `auto`). `ego` / `aside` are tried first but fall through to the auto order when that tool is missing.
+- The script reads `browser.provider` from km-config.json itself (`--config`; missing, `auto` or `playwright` → auto order). `ego` / `aside` are tried first but fall through to the auto order when that tool is missing.
+- If this file was read with Read and `${CLAUDE_PLUGIN_ROOT}` is still literal, replace it in the first line with this plugin's folder (this file's path up to `.agent/` / `skills/`).
 - Output = one JSON line. `provider` = `ego` | `aside` | `fallback` | (explicit `hyperbrowser` / `antigravity`) · `bin` = absolute path of the CLI.
 - **`provider=ego`** → open with ego lite, using the printed `bin` absolute path as the command (works even when its folder is not on PATH). If the ego lite app is closed, this command opens its window.
   ```bash

@@ -147,6 +147,48 @@ class Detect(unittest.TestCase):
         self.e.put_path("ego-browser", EGO_OK)
         self.assertEqual(self.e.run("--prefer", "hyperbrowser")["provider"], "hyperbrowser")
 
+    def test_aside_broken_falls_to_fallback(self):
+        self.e.put_path("aside", EGO_BROKEN)
+        d = self.e.run()
+        self.assertEqual(d["provider"], "fallback")
+        self.assertTrue(d["detected"]["aside"]["found"])
+        self.assertFalse(d["detected"]["aside"]["ready"])
+
+    def test_both_hang_fallback_within_limit(self):
+        self.e.put_path("ego-browser", EGO_HANG)
+        self.e.put_path("aside", EGO_HANG)
+        t0 = time.time()
+        d = self.e.run(timeout_env="1")
+        self.assertLess(time.time() - t0, 20)
+        self.assertEqual(d["provider"], "fallback")
+        self.assertEqual(d["detected"]["aside"]["why"], "probe timeout")
+
+    # --- --config reads browser.provider itself ----------------------------
+    def _cfg(self, body):
+        p = os.path.join(self.e.tmp.name, "km-config.json")
+        with open(p, "w", encoding="utf-8") as f:
+            f.write(body)
+        return p
+
+    def test_config_aside_used_when_both(self):
+        self.e.put_path("ego-browser", EGO_OK)
+        self.e.put_path("aside", ASIDE_OK)
+        cfg = self._cfg('{"browser": {"provider": "aside"}}')
+        self.assertEqual(self.e.run("--config", cfg)["provider"], "aside")
+
+    def test_config_missing_or_broken_is_auto(self):
+        self.e.put_path("ego-browser", EGO_OK)
+        self.e.put_path("aside", ASIDE_OK)
+        bad = self._cfg("{not json")
+        d = self.e.run("--config", os.path.join(self.e.tmp.name, "nope.json"), "--config", bad)
+        self.assertEqual((d["provider"], d["prefer"]), ("ego", "auto"))
+
+    def test_prefer_flag_beats_config(self):
+        self.e.put_path("ego-browser", EGO_OK)
+        self.e.put_path("aside", ASIDE_OK)
+        cfg = self._cfg('{"browser": {"provider": "aside"}}')
+        self.assertEqual(self.e.run("--config", cfg, "--prefer", "ego")["provider"], "ego")
+
     def test_get_field(self):
         self.e.put_path("aside", ASIDE_OK)
         env = {"HOME": self.e.home, "PATH": self.e.bin + os.pathsep + "/usr/bin:/bin"}
@@ -170,6 +212,8 @@ class DocsWiring(unittest.TestCase):
             self.assertIn("scripts/km_browser_detect.py", s, rel)
             self.assertIn("provider=ego", s, rel)
             self.assertIn("provider=fallback", s, rel)
+            self.assertIn('--config "./km-config.json"', s, rel)
+            self.assertNotIn('--prefer "auto"', s, rel)
 
     def test_no_scrapling_missing_skips_browser_slot(self):
         for rel in ("commands/knowledge-manager.md", "skills/km-content-extraction.md"):

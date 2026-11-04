@@ -26,10 +26,11 @@ provider = config.browser.provider  // "auto"(기본) | "ego" | "aside" | "playw
 
 ```bash
 KM_BD="${CLAUDE_PLUGIN_ROOT}/scripts/km_browser_detect.py"
-[ -f "$KM_BD" ] || KM_BD="$(find "$HOME/.claude/plugins/cache/knowledge-manager" -name km_browser_detect.py 2>/dev/null | sort | tail -1)"
-if [ -f "$KM_BD" ]; then python3 "$KM_BD" --prefer "auto"; else echo '{"provider":"fallback","reason":"detector missing"}'; fi
+[ -f "$KM_BD" ] || KM_BD="$(find "$HOME/.claude/plugins" "$HOME/.codex/plugins" -name km_browser_detect.py 2>/dev/null | sort | tail -1)"
+if [ -f "$KM_BD" ]; then python3 "$KM_BD" --config "./km-config.json" --config "${VAULT_PATH:-.}/km-config.json"; else echo '{"provider":"fallback","reason":"detector missing"}'; fi
 ```
-- `--prefer` 값 = km-config.json 의 `browser.provider`(없거나 `auto`·`playwright` 면 `auto` 그대로). `ego`·`aside` 를 적어 둔 경우에도 그 도구가 없으면 자동 순서로 넘어간다.
+- km-config.json 의 `browser.provider` 는 대본이 `--config` 로 직접 읽는다(없거나 `auto`·`playwright` 면 자동 순서). `ego`·`aside` 를 적어 둔 경우에도 그 도구가 없으면 자동 순서로 넘어간다.
+- 이 문서를 Read 로 읽어 `${CLAUDE_PLUGIN_ROOT}` 가 글자 그대로 남아 있으면, 첫 줄의 그 자리를 «이 문서가 든 플러그인 폴더»(이 파일 경로에서 `commands/`·`skills/` 앞까지)로 바꿔 친다.
 - 출력 = JSON 한 줄. `provider` = `ego` | `aside` | `fallback` | (명시한 `hyperbrowser`·`antigravity`) · `bin` = 실행 파일 절대 경로.
 - **`provider=ego`** → ego lite 로 연다. 명령 이름 자리에 출력된 `bin` 절대 경로를 그대로 쓴다(사용자 PATH 에 그 폴더가 없어도 돈다). ego lite 앱이 꺼져 있어도 이 명령이 앱 창을 띄운다.
   ```bash
@@ -74,7 +75,7 @@ async function scrape_with_aside(url) {
 
 ---
 
-### Playwright (aside 가 실패했을 때 · 이유를 남긴 뒤)
+### Playwright (자동 탐색 브라우저 — ego lite·Aside — 가 없거나 실패했을 때 · 이유를 남긴 뒤)
 
 ```javascript
 // 단순 스크래핑 (3단계)
