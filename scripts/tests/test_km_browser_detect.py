@@ -246,6 +246,14 @@ class DocsWiring(unittest.TestCase):
         self.assertIn("없으면 브라우저 자동 탐색(ego lite → Aside), 그다음 playwright-cli",
                       self.read("agents/knowledge-manager.md"))
 
+    def test_setup_detects_before_playwright_question(self):
+        s = self.read("commands/knowledge-manager-setup.md")
+        a = s.find("km_browser_detect.py")
+        b = s.find("### Playwright 설치 (브라우저가 없을 때만)")
+        self.assertTrue(0 < a < b, "setup must run the detector before the Playwright question")
+        self.assertNotIn("### Playwright 설치 (필수)", s)
+        self.assertIn("Playwright 는 설치하지 않아도 돼요", s)
+
     def test_new_configs_default_auto(self):
         cfg = json.loads(self.read("km-config.example.json"))
         self.assertEqual(cfg["browser"]["provider"], "auto")

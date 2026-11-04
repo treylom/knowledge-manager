@@ -5,6 +5,7 @@
 - 실행 파일 절대 경로를 돌려준다 — `~/.local/bin` 이 PATH 에 없는 맥에서도 ego lite·Aside 를 찾는다(고정 설치 폴더도 본다). 확인 명령마다 시한(기본 15초 · `KM_BROWSER_PROBE_TIMEOUT`)이 있어 멈춘 CLI 가 km 을 세우지 않는다.
 - ego lite 가 꺼져 있어도 `ego-browser nodejs` 명령이 앱 창을 띄운다(맥 실측) — 따로 켜는 단계 없음.
 - `browser.provider`: 새 기본값 `auto`(설정 마법사 · km-config.example.json). 예전 기본값 `aside`(1.8.4~1.8.5 예시)·`playwright`(설정 마법사)가 적힌 설정도 그 도구가 없으면 자동 순서로 넘어가 ego lite 를 쓴다. `hyperbrowser`·`antigravity` 를 적은 경우만 그대로 따른다.
+- 설정 마법사(`/km:setup`): Playwright 설치 질문 전에 감지기를 돌려, ego lite·Aside 가 있으면 질문을 건너뛰고 «웹페이지는 ego lite(또는 Aside)로 읽어요» 한 줄만 보여 준다. 끝 요약의 도구 줄도 실제 상태대로. (1.8.5 실측: ego lite 가 있어도 «웹 = Playwright 필수»로 설치를 권하고, 끝 안내도 «웹페이지 = Playwright 먼저 설치».)
 - 문서: 명령(`commands/knowledge-manager.md`)·브라우저 추상화·추출 스킬·에이전트 정의·Codex 사본의 «Aside 3순위» 자리를 «브라우저 자동 탐색» 자리로 바꿈. Scrapling 이 없을 때 3순위(브라우저)를 건너뛰고 Playwright CLI 로 가던 문장도 고침.
 - 시험: `scripts/tests/test_km_browser_detect.py`(ego 만 · Aside 만 · 둘 다 · 둘 다 없음 + PATH 밖 설치 · 대답 없는 CLI · 시한 · 설정값 갈래) — CI 에 추가.
 - Windows: PATH 에서만 찾는다(고정 설치 폴더는 맥·리눅스 기준 · 윈도우 실측 전).

@@ -143,12 +143,14 @@ Selection: _
 
 ### For Claude Code
 
-Claude Code doesn't have a built-in browser, so Playwright is required.
+Claude Code has no built-in browser. Since 1.8.6, run the browser auto-detect first (`python3 <plugin>/scripts/km_browser_detect.py --get provider`): if it prints `ego` (ego lite) or `aside` (Aside), web pages are read with that browser and Playwright is **not** installed. Only on `fallback` is Playwright added.
 
 ```javascript
-function configure_claude_mcp(vaultPath) {
+function configure_claude_mcp(vaultPath, browserProvider /* output of km_browser_detect.py --get provider */) {
   // Use claude mcp add command
-  Bash(`claude mcp add playwright -s user -- npx -y @modelcontextprotocol/server-playwright`)
+  if (browserProvider === "fallback") {
+    Bash(`claude mcp add playwright -s user -- npx -y @modelcontextprotocol/server-playwright`)
+  }
 
   Bash(`claude mcp add obsidian -s user -e OBSIDIAN_VAULT_PATH="${vaultPath}" -- npx -y @huangyihe/obsidian-mcp`)
 
