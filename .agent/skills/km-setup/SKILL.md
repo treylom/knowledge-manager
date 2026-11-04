@@ -177,7 +177,7 @@ function create_km_config(options) {
     },
     "browser": {
       // Antigravity uses native browser by default
-      "provider": options.environment === "antigravity" ? "antigravity" : "playwright"
+      "provider": options.environment === "antigravity" ? "antigravity" : "auto"
     },
     "defaults": {
       "detailLevel": 2

@@ -28,11 +28,13 @@ triggers:
 > `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 `playwright-cli`.
 
 ```bash
-# Aside (1.8.4 — 예전에 playwright 로 읽던 자리: Scrapling 으로는 안 열리지만 브라우저로는 누구나 볼 수 있는 공개 페이지 · SNS · 브라우저 조작)
-# 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
-aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
-# 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다.
-# aside 가 없거나 실패하면: 실패 이유를 남기고 다음 순위(Playwright CLI)로 넘어간다.
+# 브라우저 (1.8.6 — 자동 탐색: ego lite → Aside → 다음 순위)
+# 먼저 «브라우저 자동 탐색» 블록(skills/km-browser-abstraction.md · commands/knowledge-manager.md 같은 글자)을 실행해 provider·bin 을 얻는다.
+# provider=ego   → "<bin>" nodejs -e '…page.goto("[URL]") … document.body.innerText …'  (블록의 예시 그대로)
+# provider=aside → "<bin>" exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
+# provider=fallback → 4순위(Playwright CLI)로.
+# 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 어느 브라우저로도 열지 않는다.
+# 실패하면: 실패 이유를 남기고 다음 순위로 넘어간다.
 ```
 
 ```

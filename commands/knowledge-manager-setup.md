@@ -577,7 +577,7 @@ const config = {
   },
 
   browser: {
-    provider: "playwright"  // 기본값: Playwright
+    provider: "auto"  // 기본값: 자동 탐색(ego lite → Aside → Playwright)
   },
 
   defaults: {

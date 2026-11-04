@@ -1,0 +1,187 @@
+#!/usr/bin/env python3
+"""Contract: km browser auto-detect picks ego lite → Aside → fallback with no user setup.
+
+Each case builds a throw-away home folder and PATH with fake `ego-browser` / `aside`
+programs (shell scripts), then runs the real script as a subprocess.
+Run: python3 -I -B scripts/tests/test_km_browser_detect.py
+"""
+import json
+import os
+import stat
+import subprocess
+import sys
+import tempfile
+import time
+import unittest
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+SCRIPT = os.path.join(os.path.dirname(HERE), "km_browser_detect.py")
+
+EGO_OK = '#!/bin/sh\nif [ "$1" = skill ]; then echo "[ego-browser:skill] guide"; echo "[ego-browser:skill] end of guide v2.2.0"; exit 0; fi\nexit 0\n'
+EGO_BROKEN = '#!/bin/sh\necho "cannot connect" >&2\nexit 3\n'
+EGO_NO_GUIDE_END = '#!/bin/sh\necho "[ego-browser:skill] guide (cut)"\nexit 0\n'
+EGO_HANG = '#!/bin/sh\nsleep 30\n'
+ASIDE_OK = '#!/bin/sh\nif [ "$1" = --version ]; then echo 1.26.0; exit 0; fi\nexit 0\n'
+
+
+def _write(path, body):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        f.write(body)
+    os.chmod(path, os.stat(path).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+
+class Env:
+    def __init__(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.home = os.path.join(self.tmp.name, "home")
+        self.bin = os.path.join(self.tmp.name, "bin")
+        os.makedirs(self.home)
+        os.makedirs(self.bin)
+
+    def put_path(self, name, body):
+        _write(os.path.join(self.bin, name), body)
+
+    def put_home(self, rel, body):
+        _write(os.path.join(self.home, rel), body)
+
+    def run(self, *args, timeout_env=None):
+        env = {"HOME": self.home, "PATH": self.bin + os.pathsep + "/usr/bin:/bin"}
+        if timeout_env:
+            env["KM_BROWSER_PROBE_TIMEOUT"] = timeout_env
+        r = subprocess.run([sys.executable, "-I", "-B", SCRIPT, *args], env=env,
+                           capture_output=True, text=True, timeout=60)
+        if r.returncode != 0:
+            raise AssertionError(f"rc={r.returncode} err={r.stderr}")
+        return json.loads(r.stdout)
+
+    def close(self):
+        self.tmp.cleanup()
+
+
+class Detect(unittest.TestCase):
+    def setUp(self):
+        self.e = Env()
+
+    def tearDown(self):
+        self.e.close()
+
+    # --- the four verdicts asked for --------------------------------------
+    def test_1_ego_only(self):
+        self.e.put_path("ego-browser", EGO_OK)
+        d = self.e.run()
+        self.assertEqual(d["provider"], "ego")
+        self.assertTrue(d["bin"].endswith("ego-browser"))
+        self.assertFalse(d["detected"]["aside"]["found"])
+
+    def test_2_aside_only(self):
+        self.e.put_path("aside", ASIDE_OK)
+        d = self.e.run()
+        self.assertEqual(d["provider"], "aside")
+        self.assertFalse(d["detected"]["ego"]["found"])
+
+    def test_3_both_ego_first(self):
+        self.e.put_path("ego-browser", EGO_OK)
+        self.e.put_path("aside", ASIDE_OK)
+        d = self.e.run()
+        self.assertEqual(d["provider"], "ego")
+        self.assertTrue(d["detected"]["aside"]["ready"])
+
+    def test_4_none_fallback(self):
+        d = self.e.run()
+        self.assertEqual(d["provider"], "fallback")
+        self.assertIsNone(d["bin"])
+        self.assertEqual(d["order"], ["ego", "aside", "fallback"])
+
+    # --- not on PATH: fixed install folders, absolute path printed --------
+    def test_ego_fixed_folder_not_on_path(self):
+        self.e.put_home(".local/bin/ego-browser", EGO_OK)
+        d = self.e.run()
+        self.assertEqual(d["provider"], "ego")
+        self.assertEqual(d["bin"], os.path.join(self.e.home, ".local/bin/ego-browser"))
+
+    def test_aside_app_folder_with_space(self):
+        self.e.put_home(".aside/cli/Aside CLI.app/Contents/MacOS/aside", ASIDE_OK)
+        d = self.e.run()
+        self.assertEqual(d["provider"], "aside")
+        self.assertIn("Aside CLI.app", d["bin"])
+
+    # --- installed but not answering → next in order (negative pair) ------
+    def test_ego_broken_falls_to_aside(self):
+        self.e.put_path("ego-browser", EGO_BROKEN)
+        self.e.put_path("aside", ASIDE_OK)
+        d = self.e.run()
+        self.assertEqual(d["provider"], "aside")
+        self.assertTrue(d["detected"]["ego"]["found"])
+        self.assertFalse(d["detected"]["ego"]["ready"])
+
+    def test_ego_guide_without_end_is_not_ready(self):
+        self.e.put_path("ego-browser", EGO_NO_GUIDE_END)
+        d = self.e.run()
+        self.assertEqual(d["provider"], "fallback")
+
+    def test_probe_timeout_does_not_hang(self):
+        self.e.put_path("ego-browser", EGO_HANG)
+        t0 = time.time()
+        d = self.e.run(timeout_env="1")
+        self.assertLess(time.time() - t0, 15)
+        self.assertEqual(d["detected"]["ego"]["why"], "probe timeout")
+        self.assertEqual(d["provider"], "fallback")
+
+    # --- km-config.json browser.provider -----------------------------------
+    def test_prefer_aside_when_both(self):
+        self.e.put_path("ego-browser", EGO_OK)
+        self.e.put_path("aside", ASIDE_OK)
+        self.assertEqual(self.e.run("--prefer", "aside")["provider"], "aside")
+
+    def test_prefer_aside_missing_goes_ego(self):
+        # 1.8.4/1.8.5 template default was "aside": with no Aside, ego lite must still be used
+        self.e.put_path("ego-browser", EGO_OK)
+        self.assertEqual(self.e.run("--prefer", "aside")["provider"], "ego")
+
+    def test_prefer_playwright_legacy_default_still_auto(self):
+        self.e.put_path("ego-browser", EGO_OK)
+        self.assertEqual(self.e.run("--prefer", "playwright")["provider"], "ego")
+
+    def test_prefer_hyperbrowser_explicit(self):
+        self.e.put_path("ego-browser", EGO_OK)
+        self.assertEqual(self.e.run("--prefer", "hyperbrowser")["provider"], "hyperbrowser")
+
+    def test_get_field(self):
+        self.e.put_path("aside", ASIDE_OK)
+        env = {"HOME": self.e.home, "PATH": self.e.bin + os.pathsep + "/usr/bin:/bin"}
+        r = subprocess.run([sys.executable, "-I", "-B", SCRIPT, "--get", "provider"], env=env,
+                           capture_output=True, text=True, timeout=60)
+        self.assertEqual((r.returncode, r.stdout.strip()), (0, "aside"))
+
+
+class DocsWiring(unittest.TestCase):
+    """The docs that open web pages call the detector, and new configs default to auto."""
+    ROOT = os.path.dirname(os.path.dirname(HERE))
+
+    def read(self, rel):
+        with open(os.path.join(self.ROOT, rel), encoding="utf-8") as f:
+            return f.read()
+
+    def test_docs_call_detector(self):
+        for rel in ("commands/knowledge-manager.md", "skills/km-browser-abstraction.md",
+                    ".agent/skills/km-browser-abstraction/SKILL.md"):
+            s = self.read(rel)
+            self.assertIn("scripts/km_browser_detect.py", s, rel)
+            self.assertIn("provider=ego", s, rel)
+            self.assertIn("provider=fallback", s, rel)
+
+    def test_no_scrapling_missing_skips_browser_slot(self):
+        for rel in ("commands/knowledge-manager.md", "skills/km-content-extraction.md"):
+            s = self.read(rel)
+            self.assertNotIn("별도 준비, 없으면 playwright-cli", s, rel)
+            self.assertNotIn("별도 준비, 없으면 `playwright-cli`", s, rel)
+
+    def test_new_configs_default_auto(self):
+        cfg = json.loads(self.read("km-config.example.json"))
+        self.assertEqual(cfg["browser"]["provider"], "auto")
+        self.assertIn('provider: "auto"', self.read("commands/knowledge-manager-setup.md"))
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
