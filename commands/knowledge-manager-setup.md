@@ -282,7 +282,21 @@ README.md의 "Antigravity 설정" 섹션을 참고해주세요.
 }
 ```
 
-### Playwright 설치 (필수)
+### 웹 브라우저 확인 (1.8.6 — Playwright 질문 전에)
+
+먼저 이 컴퓨터에 쓸 수 있는 브라우저가 있는지 본다. 사용자에게 묻지 않는다.
+
+```bash
+KM_BD="${CLAUDE_PLUGIN_ROOT}/scripts/km_browser_detect.py"
+[ -f "$KM_BD" ] || KM_BD="$(find "$HOME/.claude/plugins" "$HOME/.codex/plugins" -name km_browser_detect.py 2>/dev/null | sort | tail -1)"
+if [ -f "$KM_BD" ]; then python3 "$KM_BD" --get provider; else echo fallback; fi
+```
+
+- 출력 `ego` → 아래 «Playwright 설치» 질문을 **건너뛴다**(`browserReady = "ego lite"`). 사용자에게 한 줄만: «웹페이지는 ego lite 브라우저로 읽어요 — Playwright 는 설치하지 않아도 돼요.»
+- 출력 `aside` → 같은 꼴로 건너뛴다(`browserReady = "Aside"`). «웹페이지는 Aside 브라우저로 읽어요 — Playwright 는 설치하지 않아도 돼요.»
+- 출력 `fallback`(또는 감지기 없음) → `browserReady = null` · 아래 «Playwright 설치» 질문을 그대로 진행.
+
+### Playwright 설치 (브라우저가 없을 때만)
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -577,7 +591,7 @@ const config = {
   },
 
   browser: {
-    provider: "playwright"  // 기본값: Playwright
+    provider: "auto"  // 기본값: 자동 탐색(ego lite → Aside → Playwright)
   },
 
   defaults: {
@@ -752,7 +766,7 @@ echo "   폴더를 나누거나 허브를 더 만드는 게 고민되면 /km:int
      ${hasObsidianMcp ? "Obsidian vault: " + vaultPath : "로컬 폴더: " + localPath}
 
   🔌 설치된 도구
-     ✅ Playwright (웹 콘텐츠 추출)
+     ${browserReady ? "✅ 웹 읽기 = " + browserReady + " (자동 탐색)" : (playwrightInstalled ? "✅ Playwright (웹 콘텐츠 추출)" : "⬜ 웹 읽기 브라우저 (ego lite 를 깔거나 Playwright 설치)")}
      ${hasObsidianMcp ? "✅ Obsidian 연결" : "⬜ Obsidian (나중에 연결 가능)"}
 
 ═══════════════════════════════════════════════════════════

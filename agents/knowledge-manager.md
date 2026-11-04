@@ -87,12 +87,12 @@ Task 도구로 호출된 경우:
 
 ### 콘텐츠 추출 (Phase 2)
 
-> `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 `playwright-cli`.
+> `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 브라우저 자동 탐색(ego lite → Aside), 그다음 playwright-cli.
 
 | 입력 유형 | 필수 도구 호출 | 절대 금지 |
 |----------|--------------|----------|
-| **Threads/Instagram URL** | `aside exec` ⭐ **1순위** · 없으면 `playwright-cli open → snapshot` (scrapling은 첫 포스트만 반환) | MCP playwright 사용 금지, WebFetch 사용 금지 |
-| 일반 웹 URL | `scrapling-crawl.py --mode dynamic` (1순위) → `--mode stealth` (2순위) → `aside exec` (3순위 · Scrapling 으로 안 열릴 때) → `playwright-cli` (4순위) → `WebFetch` (정적) | 추측 금지 |
+| **Threads/Instagram URL** | 브라우저 자동 탐색(ego lite → Aside) ⭐ **1순위** · 없으면 `playwright-cli open → snapshot` (scrapling은 첫 포스트만 반환) | MCP playwright 사용 금지, WebFetch 사용 금지 |
+| 일반 웹 URL | `scrapling-crawl.py --mode dynamic` (1순위) → `--mode stealth` (2순위) → 브라우저 자동 탐색(ego lite → Aside · 3순위 · Scrapling 으로 안 열릴 때) → `playwright-cli` (4순위) → `WebFetch` (정적) | 추측 금지 |
 | **PDF 파일 (작은)** | `Read` 직접 시도 (< 5MB, < 20p) | 실패 시 marker 변환 |
 | **PDF 파일 (큰)** | `/pdf` 스킬 권장 또는 `marker_single` | 직접 Read 금지 |
 | DOCX/XLSX/PPTX | `Read` 또는 해당 스킬 도구 | 없음 |
@@ -429,17 +429,17 @@ Research/[프로젝트명]/
 
 ## Social Media Auto-Detection (NEW!) ⭐
 
-**CRITICAL**: 다음 URL 패턴 감지 시 자동으로 **aside** 사용 (1순위 · 없으면 playwright-cli, scrapling은 SNS에서 첫 포스트만 반환)
+**CRITICAL**: 다음 URL 패턴 감지 시 자동으로 **브라우저 자동 탐색(ego lite → Aside)** 사용 (1순위 · 없으면 playwright-cli, scrapling은 SNS에서 첫 포스트만 반환)
 
 | 플랫폼 | URL 패턴 | 처리 |
 |--------|----------|------|
-| Threads | `threads.net/@*`, `threads.com/@*` | → **aside** (1순위 · 없으면 playwright-cli) + km-social-media.md |
-| Threads | `threads.net/t/*` | → **aside** (1순위 · 없으면 playwright-cli) + km-social-media.md |
-| Instagram Post | `instagram.com/p/*` | → **aside** (1순위 · 없으면 playwright-cli) + km-social-media.md |
-| Instagram Reel | `instagram.com/reel/*` | → **aside** (1순위 · 없으면 playwright-cli) + km-social-media.md |
+| Threads | `threads.net/@*`, `threads.com/@*` | → **브라우저 자동 탐색(ego lite → Aside)** (1순위 · 없으면 playwright-cli) + km-social-media.md |
+| Threads | `threads.net/t/*` | → **브라우저 자동 탐색(ego lite → Aside)** (1순위 · 없으면 playwright-cli) + km-social-media.md |
+| Instagram Post | `instagram.com/p/*` | → **브라우저 자동 탐색(ego lite → Aside)** (1순위 · 없으면 playwright-cli) + km-social-media.md |
+| Instagram Reel | `instagram.com/reel/*` | → **브라우저 자동 탐색(ego lite → Aside)** (1순위 · 없으면 playwright-cli) + km-social-media.md |
 
 > ❌ SNS에서 Playwright MCP 사용 금지 — CLI만 사용합니다.
-> (1.8.4) SNS 는 aside 가 1순위 — 예전 playwright-cli 자리. 일반 웹 페이지는 Scrapling 부터.
+> (1.8.6) SNS 는 브라우저 자동 탐색(ego lite → Aside)이 1순위 — 예전 playwright-cli 자리. 일반 웹 페이지는 Scrapling 부터.
 
 상세 워크플로우는 `km-social-media.md` 참조.
 
@@ -452,11 +452,14 @@ python3 scripts/scrapling-crawl.py fetch "https://example.com/article" --mode dy
 # 2순위: Scrapling Stealth (안티봇 우회)
 python3 scripts/scrapling-crawl.py fetch "https://example.com/article" --mode stealth --output markdown
 
-# 3순위: Aside (1.8.4 — 예전에 playwright 로 읽던 자리: Scrapling 으로는 안 열리지만 브라우저로는 누구나 볼 수 있는 공개 페이지 · SNS · 브라우저 조작)
-# 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
-aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
-# 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다.
-# aside 가 없거나 실패하면: 실패 이유를 남기고 다음 순위(Playwright CLI)로 넘어간다.
+# 3순위: 브라우저 (1.8.6 — 자동 탐색: ego lite → Aside → 다음 순위)
+# 먼저 «브라우저 자동 탐색» 블록(skills/km-browser-abstraction.md · commands/knowledge-manager.md 같은 글자)을 실행해 provider·bin 을 얻는다.
+# provider=ego   → "<bin>" nodejs -e '…page.goto("[URL]") … document.body.innerText …'  (블록의 예시 그대로)
+# provider=aside → "<bin>" exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
+# provider=fallback → 4순위(Playwright CLI)로.
+# 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 어느 브라우저로도 열지 않는다.
+# 실패하면: 실패 이유를 남기고 다음 순위로 넘어간다.
+# 단, ego lite 가 사용자 차례로 멈추면(권한 창 등 · 오류에 permission prompt / user now controls) 넘어가지 않는다 — 자동 탐색 블록의 예외대로 누를 곳을 안내하고 같은 작업 공간에서 이어 간다.
 
 # 4순위 Fallback: Playwright CLI (스크린샷 필요 시)
 playwright-cli open "https://threads.net/@user/post/abc123"
@@ -557,7 +560,7 @@ mcp__notebooklm__ask_question({
 
 ### Playwright 자동화 (노트북 생성 시)
 
-(1.8.4) 브라우저 조작은 aside exec 지시문 먼저 · playwright 는 aside 가 실패해 그 이유를 남긴 뒤
+(1.8.6) 브라우저 조작은 브라우저 자동 탐색 결과(ego lite → Aside) 먼저 · playwright 는 자동 탐색 브라우저가 없거나 실패해 그 이유를 남긴 뒤(ego lite 가 사용자 차례로 멈춘 것은 실패가 아님 — 자동 탐색 블록의 예외)
 
 **사전 요구사항**: 최초 1회 수동 로그인 (Chrome 프로필에 세션 저장)
 
@@ -832,10 +835,11 @@ AI 모델명 작성 시:
 |------|------|------|----------|
 | 1순위 | **scrapling-crawl.py --mode dynamic** | 빠름, JS 렌더링, Python | 기본 (소셜 미디어 포함) |
 | 2순위 | **scrapling-crawl.py --mode stealth** | 안티봇 우회 | 봇 차단 시 |
-| 3순위 | **playwright-cli** (Bash) | 안정적, JS 렌더링, 스크린샷 | scrapling 실패 시 폴백 |
-| 4순위 | **Playwright MCP** | 동일 기능, MCP 프로토콜 | CLI 실패 시 |
-| 5순위 | **WebFetch** | 빠름, 정적 콘텐츠 | 정적 웹페이지 |
-| 6순위 | **Hyperbrowser** | 클라우드, stealth | 크레딧 있고 위 모두 실패 시 |
+| 3순위 | **브라우저 자동 탐색** — ego lite → Aside (`scripts/km_browser_detect.py`) | 실제 브라우저, 로그인 세션 | scrapling 실패·없음 시 (1.8.6) |
+| 4순위 | **playwright-cli** (Bash) | 안정적, JS 렌더링, 스크린샷 | 자동 탐색 브라우저 없음·실패 시 |
+| 5순위 | **Playwright MCP** | 동일 기능, MCP 프로토콜 | CLI 실패 시 |
+| 6순위 | **WebFetch** | 빠름, 정적 콘텐츠 | 정적 웹페이지 |
+| 7순위 | **Hyperbrowser** | 클라우드, stealth | 크레딧 있고 위 모두 실패 시 |
 
 모든 스킬은 플러그인 설치에서는 `skills/`, 프로젝트 설치에서는 `.claude/skills/`(install-to-project.sh 가 복사)에서 로드됩니다.
 

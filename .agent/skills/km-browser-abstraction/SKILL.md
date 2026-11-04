@@ -1,6 +1,6 @@
 ---
 name: km-browser-abstraction
-description: Unified browser interface for Aside (default browser provider), Antigravity native, Playwright, and Hyperbrowser providers
+description: Unified browser interface for browser auto-detect (default: ego lite → Aside → Playwright), Antigravity native, Playwright, and Hyperbrowser providers
 ---
 
 # Browser Abstraction Layer
@@ -21,7 +21,7 @@ function get_browser_provider() {
 
   // 2. Fall back to config
   config = Read("km-config.json")
-  return config?.browser?.provider || "aside"
+  return config?.browser?.provider || "auto"
 }
 
 function is_antigravity_environment() {
@@ -35,7 +35,35 @@ function is_antigravity_environment() {
 
 ---
 
-## Aside (default browser provider since 1.8.4)
+## Browser auto-detect (1.8.6 — default · no user setup)
+
+Run this block once, at the moment a page has to be opened in a real browser (the «browser» slot of the order below). It picks the first of ego lite → Aside → the existing order (Playwright CLI → Playwright MCP → WebFetch) that is installed and answers. The user does not choose or configure a browser.
+
+```bash
+KM_BD="${CLAUDE_PLUGIN_ROOT}/scripts/km_browser_detect.py"
+[ -f "$KM_BD" ] || KM_BD="$(find "$HOME/.claude/plugins" "$HOME/.codex/plugins" -name km_browser_detect.py 2>/dev/null | sort | tail -1)"
+if [ -f "$KM_BD" ]; then python3 "$KM_BD" --config "./km-config.json" --config "${VAULT_PATH:-.}/km-config.json"; else echo '{"provider":"fallback","reason":"detector missing"}'; fi
+```
+- The script reads `browser.provider` from km-config.json itself (`--config`; missing, `auto` or `playwright` → auto order). `ego` / `aside` are tried first but fall through to the auto order when that tool is missing.
+- If this file was read with Read and `${CLAUDE_PLUGIN_ROOT}` is still literal, replace it in the first line with this plugin's folder (this file's path up to `.agent/` / `skills/`).
+- Output = one JSON line. `provider` = `ego` | `aside` | `fallback` | (explicit `hyperbrowser` / `antigravity`) · `bin` = absolute path of the CLI.
+- **`provider=ego`** → open with ego lite, using the printed `bin` absolute path as the command (works even when its folder is not on PATH). If the ego lite app is closed, this command opens its window (measured on macOS; other OSes not yet checked). ego lite runs this work in a separate task space, so the first time in a conversation tell the user in one line: "Click the number button at the top right of the ego lite window, then the ‘km read’ space, to watch the page I am reading." (measured on macOS)
+  ```bash
+  "<bin>" nodejs -e '
+  const task = await taskSpace("km read");
+  const page = task.page("p1");
+  await page.goto("[URL]");
+  console.log(await page.evaluate(() => document.title + "\n\n" + document.body.innerText));
+  '
+  ```
+  For clicks, input or screenshots read `"<bin>" skill` first and use only the APIs it lists (do not guess Playwright methods). One task = one TaskSpace.
+- **`provider=aside`** → `"<bin>" exec "Open [URL] and return the page body text verbatim, without summarizing. Include title, author, date, and image descriptions."`
+- **`provider=fallback`** → the existing order (Playwright CLI → Playwright MCP → WebFetch).
+- If the chosen browser fails while running, log the reason in one line and move to the next slot (ego → aside → fallback).
+- **Exception: when ego lite stops for the user, do not move to the next slot.** If the error mentions `permission prompt`, `user now controls` or `takeOverTaskSpace` (a site's notification/location permission prompt, a device chooser, etc.), it is not a failure. Tell the user and stop: "In the ego lite window, click the number button at the top right → click the space marked ‘Need your action’ → click ‘Block’ (or handle the prompt) → click ‘Return to agent’ at the bottom, then tell me it is done." (measured on macOS; on a Korean-language Mac the button reads ‘차단’) When the user confirms, resume the same space with `const task = await takeOverTaskSpace(<id>)` (`<id>` = the `id` from the error or `listTaskSpaces()`). Never click ‘Allow’ on the user's behalf.
+- Never open someone else's login wall, paywall, CAPTCHA, or robots/ToS-forbidden page with any browser.
+
+## Aside (auto-detect slot 2 — when ego lite is missing)
 
 ```bash
 # Aside (since 1.8.4) — where Playwright used to be needed: public pages anyone can view in a browser but Scrapling cannot open, social media, browser actions.

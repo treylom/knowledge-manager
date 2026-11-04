@@ -54,15 +54,15 @@
   },
 
   "browser": {
-    "provider": "aside",
-    "_provider_help": "브라우저가 필요할 때의 기본 = aside(1.8.4 부터). aside 가 없으면 playwright.",
+    "provider": "auto",
+    "_provider_help": "브라우저가 필요할 때 = 자동 탐색(1.8.6 부터): ego lite → Aside → Playwright. 따로 고를 필요 없음. hyperbrowser·antigravity 만 이름을 적어 지정.",
 
     "aside": {
       "_help": "Aside 브라우저 CLI(macOS = aside · WSL/Windows = aside.exe). 설치: https://aside.com"
     },
 
     "playwright": {
-      "_help": "aside 가 없을 때 쓰는 브라우저. 추가 설정 불필요."
+      "_help": "ego lite·Aside 가 없을 때 쓰는 브라우저. 추가 설정 불필요."
     }
   },
 

@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.8.7 (2026-11-05) — km:search 원문은 결과 경로로 찾기 · 지도 노트 위키링크 이름 풀기
+- 원문 찾기: 검색 결과의 원문을 `entity`(이름)가 아니라 결과의 `source_note`(경로)로 찾는다 — `scripts/km_note_caller.sh` → `scripts/km_search_guard.py`. 같은 vault 면 vault 안의 그 경로만 읽고 서버를 부르지 않는다. 다른 vault 면 서버 `/api/note` 를 한 번 부르되, 돌아온 `note_path` 가 기대한 `source_note` 와 유니코드 정규화(NFC) 뒤 글자 그대로 같을 때만 본문을 쓴다(이름만 같은 노트 ❌ · 앞 폴더 떼기 ❌). 경로 없음·절대 경로·부모 폴더 탈출·심볼릭 링크·다른 경로·깨진 응답·HTTP 실패·256KB 넘는 노트 = «원문 미확보»(exit 3) — 확보 0건을 성공으로 세지 않는다. 연결 3초·전체 15초·본문 앞 2,500자는 그대로. 같은 vault 읽기는 심볼릭 링크를 따라가지 않는 열기(`O_NOFOLLOW` · 폴더 기준 열기)가 되는 OS(맥·리눅스)에서만 하고, 그게 안 되는 파이썬(Windows 등)에선 멈추지 않고 «원문 미확보»로 빠진다(Windows 실측 전).
+- 지도 노트 위키링크 이름 풀기: 지도(MOC) 노트에 실제로 적힌 `[[이름]]` 을 따라갈 때 `scripts/km_wikilink_resolver.py` 가 같은 vault 의 md 파일 목록에서 이름을 푼다. 후보 1개 = 그 경로 · 2개 이상 = 같은 줄의 백틱 폴더 힌트(vault 뿌리 기준 경로)로 좁히고, 안 좁혀지면 «모호»(추측 ❌) · `/` 가 든 링크 = 폴더 경계 기준 끝맞춤(여전히 후보 1개만) · 다른 vault = 로컬 파일 목록·본문 읽기 0 · 파일 목록을 끝까지 못 읽었으면(읽기 오류·유니코드 정규화 충돌) «미확보». 풀린 경로는 위 원문 찾기 검사를 그대로 거친다.
+- Phase 0.4(구조 문서 축): MOC-Map 앞 130줄만 보던 허브 매핑을 지도 전체로 넓힘(점수·순서·최대 3허브 규칙은 그대로). 130줄은 근거로 읽는 줄 수 상한이고 후보를 찾는 범위를 자르지 않는다. 출력 줄이 `ROUTE_SCAN=ok|unmeasured ROUTE_HUB_COUNT=…` + 결과 JSON 으로 바뀜.
+- 한계: 본문은 앞 2,500자 고정 — 찾던 내용이 그 뒤에 있으면 못 가져온다(실측 사례는 2,500자 경계 1자 앞에서 끝났다). Codex 쪽 사본(`.agent/skills/km-search/SKILL.md`)엔 이번 판이 들어가지 않았다(Claude Code 명령만).
+- 시험: `scripts/tests/test_km_note_fragment_boundary.py`(경계 1자 앞에서 끝나는 주소 = 통째로 옴 · 1자 밀면 잘림 · 같은/다른 vault 두 길) · `scripts/tests/test_km_note_guard_platform.py`(심볼릭 링크 막는 열기가 없는 파이썬 흉내 → «원문 미확보» exit 3 · 원래 환경은 그대로 읽음) — CI 에 추가.
+- 매니페스트: .claude-plugin 1.8.6→1.8.7 · .codex-plugin(동시) · tier2 시험 버전 고정 2줄.
+
+## 1.8.6 (2026-11-05) — 브라우저 자동 탐색: ego lite → Aside → 기존 순서
+- 웹 페이지를 브라우저로 열어야 할 때 km 이 먼저 `scripts/km_browser_detect.py` 를 한 번 돌려, 깔려 있고 대답하는 브라우저를 고른다: ego lite(`ego-browser skill` 안내가 끝까지 나옴) → Aside(`aside --version` 성공) → 기존 순서(Playwright CLI → Playwright MCP → WebFetch). 사용자가 브라우저를 고르거나 설정하는 단계는 없다.
+- 실행 파일 절대 경로를 돌려준다 — `~/.local/bin` 이 PATH 에 없는 맥에서도 ego lite·Aside 를 찾는다(고정 설치 폴더도 본다). 확인 명령마다 시한(기본 15초 · `KM_BROWSER_PROBE_TIMEOUT`)이 있어, 멈춘 CLI 가 있어도 한 도구당 최대 15초만 기다린다.
+- ego lite 가 꺼져 있어도 `ego-browser nodejs` 명령이 앱 창을 띄운다(맥 실측) — 따로 켜는 단계 없음.
+- ego lite 는 에이전트 작업을 별도 작업 공간에서 해서 창엔 빈 새 탭만 보인다 — 처음 열 때 «숫자 버튼 → ‘km read’ 공간» 한 줄을 사용자에게 알린다(맥 실측).
+- ego lite 가 사이트 권한 창(알림 허용 등)에서 «사용자 차례»로 멈추면 다른 브라우저로 넘어가지 않고, ego lite 창에서 무엇을 누르면 되는지 안내한 뒤 같은 작업 공간에서 이어 간다. 1.8.6 맥 실측에서는 «실행 중 실패하면 다음 칸» 문장대로 Aside 로 넘어갔다. ego lite 안내대로 권한 창은 사용자가 처리하고, 봇이 우회하지 않는다. 추출 스킬·에이전트·스텔스 문서의 «실패하면 다음 순위» 줄 4곳에도 같은 예외를 넣었다.
+- `browser.provider`: 새 기본값 `auto`(설정 마법사 · km-config.example.json). 예전 기본값 `aside`(1.8.4~1.8.5 예시)가 적힌 설정은 Aside 가 깔려 있고 대답하면 Aside 를 먼저 쓰고, 아니면 자동 순서로 넘어간다. `playwright`(예전 설정 마법사 기본값)는 `auto` 와 같게 다뤄 자동 순서(ego lite → Aside → 기존 순서)를 따른다. `hyperbrowser`·`antigravity` 를 적은 경우만 그대로 따른다.
+- 설정 마법사(`/km:setup`): Playwright 설치 질문 전에 감지기를 돌려, ego lite·Aside 가 있으면 질문을 건너뛰고 «웹페이지는 ego lite(또는 Aside)로 읽어요» 한 줄만 보여 준다. 끝 요약의 도구 줄도 실제 상태대로. (1.8.5 실측: ego lite 가 있어도 «웹 = Playwright 필수»로 설치를 권하고, 끝 안내도 «웹페이지 = Playwright 먼저 설치».)
+- 문서: 명령(`commands/knowledge-manager.md`)·브라우저 추상화·추출 스킬·에이전트 정의·Codex 사본의 «Aside 3순위» 자리를 «브라우저 자동 탐색» 자리로 바꿈. Scrapling 이 없을 때 3순위(브라우저)를 건너뛰고 Playwright CLI 로 가던 문장도 고침.
+- 시험: `scripts/tests/test_km_browser_detect.py`(ego 만 · Aside 만 · 둘 다 · 둘 다 없음 + PATH 밖 설치 · 대답 없는 CLI · 시한 · 설정값 갈래) — CI 에 추가.
+- 한계: 설정은 지금 작업 폴더의 `km-config.json` 을 vault 쪽보다 먼저 읽는다 · 감지 대본이 여러 판 깔려 있으면 이름순 마지막 하나를 쓴다 · Windows 는 PATH 만 본다(고정 설치 폴더는 맥·리눅스 기준 · 실측 전).
+- 매니페스트: .claude-plugin 1.8.5→1.8.6 · .codex-plugin(동시) · tier2 시험 버전 고정 2줄.
+
 ## 1.8.5 (2026-10-31) — km:search 규칙 원본 단계 · 메모리뱅크 3건 고정 · 깊음 모드 그래프 확장
 - 규칙 원본 축(구 Tier 1-R)을 Tier 0 블록(메모리뱅크 블록과 같은 Bash 호출)으로 옮김. 돌릴지 판정을 모델이 넘기는 `VAULT_MODE` 대신 `km_rules_route.py --auto` 가 직접 함(끔 스위치·서버 응답·결과 source_note 의 vault 실재) — `other` 확정 때만 건너뜀. 실측: 옛 판은 모델이 블록 자체를 안 돌린 회차가 15 중 11.
 - 순위: rg 축 길이 정규화(BM25 꼴) · 조사 떼기 = 남는 줄기 2자 이상일 때만 · 루트 AGENTS.md·CLAUDE.md 를 코퍼스에 늘 포함. 원본 우선 원칙(규칙·절차 질문이면 후보 원본 최소 1개 Read · 원본 = 현재 기준).

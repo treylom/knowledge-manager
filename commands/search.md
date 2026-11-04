@@ -189,15 +189,27 @@ fi
 echo "VAULT_MODE=${VAULT_MODE}"
 ```
 - 이후 모든 절이 이 값을 따른다. 다른 vault 탐색·Obsidian 설정 대조 금지(Phase -1의 vaultPath 미설정 판정만 별개). `same`+source_note면 로컬 Read 허용. `other`는 로컬 파일·CLI 보강·경로 변환·vault/로컬 그래프 탐색 전부 0회; QUICK/DEEP·Phase 2.5도 서버 body만 근거로 쓴다.
-- 양 모드 원문 조회: `curl -s "${SEARCH_ENDPOINT}/api/note?name=<entity>&max_chars=2500" --connect-timeout 3 --max-time 15`; max_chars=100~20000, 응답=`note_path`+`body`. other 답변 말미=`검색: GraphRAG 서버 (다른 vault 인덱스 — 서버 본문 기반)`. 사용자 vault 색인을 원하면 `/tofugraph build`를 이 vault에서 실행하도록 안내.
-- note 실패(예:404)는 이름 변경 재시도 없이 entity·source_note·점수만 사용하고 `원문 미확보 — 서버 메타데이터 기반`을 명시. 멈추지 않는다.
+- 원문 식별은 `entity`가 아닌 검색 결과의 `source_note`로 한다. 아래 caller에 실제 결과의 경로·표시명을 전달한다. same은 해당 vault 내부의 정확 경로만 읽고 API를 호출하지 않는다. other는 로컬 접근 없이 기존 이름 기반 API를 한 번 사용하되, 반환 `note_path`와 기대 `source_note`의 NFC 상대경로가 정확히 일치하기 전에는 본문을 출력·채택하지 않는다. basename 일치나 임의 접두어 제거는 금지한다.
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/km_note_caller.sh" \
+  "$VAULT_MODE" "${VAULT_PATH:-}" "$SOURCE_NOTE" "$ENTITY" "$SEARCH_ENDPOINT"
+```
+- caller는 경로 없음·절대경로·부모탈출·symlink·다른 경로·잘못된 JSON·HTTP 실패를 `unmeasured`/exit 3으로 돌려주며, 원문 확보 0건 성공으로 바꾸지 않는다. 해당 본문은 인용/확보 건수에 포함하지 않고 `원문 미확보 — 식별 불확실/서버 메타데이터 기반`으로 남긴다. 이름 변경 재시도 0, 다른 후보는 원래 읽기로 한 건수 안에서 계속한다. connect 3초/전체 15초·max_chars 2500은 유지한다.
+- other 답변 말미=`검색: GraphRAG 서버 (다른 vault 인덱스 — 서버 본문 기반)`. 사용자 vault 색인은 기존 `/tofugraph build` 안내만 유지하며 이 caller가 빌드를 실행하지 않는다.
+- 지도에 실제로 나온 링크를 따라 원문을 확보할 때만 위키링크 이름 풀기(`km_wikilink_resolver.py`)를 쓴다. LINK_TARGET_NAME은 검증된 지도 단편에서 읽은 위키링크 대상 이름이며 미리 알고 있는 경로를 대신 넣지 않는다. same에서만 vault 파일목록을 만들고 후보가 유일할 때 정규 경로를 위 원문 찾기 검사(`km_note_caller.sh`)로 넘긴다. 여러 후보는 같은 줄의 backtick으로 감싼 vault-root 상대 폴더 힌트로만 좁힌다. 뿌리 없는 부분 폴더 힌트는 추측하지 않는다. /가 든 링크는 vault 뿌리·지도 기준 경로가 안 맞을 때만 폴더 경계 기준 끝맞춤을 허용하며 여전히 후보 1개만 채택한다. 스캔 오류/정규화 충돌/모호함은 미확보, other는 로컬 탐색 0이다.
+```bash
+python3 -I -B "${CLAUDE_PLUGIN_ROOT}/scripts/km_wikilink_resolver.py" \
+  --mode "$VAULT_MODE" --root "${VAULT_PATH:-}" \
+  --map-source "$SOURCE_NOTE" --target-name "$LINK_TARGET_NAME"
+```
+- 이름 풀기 결과는 단편 SHA·frontmatter 포함 여부·링크 위치·같은 줄 힌트·전체목록 SHA/오류·해소 전후 후보를 돌려준다. 유일성은 그 시점의 비원자적 정규 md 파일목록 관측에 한정하며, 새 파일이 이후 생기지 않는다는 보장은 하지 않는다. 본문 2500자 예산과 경로 일치 검사는 유지한다.
 - ENDPOINT_SWITCHED≠none이면 반드시 `⚠️ 원래 서버(<원주소>)가 응답하지 않아 <새주소> 로 검색했습니다 — 색인된 vault 가 다를 수 있습니다`와 source_note 한 건을 그대로 표시. 경로 접두어는 vault 식별자가 아니다.
 - `--max-time 60`: 냉시작 지연 때문에 connect-timeout만으로 부족하다. 조정 시 관측 정상 시간보다 넉넉히 잡는다. `/health` 200으로 검색 정상을 판단하지 않는다.
 - 서버 미기동/미설치면 조용히 Tier 2; `/tofugraph`로 구축하면 자동 사용. 질의는 3~7단어 권장(문장도 허용); 빈손이어도 동일 질의 재시도 금지. 별칭·한/영 등 표현을 1회 바꾸고 다음 티어로 간다.
 
 #### Phase 0.4: 구조 문서 축 (000-START-HERE)
 
-셋업이 만든 3문서(`START-HERE`·`VAULT-STRUCTURE`·`MOC-Map`)는 **Tier 1 정합 확인 또는 실패 후 본문 근거 확보 전에 먼저 참조**한다 — 있으면 `MOC-Map` 을 Read(≤130줄)해서 질문을 허브에 매핑한 뒤 검색에 들어간다.
+셋업의 3문서는 기존 Tier 1 정합 확인 또는 실패 후 본문 근거 확보 전에 참조한다. `MOC-Map` 전체는 로컬 메타데이터로 스캔하되 선택 허브의 원문 근거만 합계 ≤130줄 읽는다. 130줄은 근거 출력 예산이며 후보 탐색 절단선이 아니다. other의 로컬 접근 0은 유지한다.
 입력 변수는 `VAULT_PATH` 와 `QUERY_KEYWORDS`(핵심 키워드 1~3개, 공백 구분) 둘이고, 아래 블록은 그대로 실행할 수 있다.
 
 ```bash
@@ -206,21 +218,18 @@ for f in START-HERE VAULT-STRUCTURE MOC-Map; do
   if [ -f "$STRUCT_DIR/$f.md" ]; then STRUCT_DOCS=$((STRUCT_DOCS+1)); else STRUCT_MISSING="$STRUCT_MISSING $f"; fi
 done
 echo "STRUCT_DOCS=${STRUCT_DOCS}/3 missing=[${STRUCT_MISSING# }]"
-# 허브 매핑: MOC-Map 앞 130줄에서 허브마다 «겹친 키워드 수»를 세어 많은 순 ≤3 · 동점 = 지도 위쪽(먼저 나온) 순
-# 키워드는 awk 안에서 쪼갠다(zsh 는 $QUERY_KEYWORDS 를 안 쪼갬) · 대소문자 무시 글자 그대로 비교(정규식 ❌) · 허브명은 줄 단위(공백 든 이름 보존)
+# 전체 지도 스캔, 기존 literal 점수/행순 정렬 및 최대 3허브 유지. 근거 출력 ≤130줄.
 ROUTE_HUBS=""
-if [ -f "$STRUCT_DIR/MOC-Map.md" ]; then
-  ROUTE_HUBS="$(head -130 "$STRUCT_DIR/MOC-Map.md" | awk -v kws="$QUERY_KEYWORDS" '
-    BEGIN { m = split(tolower(kws), T, " "); for (i = 1; i <= m; i++) if (!(T[i] in U)) { U[T[i]] = 1; K[++n] = T[i] } }
-    { l = tolower($0); s = $0
-      while (match(s, /\[\[[^]|#]*/)) { h = substr(s, RSTART + 2, RLENGTH - 2); s = substr(s, RSTART + RLENGTH)
-        if (!(h in F)) F[h] = NR
-        for (i = 1; i <= n; i++) if (index(l, K[i])) M[h SUBSEP i] = 1 } }
-    END { for (h in F) { c = 0; for (i = 1; i <= n; i++) if ((h SUBSEP i) in M) c++; if (c) printf "%d\t%d\t%s\n", c, F[h], h } }' \
-    | sort -t "$(printf '\t')" -k1,1nr -k2,2n | head -3 | cut -f3)"
+if MAP_RESULT="$(python3 -I -B "${CLAUDE_PLUGIN_ROOT}/scripts/km_search_guard.py" \
+  route --map "$STRUCT_DIR/MOC-Map.md" --keywords "$QUERY_KEYWORDS")"; then
+  ROUTE_HUBS="$(printf '%s' "$MAP_RESULT" | python3 -I -c 'import json,sys; print("\n".join(h["path"] for h in json.load(sys.stdin)["hubs"]))')"
+  ROUTE_HUB_COUNT="$(printf '%s' "$MAP_RESULT" | python3 -I -c 'import json,sys; print(json.load(sys.stdin)["hub_count"])')"
+  echo "ROUTE_SCAN=ok ROUTE_HUB_COUNT=${ROUTE_HUB_COUNT}"
+else
+  unset ROUTE_HUB_COUNT
+  echo "ROUTE_SCAN=unmeasured ROUTE_HUB_COUNT=unmeasured"
 fi
-ROUTE_HUB_COUNT=$(printf '%s\n' "$ROUTE_HUBS" | awk 'NF' | wc -l | tr -d ' ')
-echo "ROUTE_HUBS=[$(printf '%s\n' "$ROUTE_HUBS" | awk 'NF' | paste -sd '|' - | sed 's/|/ | /g')] count=${ROUTE_HUB_COUNT}"
+printf '%s\n' "$MAP_RESULT"
 ```
 
 - `STRUCT_DOCS` 가 3 미만이면 답변에 「구조 문서 없음(<빠진 것>) — `/km:setup` 재실행으로 생성」 1줄을 적고 **그대로 계속 진행**한다(멈춤 ❌).

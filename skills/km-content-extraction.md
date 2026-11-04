@@ -14,17 +14,20 @@
 
 ```bash
 # 1순위: Scrapling (Python, JS 렌더링, 3x 빠름)
-# scripts/scrapling-crawl.py 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 playwright-cli
+# scripts/scrapling-crawl.py 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 3순위(브라우저 자동 탐색)로
 python3 scripts/scrapling-crawl.py fetch "[URL]" --mode dynamic --output markdown
 
 # 2순위: Scrapling Stealth (안티봇 우회 필요 시)
 python3 scripts/scrapling-crawl.py fetch "[URL]" --mode stealth --output markdown
 
-# 3순위: Aside (1.8.4 — 예전에 playwright 로 읽던 자리: Scrapling 으로는 안 열리지만 브라우저로는 누구나 볼 수 있는 공개 페이지 · SNS · 브라우저 조작)
-# 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
-aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
-# 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다.
-# aside 가 없거나 실패하면: 실패 이유를 남기고 다음 순위(Playwright CLI)로 넘어간다.
+# 3순위: 브라우저 (1.8.6 — 자동 탐색: ego lite → Aside → 다음 순위)
+# 먼저 «브라우저 자동 탐색» 블록(skills/km-browser-abstraction.md · commands/knowledge-manager.md 같은 글자)을 실행해 provider·bin 을 얻는다.
+# provider=ego   → "<bin>" nodejs -e '…page.goto("[URL]") … document.body.innerText …'  (블록의 예시 그대로)
+# provider=aside → "<bin>" exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
+# provider=fallback → 4순위(Playwright CLI)로.
+# 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 어느 브라우저로도 열지 않는다.
+# 실패하면: 실패 이유를 남기고 다음 순위로 넘어간다.
+# 단, ego lite 가 사용자 차례로 멈추면(권한 창 등 · 오류에 permission prompt / user now controls) 넘어가지 않는다 — 자동 탐색 블록의 예외대로 누를 곳을 안내하고 같은 작업 공간에서 이어 간다.
 
 # 4순위: Playwright CLI (Bash 기반 - 폴백 + 스크린샷)
 playwright-cli open [URL]
@@ -64,8 +67,8 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 | 소스 유형 | 🚨 필수 도구 호출 | 이미지 처리 | 참조 스킬 |
 |----------|------------------|-----------|----------|
 | **YouTube** | `youtube-transcript-api` → `yt-dlp` 폴백 | 썸네일만 | → km-youtube-transcript.md |
-| **소셜 미디어** | `aside exec` ⭐ (fallback: playwright-cli → MCP → WebFetch · 실패 이유 기록) | 미디어 URL 수집 | → km-social-media.md |
-| **일반 웹 페이지** | Scrapling ⭐ (막히면 `aside exec` → playwright-cli → MCP → WebFetch) | img/figure 파싱 + 차트 스크린샷 | 이 문서 |
+| **소셜 미디어** | 브라우저 자동 탐색(ego lite → Aside) ⭐ (fallback: playwright-cli → MCP → WebFetch · 실패 이유 기록) | 미디어 URL 수집 | → km-social-media.md |
+| **일반 웹 페이지** | Scrapling ⭐ (막히면 브라우저 자동 탐색(ego lite → Aside) → playwright-cli → MCP → WebFetch) | img/figure 파싱 + 차트 스크린샷 | 이 문서 |
 | PDF | **1순위**: `Read` → **2순위**: `opendataloader-pdf` → **3순위**: `marker_single` → **4순위**: `GLM-OCR` → **5순위**: Gemini OCR | ODL/marker images/ 폴더 스캔 | → pdf 스킬, km-glm-ocr |
 | Word (DOCX) | **1순위**: `npx -y @firecrawl/anydoc "[파일]"` → **2순위**: `Read` | 임베디드 이미지 설명 추출 | → 아래 "Word 문서" · docx 스킬은 **편집 전용** |
 | Excel (XLSX) | **1순위**: `npx -y @firecrawl/anydoc "[파일]"` (수식 없는 표 한정) → **2순위**: `xlsx` 스킬 (수식·분석·편집) | 차트 없음 (데이터만) | → 아래 "Excel" — 🔴 수식 셀 소실·헤더 밀림 주의 |
@@ -319,7 +322,7 @@ OBSIDIAN_CLI="$OBSIDIAN_CLI"
 ```
 1순위: scrapling-crawl.py --mode dynamic (Python, JS 렌더링, 3x 빠름)
 2순위: scrapling-crawl.py --mode stealth (Python, 안티봇 우회)
-3순위: aside exec (1.8.4 · 막히는 사이트·SNS — 예전 playwright 자리 · 실패하면 이유를 남긴다)
+3순위: 브라우저 자동 탐색 — ego lite → Aside (1.8.6 · 막히는 사이트·SNS · 실패하면 이유를 남긴다)
 4순위: playwright-cli (Bash, 폴백 + 스크린샷)
 5순위: Playwright MCP (CLI 실패 시 - 동일 기능, MCP 프로토콜)
 6순위: WebFetch (정적 콘텐츠 추출 가능 - 허용)
@@ -340,7 +343,7 @@ Step 1: Video ID 추출 (URL 파싱)
 Step 2: 트랜스크립트 추출 (youtube-transcript-api → yt-dlp 폴백)
 Step 3: 메타데이터 + 챕터 수집 (🚨 정확성 보장!)
         1순위: yt-dlp --dump-json
-        2순위: aside exec(메타데이터)
+        2순위: 브라우저 자동 탐색(ego lite → Aside · 메타데이터)
         3순위: playwright-cli open → snapshot (⭐ 핵심 폴백)
         4순위: Playwright MCP (CLI 실패 시)
         → 챕터가 있으면 타임라인 타임스탬프로 활용!
@@ -348,11 +351,11 @@ Step 4: 콘텐츠 분석 (프리셋 반영 — 타임라인, 인사이트, 인�
 ```
 
 **트랜스크립트 추출에는 Playwright/WebFetch·aside 사용 금지** — 자막은 반드시 youtube-transcript-api 또는 yt-dlp 사용.
-**메타데이터/챕터 수집에는 aside·playwright-cli 사용 가능** — yt-dlp 실패 시 aside exec, 그다음 playwright-cli로 제목, 채널, 업로드일, 챕터 등 수집.
+**메타데이터/챕터 수집에는 브라우저(자동 탐색: ego lite → Aside)·playwright-cli 사용 가능** — yt-dlp 실패 시 자동 탐색 브라우저, 그다음 playwright-cli로 제목, 채널, 업로드일, 챕터 등 수집.
 
 ### 소셜 미디어 URL
 
-**다음 URL 패턴은 aside 로 크롤링(없으면 Playwright CLI):**
+**다음 URL 패턴은 브라우저 자동 탐색(ego lite → Aside)으로 크롤링(없으면 Playwright CLI):**
 - `threads.net/*` → km-social-media.md 스킬 참조
 - `instagram.com/p/*` → km-social-media.md 스킬 참조
 - `instagram.com/reel/*` → km-social-media.md 스킬 참조
@@ -374,17 +377,20 @@ python3 scripts/scrapling-crawl.py fetch "[URL]" --mode dynamic --images --outpu
 python3 scripts/scrapling-crawl.py fetch "[URL]" --mode stealth --output markdown
 ```
 
-### 3순위: Aside (1.8.4 — Scrapling 으로 안 열리는 공개 페이지·SNS)
+### 3순위: 브라우저 자동 탐색 — ego lite → Aside (1.8.6 — Scrapling 으로 안 열리는 공개 페이지·SNS)
 
 ```bash
-# Aside (1.8.4 — 예전에 playwright 로 읽던 자리: Scrapling 으로는 안 열리지만 브라우저로는 누구나 볼 수 있는 공개 페이지 · SNS · 브라우저 조작)
-# 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
-aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
-# 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다.
-# aside 가 없거나 실패하면: 실패 이유를 남기고 다음 순위(Playwright CLI)로 넘어간다.
+# 브라우저 (1.8.6 — 자동 탐색: ego lite → Aside → 다음 순위)
+# 먼저 «브라우저 자동 탐색» 블록(skills/km-browser-abstraction.md · commands/knowledge-manager.md 같은 글자)을 실행해 provider·bin 을 얻는다.
+# provider=ego   → "<bin>" nodejs -e '…page.goto("[URL]") … document.body.innerText …'  (블록의 예시 그대로)
+# provider=aside → "<bin>" exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
+# provider=fallback → 4순위(Playwright CLI)로.
+# 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 어느 브라우저로도 열지 않는다.
+# 실패하면: 실패 이유를 남기고 다음 순위로 넘어간다.
+# 단, ego lite 가 사용자 차례로 멈추면(권한 창 등 · 오류에 permission prompt / user now controls) 넘어가지 않는다 — 자동 탐색 블록의 예외대로 누를 곳을 안내하고 같은 작업 공간에서 이어 간다.
 ```
 
-### 4순위: Playwright CLI (Aside 실패 시 + 스크린샷)
+### 4순위: Playwright CLI (자동 탐색 브라우저 실패·없음 + 스크린샷)
 
 ```bash
 playwright-cli open "[URL]"
@@ -413,7 +419,7 @@ WebFetch({ url: "[URL]", prompt: "전체 내용을 추출해줘" })
 ### 웹 크롤링 완료 검증 (필수!)
 
 ```
-□ Scrapling 으로 안 열리거나 SNS 면 aside 로 열었나? (실패하면 이유를 남겼나?)
+□ Scrapling 으로 안 열리거나 SNS 면 자동 탐색 브라우저(ego lite → Aside)로 열었나? (실패하면 이유를 남겼나?)
 □ scrapling-crawl.py 또는 playwright-cli snapshot 호출 완료?
 □ 출력에서 실제 콘텐츠 확인 가능?
 □ 실패 시 다음 순위 Fallback 시도 완료?
