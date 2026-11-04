@@ -459,7 +459,7 @@ python3 scripts/scrapling-crawl.py fetch "https://example.com/article" --mode st
 # provider=fallback → 4순위(Playwright CLI)로.
 # 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 어느 브라우저로도 열지 않는다.
 # 실패하면: 실패 이유를 남기고 다음 순위로 넘어간다.
-# 단, ego lite 가 사용자 차례로 멈추면(권한 창 등 · 오류에 permission prompt / user now controls) 넘어가지 않는다 — 자동 탐색 블록의 예외대로 누를 곳을 안내하고 같은 칸에서 이어 간다.
+# 단, ego lite 가 사용자 차례로 멈추면(권한 창 등 · 오류에 permission prompt / user now controls) 넘어가지 않는다 — 자동 탐색 블록의 예외대로 누를 곳을 안내하고 같은 작업 공간에서 이어 간다.
 
 # 4순위 Fallback: Playwright CLI (스크린샷 필요 시)
 playwright-cli open "https://threads.net/@user/post/abc123"

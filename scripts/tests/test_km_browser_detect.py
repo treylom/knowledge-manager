@@ -265,7 +265,7 @@ class DocsWiring(unittest.TestCase):
             self.assertIn("Return to agent", s, rel)
             self.assertIn("Need your action", s, rel)
             # where to click to watch the agent's space (the hint line, not the taskSpace("km read") code)
-            self.assertTrue("‘km read’ 칸" in s or "‘km read’ space" in s, rel)
+            self.assertTrue("‘km read’ 공간" in s or "‘km read’ space" in s, rel)
 
     def test_every_browser_failover_line_carries_the_user_control_exception(self):
         bad = []

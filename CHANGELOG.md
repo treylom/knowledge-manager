@@ -12,8 +12,8 @@
 - 웹 페이지를 브라우저로 열어야 할 때 km 이 먼저 `scripts/km_browser_detect.py` 를 한 번 돌려, 깔려 있고 대답하는 브라우저를 고른다: ego lite(`ego-browser skill` 안내가 끝까지 나옴) → Aside(`aside --version` 성공) → 기존 순서(Playwright CLI → Playwright MCP → WebFetch). 사용자가 브라우저를 고르거나 설정하는 단계는 없다.
 - 실행 파일 절대 경로를 돌려준다 — `~/.local/bin` 이 PATH 에 없는 맥에서도 ego lite·Aside 를 찾는다(고정 설치 폴더도 본다). 확인 명령마다 시한(기본 15초 · `KM_BROWSER_PROBE_TIMEOUT`)이 있어, 멈춘 CLI 가 있어도 한 도구당 최대 15초만 기다린다.
 - ego lite 가 꺼져 있어도 `ego-browser nodejs` 명령이 앱 창을 띄운다(맥 실측) — 따로 켜는 단계 없음.
-- ego lite 는 에이전트 작업을 별도 작업 칸에서 해서 창엔 빈 새 탭만 보인다 — 처음 열 때 «숫자 버튼 → ‘km read’ 칸» 한 줄을 사용자에게 알린다(맥 실측).
-- ego lite 가 사이트 권한 창(알림 허용 등)에서 «사용자 차례»로 멈추면 다른 브라우저로 넘어가지 않고, ego lite 창에서 무엇을 누르면 되는지 안내한 뒤 같은 작업 공간에서 이어 간다(1.8.6 맥 실측: 넘어가기 문장대로 Aside 로 빠짐 · ego 안내 = 권한 창은 사용자가 처리 · 우회 금지) · 추출 스킬·에이전트·스텔스 문서의 «실패하면 다음 순위» 줄 4곳에도 같은 예외).
+- ego lite 는 에이전트 작업을 별도 작업 공간에서 해서 창엔 빈 새 탭만 보인다 — 처음 열 때 «숫자 버튼 → ‘km read’ 공간» 한 줄을 사용자에게 알린다(맥 실측).
+- ego lite 가 사이트 권한 창(알림 허용 등)에서 «사용자 차례»로 멈추면 다른 브라우저로 넘어가지 않고, ego lite 창에서 무엇을 누르면 되는지 안내한 뒤 같은 작업 공간에서 이어 간다. 1.8.6 맥 실측에서는 «실행 중 실패하면 다음 칸» 문장대로 Aside 로 넘어갔다. ego lite 안내대로 권한 창은 사용자가 처리하고, 봇이 우회하지 않는다. 추출 스킬·에이전트·스텔스 문서의 «실패하면 다음 순위» 줄 4곳에도 같은 예외를 넣었다.
 - `browser.provider`: 새 기본값 `auto`(설정 마법사 · km-config.example.json). 예전 기본값 `aside`(1.8.4~1.8.5 예시)가 적힌 설정은 Aside 가 깔려 있고 대답하면 Aside 를 먼저 쓰고, 아니면 자동 순서로 넘어간다. `playwright`(예전 설정 마법사 기본값)는 `auto` 와 같게 다뤄 자동 순서(ego lite → Aside → 기존 순서)를 따른다. `hyperbrowser`·`antigravity` 를 적은 경우만 그대로 따른다.
 - 설정 마법사(`/km:setup`): Playwright 설치 질문 전에 감지기를 돌려, ego lite·Aside 가 있으면 질문을 건너뛰고 «웹페이지는 ego lite(또는 Aside)로 읽어요» 한 줄만 보여 준다. 끝 요약의 도구 줄도 실제 상태대로. (1.8.5 실측: ego lite 가 있어도 «웹 = Playwright 필수»로 설치를 권하고, 끝 안내도 «웹페이지 = Playwright 먼저 설치».)
 - 문서: 명령(`commands/knowledge-manager.md`)·브라우저 추상화·추출 스킬·에이전트 정의·Codex 사본의 «Aside 3순위» 자리를 «브라우저 자동 탐색» 자리로 바꿈. Scrapling 이 없을 때 3순위(브라우저)를 건너뛰고 Playwright CLI 로 가던 문장도 고침.
