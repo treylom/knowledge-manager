@@ -47,7 +47,7 @@ if [ -f "$KM_BD" ]; then python3 "$KM_BD" --config "./km-config.json" --config "
 - The script reads `browser.provider` from km-config.json itself (`--config`; missing, `auto` or `playwright` → auto order). `ego` / `aside` are tried first but fall through to the auto order when that tool is missing.
 - If this file was read with Read and `${CLAUDE_PLUGIN_ROOT}` is still literal, replace it in the first line with this plugin's folder (this file's path up to `.agent/` / `skills/`).
 - Output = one JSON line. `provider` = `ego` | `aside` | `fallback` | (explicit `hyperbrowser` / `antigravity`) · `bin` = absolute path of the CLI.
-- **`provider=ego`** → open with ego lite, using the printed `bin` absolute path as the command (works even when its folder is not on PATH). If the ego lite app is closed, this command opens its window.
+- **`provider=ego`** → open with ego lite, using the printed `bin` absolute path as the command (works even when its folder is not on PATH). If the ego lite app is closed, this command opens its window (measured on macOS; other OSes not yet checked).
   ```bash
   "<bin>" nodejs -e '
   const task = await taskSpace("km read");

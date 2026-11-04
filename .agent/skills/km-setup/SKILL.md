@@ -143,7 +143,7 @@ Selection: _
 
 ### For Claude Code
 
-Claude Code has no built-in browser. Since 1.8.6, run the browser auto-detect first (`python3 <plugin>/scripts/km_browser_detect.py --get provider`): if it prints `ego` (ego lite) or `aside` (Aside), web pages are read with that browser and Playwright is **not** installed. Only on `fallback` is Playwright added.
+Claude Code has no built-in browser. Since 1.8.6, run the browser auto-detect first (`python3 <plugin>/scripts/km_browser_detect.py --get provider`): if it prints `ego` (ego lite) or `aside` (Aside), web pages are read with that browser and Playwright is **not** installed. Only on `fallback` does setup go on to the Playwright install question.
 
 ```javascript
 function configure_claude_mcp(vaultPath, browserProvider /* output of km_browser_detect.py --get provider */) {
