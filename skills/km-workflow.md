@@ -8,7 +8,7 @@
 
 다음 Phase에서는 반드시 도구를 실제로 호출해야 합니다:
 
-> `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 `playwright-cli`.
+> `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 브라우저 자동 탐색(ego lite → Aside), 그다음 playwright-cli.
 
 | Phase | 필수 행동 | 절대 금지 |
 |-------|----------|----------|

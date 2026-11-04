@@ -87,7 +87,7 @@ Task 도구로 호출된 경우:
 
 ### 콘텐츠 추출 (Phase 2)
 
-> `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 `playwright-cli`.
+> `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 브라우저 자동 탐색(ego lite → Aside), 그다음 playwright-cli.
 
 | 입력 유형 | 필수 도구 호출 | 절대 금지 |
 |----------|--------------|----------|
@@ -834,10 +834,11 @@ AI 모델명 작성 시:
 |------|------|------|----------|
 | 1순위 | **scrapling-crawl.py --mode dynamic** | 빠름, JS 렌더링, Python | 기본 (소셜 미디어 포함) |
 | 2순위 | **scrapling-crawl.py --mode stealth** | 안티봇 우회 | 봇 차단 시 |
-| 3순위 | **playwright-cli** (Bash) | 안정적, JS 렌더링, 스크린샷 | scrapling 실패 시 폴백 |
-| 4순위 | **Playwright MCP** | 동일 기능, MCP 프로토콜 | CLI 실패 시 |
-| 5순위 | **WebFetch** | 빠름, 정적 콘텐츠 | 정적 웹페이지 |
-| 6순위 | **Hyperbrowser** | 클라우드, stealth | 크레딧 있고 위 모두 실패 시 |
+| 3순위 | **브라우저 자동 탐색** — ego lite → Aside (`scripts/km_browser_detect.py`) | 실제 브라우저, 로그인 세션 | scrapling 실패·없음 시 (1.8.6) |
+| 4순위 | **playwright-cli** (Bash) | 안정적, JS 렌더링, 스크린샷 | 자동 탐색 브라우저 없음·실패 시 |
+| 5순위 | **Playwright MCP** | 동일 기능, MCP 프로토콜 | CLI 실패 시 |
+| 6순위 | **WebFetch** | 빠름, 정적 콘텐츠 | 정적 웹페이지 |
+| 7순위 | **Hyperbrowser** | 클라우드, stealth | 크레딧 있고 위 모두 실패 시 |
 
 모든 스킬은 플러그인 설치에서는 `skills/`, 프로젝트 설치에서는 `.claude/skills/`(install-to-project.sh 가 복사)에서 로드됩니다.
 

@@ -25,7 +25,7 @@ triggers:
 
 ## 빠른 판단: 어떤 도구를 사용할까?
 
-> `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 `playwright-cli`.
+> `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 브라우저 자동 탐색(ego lite → Aside), 그다음 playwright-cli.
 
 ```bash
 # 브라우저 (1.8.6 — 자동 탐색: ego lite → Aside → 다음 순위)
@@ -58,7 +58,7 @@ triggers:
 
 > **이 스킬의 TS 스크립트(`stealth-browser.ts` · `stealth-actions.ts` · `stealth-navigate-and-extract.ts`)는 이 플러그인에 포함되어 있지 않습니다.** 플러그인 설치(`scripts/install-to-project.sh`)로는 이 스킬의 `scripts/` 디렉터리가 만들어지지 않으므로, 이 문서는 도구 선택 기준과 기법 참조만 제공합니다.
 
-봇 탐지가 있는 사이트는 `km-content-extraction` 스킬의 Scrapling stealth 모드를 사용합니다. 아래 `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않습니다 — 별도로 준비한 경우에만 쓰고, 없으면 `playwright-cli` 로 갑니다:
+봇 탐지가 있는 사이트는 `km-content-extraction` 스킬의 Scrapling stealth 모드를 사용합니다. 아래 `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않습니다 — 별도로 준비한 경우에만 쓰고, 없으면 브라우저 자동 탐색(ego lite → Aside), 그다음 `playwright-cli` 로 갑니다:
 
 ```bash
 # scripts/scrapling-crawl.py 는 플러그인 미포함 — 별도 준비한 경우에만

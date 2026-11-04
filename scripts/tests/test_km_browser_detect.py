@@ -154,6 +154,19 @@ class Detect(unittest.TestCase):
         self.assertTrue(d["detected"]["aside"]["found"])
         self.assertFalse(d["detected"]["aside"]["ready"])
 
+    def test_aside_prints_version_but_fails_is_not_ready(self):
+        # rc check alone (output looks fine, exit code says no)
+        self.e.put_path("aside", '#!/bin/sh\necho 1.26.0\nexit 7\n')
+        d = self.e.run()
+        self.assertEqual(d["provider"], "fallback")
+        self.assertEqual(d["detected"]["aside"]["why"], "probe exit 7")
+
+    def test_ego_full_guide_but_fails_is_not_ready(self):
+        self.e.put_path("ego-browser", '#!/bin/sh\necho "[ego-browser:skill] end of guide v2.2.0"\nexit 5\n')
+        d = self.e.run()
+        self.assertEqual(d["provider"], "fallback")
+        self.assertEqual(d["detected"]["ego"]["why"], "probe exit 5")
+
     def test_both_hang_fallback_within_limit(self):
         self.e.put_path("ego-browser", EGO_HANG)
         self.e.put_path("aside", EGO_HANG)
@@ -216,10 +229,22 @@ class DocsWiring(unittest.TestCase):
             self.assertNotIn('--prefer "auto"', s, rel)
 
     def test_no_scrapling_missing_skips_browser_slot(self):
-        for rel in ("commands/knowledge-manager.md", "skills/km-content-extraction.md"):
-            s = self.read(rel)
-            self.assertNotIn("별도 준비, 없으면 playwright-cli", s, rel)
-            self.assertNotIn("별도 준비, 없으면 `playwright-cli`", s, rel)
+        # every doc in the plugin: «no Scrapling → straight to playwright-cli» must not skip the browser slot
+        bad = ("별도 준비, 없으면 playwright-cli", "별도 준비, 없으면 `playwright-cli`",
+               "없으면 `playwright-cli` 로 갑니다")
+        hits = []
+        for top in ("commands", "skills", "agents", ".agent"):
+            for dirpath, _, files in os.walk(os.path.join(self.ROOT, top)):
+                for fn in files:
+                    if fn.endswith(".md"):
+                        p = os.path.join(dirpath, fn)
+                        with open(p, encoding="utf-8") as f:
+                            s = f.read()
+                        hits += [f"{os.path.relpath(p, self.ROOT)}: {b}" for b in bad if b in s]
+        self.assertEqual(hits, [])
+        # positive pair: the replacement wording is really there
+        self.assertIn("없으면 브라우저 자동 탐색(ego lite → Aside), 그다음 playwright-cli",
+                      self.read("agents/knowledge-manager.md"))
 
     def test_new_configs_default_auto(self):
         cfg = json.loads(self.read("km-config.example.json"))
