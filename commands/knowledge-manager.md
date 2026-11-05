@@ -259,11 +259,11 @@ PDF 파일이 입력된 경우에만 이 질문을 합니다:
 AskUserQuestion({
   "questions": [
     {
-      "question": "대용량 PDF입니까? /pdf 스킬로 처리하시겠습니까?",
+      "question": "대용량 PDF입니까? marker_single 로 변환해서 처리하시겠습니까?",
       "header": "PDF 처리",
       "options": [
         {"label": "아니오 (기본)", "description": "Read로 직접 읽기 시도"},
-        {"label": "예", "description": "/pdf 스킬로 전체 변환 후 처리"}
+        {"label": "예", "description": "marker_single 로 전체 변환 후 처리 (skills/pdf.md)"}
       ],
       "multiSelect": false
     }
@@ -319,7 +319,7 @@ if [ -f "$KM_BD" ]; then python3 "$KM_BD" --config "./km-config.json" --config "
 | **소셜 미디어 (Threads/Instagram)** | `playwright-cli open → snapshot` ⭐ **1순위** (scrapling은 첫 포스트만 반환, SNS에서 MCP 사용 금지) |
 | **일반 웹 URL** | `scrapling-crawl.py --mode dynamic` (1순위) → `--mode stealth` (2순위) → 브라우저 자동 탐색(ego lite → Aside · 3순위 · Scrapling 으로 안 열릴 때 · 위 블록) → `playwright-cli` (4순위) → `WebFetch` (정적) |
 | **PDF (작은)** | Read 직접 시도 (< 5MB, < 20p) |
-| **PDF (큰)** | /pdf 스킬 또는 marker_single |
+| **PDF (큰)** | marker_single (`skills/pdf.md` 안내) |
 | **DOCX/XLSX/PPTX** | Read 또는 해당 스킬 도구 |
 | **Notion URL** | mcp__notion__API-get-block-children |
 | **Vault 종합 ("종합해줘")** | CLI: `"$OBSIDIAN_CLI" search` + 순차 `read` / MCP 폴백: search_vault + read_multiple_notes |

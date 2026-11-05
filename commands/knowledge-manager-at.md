@@ -277,11 +277,11 @@ PDF 파일이 입력된 경우에만 이 질문을 합니다:
 AskUserQuestion({
   "questions": [
     {
-      "question": "대용량 PDF입니까? /pdf 스킬로 처리하시겠습니까?",
+      "question": "대용량 PDF입니까? marker_single 로 변환해서 처리하시겠습니까?",
       "header": "PDF 처리",
       "options": [
         {"label": "아니오 (기본)", "description": "Read로 직접 읽기 시도"},
-        {"label": "예", "description": "/pdf 스킬로 전체 변환 후 처리"}
+        {"label": "예", "description": "marker_single 로 전체 변환 후 처리 (skills/pdf.md)"}
       ],
       "multiSelect": false
     }
