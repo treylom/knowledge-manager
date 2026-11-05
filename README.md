@@ -27,7 +27,6 @@ Claude Code 안에서 아래 세 줄을 순서대로 치면 끝이에요.
 | `/km:setup` (= `/km:knowledge-manager-setup`) | 처음 한 번, vault 경로·도구·프로필을 설정해요 | `/km:setup` |
 | `/km:interview` | 「내 vault 를 어떻게 짜야 하나」 상담 → 설계 문서 1장 | `/km:interview` |
 | `/km:reform` | 폴더 이동·프론트매터·링크를 한꺼번에 손봐요(계획서 먼저) | `/km:reform plan` |
-| `/km:pdf` | 너무 큰 PDF·한글 경로 PDF 를 Markdown 으로 바꿔요 | `/km:pdf "보고서.pdf" --page_range "0-19"` |
 | `/km:tofugraph` | 검색 엔진(GraphRAG)을 설치·점검·수리해요 | `/km:tofugraph` |
 | `/km:km-update` | 플러그인을 최신으로 받고 vault 설정을 다시 입혀요 | `/km:km-update` |
 | `/km:knowledge-manager-at` | 위 정리 작업을 에이전트 9명이 나눠서 해요(tmux 필요) | `/km:knowledge-manager-at https://youtube.com/watch?v=XXX` |
@@ -63,7 +62,7 @@ Claude Code 안에서 아래 세 줄을 순서대로 치면 끝이에요.
 
 **결과는 어디에**: vault 안. 내가 쓴 글(원저자 = 본인)은 `Mine/` 아래, 남의 자료는 `Library/` 아래(예: 웹·YouTube 정리 → `Library/Zettelkasten/<주제>/`, 논문 → `Library/Papers/`). 끝나면 「처리 결과 보고」에 노트별 경로가 표로 나오고, 세션 기록이 `_km-log.md` 에 한 줄 남아요.
 
-**자주 하는 실수**: 큰 PDF 를 바로 넣으면 「Prompt is too long」이 떠요. 그땐 `/km:pdf` 로 페이지를 나눠 변환한 뒤 넣으세요.
+**자주 하는 실수**: 큰 PDF 를 바로 넣으면 「Prompt is too long」이 떠요. 그땐 터미널에서 PDF → Markdown 변환기 `marker_single` 로 페이지를 나눠 바꾼 뒤 넣으세요. 처음 한 번은 `pip install marker-pdf` 로 깔아요. 예: `marker_single "파일.pdf" --page_range "0-19" --output_format markdown --output_dir ./km-temp`(첫 페이지가 0). 결과는 `./km-temp/<파일명>/<파일명>.md` 에 생기고, 그 파일을 `/km:knowledge-manager ./km-temp/<파일명>/<파일명>.md` 처럼 넣으면 노트가 돼요. 페이지 범위는 도구가 정해 주지 않으니 직접 정해요. 경로에 한글이 있어 PDF 읽기가 실패할 때나 글자가 안 뽑힐 때도 같은 방법을 써요.
 
 ## `/km:setup` — 처음 설정 (= `/km:knowledge-manager-setup`)
 
@@ -108,21 +107,6 @@ Claude Code 안에서 아래 세 줄을 순서대로 치면 끝이에요.
 **결과는 어디에**: `_meta/REFORM-PLAN-<시각>.md`(계획서) · `_meta/REFORM-REPORT-<시각>.md`(적용 결과). 되돌리기는 `git -C <vault> reset --hard km-reform-pre-<시각>`.
 
 **자주 하는 실수**: vault 가 git 저장소가 아니면 `apply` 가 멈춰요(스냅샷 없이는 진행 안 함). 먼저 `git -C <vault> init` 을 하세요.
-
-## `/km:pdf` — 큰 PDF 를 Markdown 으로
-
-**언제 쓰나**: PDF 를 넣었더니 「Prompt is too long」이 뜰 때, 파일 경로에 한글이 있어 읽기가 실패할 때, 텍스트 추출이 안 될 때.
-
-**치는 법**
-```
-/km:pdf "파일.pdf"
-/km:pdf "파일.pdf" --page_range "0-19"
-```
-뒤에서 `marker_single`(PDF → Markdown 변환기)이 돌아요. 너무 크면 페이지 범위를 물어보니 `--page_range "시작-끝"` 으로 잘라서 다시 치면 됩니다(첫 페이지가 0).
-
-**결과는 어디에**: 현재 폴더의 `./km-temp/<파일명>/<파일명>.md`. 이걸 `/km:knowledge-manager` 에 넣으면 노트가 돼요.
-
-**자주 하는 실수**: 페이지 범위를 도구가 알아서 정해 주길 기다리기 — 일부러 안 정해요. 범위는 사용자가 직접 씁니다.
 
 ## `/km:tofugraph` — 검색 엔진(GraphRAG) 운영
 
@@ -229,7 +213,6 @@ The third line, `/km:setup`, walks you through the vault path, tool installation
 | `/km:setup` (= `/km:knowledge-manager-setup`) | One-time setup: vault path, tools, your profile | `/km:setup` |
 | `/km:interview` | A consultation on how to structure your vault → one design document | `/km:interview` |
 | `/km:reform` | Bulk changes to folders, frontmatter, and links (plan first) | `/km:reform plan` |
-| `/km:pdf` | Converts oversized PDFs (or PDFs with non-ASCII paths) to Markdown | `/km:pdf "report.pdf" --page_range "0-19"` |
 | `/km:tofugraph` | Installs, checks, and repairs the GraphRAG search engine | `/km:tofugraph` |
 | `/km:km-update` | Pulls the latest plugin version and re-applies your vault settings | `/km:km-update` |
 | `/km:knowledge-manager-at` | The same note-making job, split across a team of 9 agents (needs tmux) | `/km:knowledge-manager-at https://youtube.com/watch?v=XXX` |
@@ -265,7 +248,7 @@ Accepted input: ordinary web URLs · YouTube · Threads/Instagram posts · PDF �
 
 **Where the result goes**: Into your vault. Material you authored yourself goes under `Mine/`; everything else under `Library/` (for example, web and YouTube notes → `Library/Zettelkasten/<topic>/`, papers → `Library/Papers/`). When it finishes, a "processing report" lists every note with its path, and one line is appended to `_km-log.md`.
 
-**Common mistake**: Feeding in a large PDF directly, which fails with "Prompt is too long". Convert it in page ranges with `/km:pdf` first, then feed in the Markdown.
+**Common mistake**: Feeding in a large PDF directly, which fails with "Prompt is too long". Convert it in page ranges first with `marker_single`, a PDF-to-Markdown converter you run in a terminal (install it once with `pip install marker-pdf`) — e.g. `marker_single "file.pdf" --page_range "0-19" --output_format markdown --output_dir ./km-temp` (pages are numbered from 0). The result lands at `./km-temp/<filename>/<filename>.md`; then pass that file to `/km:knowledge-manager`. The tool won't pick a page range for you — you choose it. Use the same route when a non-ASCII file path makes reading fail or text extraction comes back empty.
 
 ## `/km:setup` — First-Time Setup (= `/km:knowledge-manager-setup`)
 
@@ -310,21 +293,6 @@ It asks five anchor questions one at a time and follows up once on each answer (
 **Where the result goes**: `_meta/REFORM-PLAN-<timestamp>.md` (the plan) and `_meta/REFORM-REPORT-<timestamp>.md` (what was applied). To roll back: `git -C <vault> reset --hard km-reform-pre-<timestamp>`.
 
 **Common mistake**: Running `apply` on a vault that isn't a git repository — it stops, because it won't proceed without a snapshot. Run `git -C <vault> init` first.
-
-## `/km:pdf` — Large PDFs to Markdown
-
-**When to use it**: When a PDF triggers "Prompt is too long", when a non-ASCII file path makes reading fail, or when text extraction comes back empty.
-
-**How to type it**
-```
-/km:pdf "file.pdf"
-/km:pdf "file.pdf" --page_range "0-19"
-```
-Under the hood it runs `marker_single` (a PDF-to-Markdown converter). If the file is too large it asks you for a page range — re-run with `--page_range "start-end"` (pages are numbered from 0).
-
-**Where the result goes**: `./km-temp/<filename>/<filename>.md` in the current folder. Feed that file to `/km:knowledge-manager` to turn it into a note.
-
-**Common mistake**: Waiting for the tool to pick a page range for you. It deliberately doesn't — you choose the range.
 
 ## `/km:tofugraph` — Run the GraphRAG Search Engine
 

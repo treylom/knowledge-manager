@@ -13,7 +13,7 @@ license: Proprietary. LICENSE.txt has complete terms
 | PDF 경로 유형 | 처리 방법 |
 |-------------|----------|
 | **영어만 경로** | **Read 도구로 직접 읽기** ✅ (이 스킬 필요 없음) |
-| **한글 포함 경로** | **이 스킬(/pdf) 사용** → marker_single로 변환 |
+| **한글 포함 경로** | **이 안내대로 marker_single로 변환** |
 
 ### 예시
 
@@ -21,8 +21,8 @@ license: Proprietary. LICENSE.txt has complete terms
 ✅ 영어 경로 - Read 사용:
    Read("C:\Users\user\AI\document.pdf")
 
-✅ 한글 경로 - /pdf 스킬 사용:
-   /pdf "C:\Users\user\바탕 화면\문서.pdf"
+✅ 한글 경로 - marker_single 로 변환:
+   marker_single "C:\Users\user\바탕 화면\문서.pdf" --output_format markdown --output_dir ./km-temp
 ```
 
 **⚠️ 한글 경로에서 Read 직접 사용 금지! UTF-8 에러 발생!**

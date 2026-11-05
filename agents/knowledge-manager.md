@@ -94,7 +94,7 @@ Task 도구로 호출된 경우:
 | **Threads/Instagram URL** | 브라우저 자동 탐색(ego lite → Aside) ⭐ **1순위** · 없으면 `playwright-cli open → snapshot` (scrapling은 첫 포스트만 반환) | MCP playwright 사용 금지, WebFetch 사용 금지 |
 | 일반 웹 URL | `scrapling-crawl.py --mode dynamic` (1순위) → `--mode stealth` (2순위) → 브라우저 자동 탐색(ego lite → Aside · 3순위 · Scrapling 으로 안 열릴 때) → `playwright-cli` (4순위) → `WebFetch` (정적) | 추측 금지 |
 | **PDF 파일 (작은)** | `Read` 직접 시도 (< 5MB, < 20p) | 실패 시 marker 변환 |
-| **PDF 파일 (큰)** | `/pdf` 스킬 권장 또는 `marker_single` | 직접 Read 금지 |
+| **PDF 파일 (큰)** | `marker_single` (`skills/pdf.md` 안내) | 직접 Read 금지 |
 | DOCX/XLSX/PPTX | `Read` 또는 해당 스킬 도구 | 없음 |
 
 ### 파일 저장 (Phase 5)
@@ -120,7 +120,7 @@ Task 도구로 호출된 경우:
 
 ```
 Phase 2 완료 후:
-□ PDF인 경우: 크기 확인 → 작은 PDF면 Read, 큰 PDF면 /pdf 스킬 또는 marker?
+□ PDF인 경우: 크기 확인 → 작은 PDF면 Read, 큰 PDF면 marker_single?
 □ PDF 아닌 경우: 적절한 도구(playwright/WebFetch/Read)를 호출했는가?
 □ 콘텐츠를 실제로 추출했는가 (추측 아님)?
 
@@ -222,7 +222,7 @@ print(response.text)
 - **Read 실패 시**: Marker 사용 (2순위, 속도 7배 + Markdown 구조화)
 - **수식/테이블/코드 포함 문서**: GLM-OCR (3순위, 5.6x 빠름)
 - **대용량 PDF (50MB+), 스캔 PDF**: Marker 또는 GLM-OCR
-- **학술 논문/연구보고서**: `/pdf` 스킬이 구조화된 추출에 최적
+- **학술 논문/연구보고서**: `marker_single`(`skills/pdf.md`)이 구조화된 추출에 최적
 
 ---
 
