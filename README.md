@@ -62,7 +62,7 @@ Claude Code 안에서 아래 세 줄을 순서대로 치면 끝이에요.
 
 **결과는 어디에**: vault 안. 내가 쓴 글(원저자 = 본인)은 `Mine/` 아래, 남의 자료는 `Library/` 아래(예: 웹·YouTube 정리 → `Library/Zettelkasten/<주제>/`, 논문 → `Library/Papers/`). 끝나면 「처리 결과 보고」에 노트별 경로가 표로 나오고, 세션 기록이 `_km-log.md` 에 한 줄 남아요.
 
-**자주 하는 실수**: 큰 PDF 를 바로 넣으면 「Prompt is too long」이 떠요. 그땐 `marker_single "파일.pdf" --page_range "0-19" --output_format markdown --output_dir ./km-temp` 처럼 페이지를 나눠 Markdown 으로 바꾼 뒤 그 파일을 넣으세요(첫 페이지가 0). 결과는 `./km-temp/<파일명>/<파일명>.md` 에 생기고, 페이지 범위는 도구가 정해 주지 않으니 직접 정해요.
+**자주 하는 실수**: 큰 PDF 를 바로 넣으면 「Prompt is too long」이 떠요. 그땐 터미널에서 PDF → Markdown 변환기 `marker_single` 로 페이지를 나눠 바꾼 뒤 넣으세요. 처음 한 번은 `pip install marker-pdf` 로 깔아요. 예: `marker_single "파일.pdf" --page_range "0-19" --output_format markdown --output_dir ./km-temp`(첫 페이지가 0). 결과는 `./km-temp/<파일명>/<파일명>.md` 에 생기고, 그 파일을 `/km:knowledge-manager ./km-temp/<파일명>/<파일명>.md` 처럼 넣으면 노트가 돼요. 페이지 범위는 도구가 정해 주지 않으니 직접 정해요. 경로에 한글이 있어 PDF 읽기가 실패할 때나 글자가 안 뽑힐 때도 같은 방법을 써요.
 
 ## `/km:setup` — 처음 설정 (= `/km:knowledge-manager-setup`)
 
@@ -248,7 +248,7 @@ Accepted input: ordinary web URLs · YouTube · Threads/Instagram posts · PDF �
 
 **Where the result goes**: Into your vault. Material you authored yourself goes under `Mine/`; everything else under `Library/` (for example, web and YouTube notes → `Library/Zettelkasten/<topic>/`, papers → `Library/Papers/`). When it finishes, a "processing report" lists every note with its path, and one line is appended to `_km-log.md`.
 
-**Common mistake**: Feeding in a large PDF directly, which fails with "Prompt is too long". Convert it to Markdown in page ranges first — e.g. `marker_single "file.pdf" --page_range "0-19" --output_format markdown --output_dir ./km-temp` (pages are numbered from 0) — then feed in that file. The result lands at `./km-temp/<filename>/<filename>.md`; the tool won't pick a page range for you — you choose it.
+**Common mistake**: Feeding in a large PDF directly, which fails with "Prompt is too long". Convert it in page ranges first with `marker_single`, a PDF-to-Markdown converter you run in a terminal (install it once with `pip install marker-pdf`) — e.g. `marker_single "file.pdf" --page_range "0-19" --output_format markdown --output_dir ./km-temp` (pages are numbered from 0). The result lands at `./km-temp/<filename>/<filename>.md`; then pass that file to `/km:knowledge-manager`. The tool won't pick a page range for you — you choose it. Use the same route when a non-ASCII file path makes reading fail or text extraction comes back empty.
 
 ## `/km:setup` — First-Time Setup (= `/km:knowledge-manager-setup`)
 

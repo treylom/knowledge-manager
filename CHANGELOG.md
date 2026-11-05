@@ -1,7 +1,7 @@
 # Changelog
 
 ## 1.8.8 (2026-11-05) — PDF 전용 명령 지움
-- /km:pdf 명령(`commands/pdf.md`)을 지움 — PDF 도 `/km:knowledge-manager` 로 저장되므로 따로 명령이 필요 없음. 큰 PDF·한글 경로 PDF 는 `marker_single` 로 바로 바꾼다(README·명령·에이전트 안내를 그 길로 고침). PDF 처리 기능(`skills/pdf.md` 안내·추출 스킬·kordoc)은 그대로. 매니페스트 1.8.7→1.8.8(.claude-plugin·.codex-plugin·tier2 시험 버전 고정 2줄).
+- /km:pdf 명령(`commands/pdf.md`)을 지움 — PDF 도 `/km:knowledge-manager` 로 저장되므로 따로 명령이 필요 없음. 큰 PDF·한글 경로 PDF 는 `marker_single` 로 바로 바꾼다(README·명령·에이전트 안내를 그 길로 고침). PDF 처리 기능(`skills/pdf.md` 안내·추출 스킬·kordoc)은 그대로. 판 번호 1.8.7→1.8.8(플러그인 설정 2곳 · 시험 2줄).
 
 ## 1.8.7 (2026-11-05) — km:search 원문은 결과 경로로 찾기 · 지도 노트 위키링크 이름 풀기
 - 원문 찾기: 검색 결과의 원문을 `entity`(이름)가 아니라 결과의 `source_note`(경로)로 찾는다 — `scripts/km_note_caller.sh` → `scripts/km_search_guard.py`. 같은 vault 면 vault 안의 그 경로만 읽고 서버를 부르지 않는다. 다른 vault 면 서버 `/api/note` 를 한 번 부르되, 돌아온 `note_path` 가 기대한 `source_note` 와 유니코드 정규화(NFC) 뒤 글자 그대로 같을 때만 본문을 쓴다(이름만 같은 노트 ❌ · 앞 폴더 떼기 ❌). 경로 없음·절대 경로·부모 폴더 탈출·심볼릭 링크·다른 경로·깨진 응답·HTTP 실패·256KB 넘는 노트 = «원문 미확보»(exit 3) — 확보 0건을 성공으로 세지 않는다. 연결 3초·전체 15초·본문 앞 2,500자는 그대로. 같은 vault 읽기는 심볼릭 링크를 따라가지 않는 열기(`O_NOFOLLOW` · 폴더 기준 열기)가 되는 OS(맥·리눅스)에서만 하고, 그게 안 되는 파이썬(Windows 등)에선 멈추지 않고 «원문 미확보»로 빠진다(Windows 실측 전).

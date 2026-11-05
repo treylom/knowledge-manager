@@ -263,7 +263,7 @@ AskUserQuestion({
       "header": "PDF 처리",
       "options": [
         {"label": "아니오 (기본)", "description": "Read로 직접 읽기 시도"},
-        {"label": "예", "description": "marker_single 로 전체 변환 후 처리 (skills/pdf.md)"}
+        {"label": "예", "description": "marker_single 로 전체 변환 후 처리"}
       ],
       "multiSelect": false
     }
