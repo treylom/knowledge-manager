@@ -104,9 +104,9 @@ if [ -n "$MB_CLI" ]; then
   MB_V="$(node "$MB_CLI" search "${QUERY}" --vector --limit 2 2>/dev/null)"; MB_RV=$?
   MB_T="$(node "$MB_CLI" search "${QUERY}" --text --limit 1 2>/dev/null)"; MB_RT=$?
   if [ "$MB_RV" -eq 0 ] && [ "$MB_RT" -eq 0 ]; then MB_STATE=ok; else MB_STATE=error; fi
-  MB_OUT="$( { printf '%s\n' "$MB_V" | awk '{print "V\t" $0}'; printf '%s\n' "$MB_T" | awk '{print "T\t" $0}'; } | awk '
+  MB_OUT="$( { printf '%s\n' "$MB_V" | awk '{print "V\t" $(0)}'; printf '%s\n' "$MB_T" | awk '{print "T\t" $(0)}'; } | awk '
     function flush() { if (blk != "" && (key == "" || !(key in seen)) && n < 3) { if (key != "") seen[key] = 1; n++; print blk } blk = ""; key = "" }
-    { src = substr($0, 1, 1); line = substr($0, 3) }
+    { src = substr($(0), 1, 1); line = substr($(0), 3) }
     src != cur { flush(); cur = src }
     line ~ /^[0-9]+\. \[/ { flush(); sub(/^[0-9]+\. /, "", line); blk = (src == "V" ? "[mb:의미] " : "[mb:글자] ") line; next }
     blk != "" && line ~ /^ *Lines [0-9]+-[0-9]+ in / { key = line; sub(/^ */, "", key); sub(/ \([^()]*\)$/, "", key) }
@@ -146,7 +146,7 @@ T1_QUERY="${QUERY}"
 [ -n "${KM_SEARCH_RUN_DIR:-}" ] && printf 'target_status=%s\nquery=%s\n' "${TARGET_STATUS:-unspecified}" "${T1_QUERY}" > "${KM_SEARCH_RUN_DIR}/tier1-query.txt"
 QUERY_ENCODED=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))" "${T1_QUERY}")
 gr_fetch() { curl -s -w '\n%{http_code}' --connect-timeout 3 --max-time 60 \
-"$1/api/search?q=${QUERY_ENCODED}&top_k=${TOP_K}&mode=hybrid"; }
+"${1}/api/search?q=${QUERY_ENCODED}&top_k=${TOP_K}&mode=hybrid"; }
 _raw="$(gr_fetch "${SEARCH_ENDPOINT}")"; TIER1_RC=$?
 TIER1_CODE="${_raw##*$'\n'}"
 TIER1_JSON="${_raw%$'\n'*}"
@@ -253,11 +253,11 @@ fi
 # CLI 질의 이스케이프: Obsidian 검색은 `낱말:`·`14:26`·`https:` 를 연산자로 읽어 `Error: Operator "X" not recognized`(rc 0)로 끝난다
 KM_CLI_Q="${CLAUDE_PLUGIN_ROOT}/scripts/km_cli_query.py"  # 맨 꼴만 치환됨(`:-` 꼴 ❌ · Tier 0 KM_RULES 줄과 같은 이유)
 [ -f "$KM_CLI_Q" ] || KM_CLI_Q="$(find "$HOME/.claude/plugins/cache/knowledge-manager" -name km_cli_query.py 2>/dev/null | sort | tail -1)"
-cliq() { if [ -f "$KM_CLI_Q" ]; then python3 "$KM_CLI_Q" "$1"; else printf '%s' "$1" | sed -E 's/([^[:space:]"]):([[:space:])]|$)/\1\2/g'; fi; }
+cliq() { if [ -f "$KM_CLI_Q" ]; then python3 "$KM_CLI_Q" "${1}"; else printf '%s' "${1}" | sed -E 's/([^[:space:]"]):([[:space:])]|$)/\1\2/g'; fi; }
 FRESH_JSON=""
 if [ "$GRAPHRAG_STATE" = "ok" ] && { [ "$AGE_MIN" -gt "$STALE_MIN" ] || [ "$RECENT" = 1 ]; } && [ -x "$FRESH_CLI" ]; then
   # 질의 = Phase 0.6 키워드 앞 2개(CLI 는 낱말 전부 일치라 문장형은 「No matches」가 정상 — 실측 25/26) · 키워드가 비면 원문
-  FRESH_Q="$(printf '%s' "${KEYWORDS_TOP:-}" | awk '{print $1, $2}' | sed 's/ *$//')"; [ -n "$FRESH_Q" ] || FRESH_Q="${QUERY}"
+  FRESH_Q="$(printf '%s' "${KEYWORDS_TOP:-}" | awk '{print $(1), $(2)}' | sed 's/ *$//')"; [ -n "$FRESH_Q" ] || FRESH_Q="${QUERY}"
   FRESH_RAW="$("$FRESH_CLI" search query="$(cliq "${FRESH_Q}")" format=json limit=20 2>/dev/null)"
   # JSON 배열 1건+ 일 때만 보강으로 인정(오류 문자열·「No matches found.」 도 비어 있지 않아 예전엔 yes 로 찍혔다)
   FRESH_JSON="$(printf '%s' "$FRESH_RAW" | python3 -c 'import sys,json

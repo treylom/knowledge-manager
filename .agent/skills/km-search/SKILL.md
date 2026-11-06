@@ -96,9 +96,9 @@ if [ -n "$MB_CLI" ]; then
   MB_V="$(node "$MB_CLI" search "${QUERY}" --vector --limit 2 2>/dev/null)"; MB_RV=$?
   MB_T="$(node "$MB_CLI" search "${QUERY}" --text --limit 1 2>/dev/null)"; MB_RT=$?
   if [ "$MB_RV" -eq 0 ] && [ "$MB_RT" -eq 0 ]; then MB_STATE=ok; else MB_STATE=error; fi
-  MB_OUT="$( { printf '%s\n' "$MB_V" | awk '{print "V\t" $0}'; printf '%s\n' "$MB_T" | awk '{print "T\t" $0}'; } | awk '
+  MB_OUT="$( { printf '%s\n' "$MB_V" | awk '{print "V\t" $(0)}'; printf '%s\n' "$MB_T" | awk '{print "T\t" $(0)}'; } | awk '
     function flush() { if (blk != "" && (key == "" || !(key in seen)) && n < 3) { if (key != "") seen[key] = 1; n++; print blk } blk = ""; key = "" }
-    { src = substr($0, 1, 1); line = substr($0, 3) }
+    { src = substr($(0), 1, 1); line = substr($(0), 3) }
     src != cur { flush(); cur = src }
     line ~ /^[0-9]+\. \[/ { flush(); sub(/^[0-9]+\. /, "", line); blk = (src == "V" ? "[mb:의미] " : "[mb:글자] ") line; next }
     blk != "" && line ~ /^ *Lines [0-9]+-[0-9]+ in / { key = line; sub(/^ */, "", key); sub(/ \([^()]*\)$/, "", key) }
@@ -129,7 +129,7 @@ QUERY_ENCODED=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sy
 # --max-time 필수: 서버가 "죽은 게 아니라 막힌" 상태면 연결은 성공하므로
 # --connect-timeout 은 걸리지 않는다(무한 대기). 실측 근거는 아래 주석 참조.
 gr_fetch() { curl -s -w '\n%{http_code}' --connect-timeout 3 --max-time 60 \
-  "$1/api/search?q=${QUERY_ENCODED}&top_k=${TOP_K}&mode=hybrid"; }
+  "${1}/api/search?q=${QUERY_ENCODED}&top_k=${TOP_K}&mode=hybrid"; }
 
 _raw="$(gr_fetch "${SEARCH_ENDPOINT}")"; TIER1_RC=$?
 TIER1_CODE="${_raw##*$'\n'}"   # 마지막 줄 = http_code
