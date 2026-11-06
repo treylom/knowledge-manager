@@ -42,6 +42,8 @@ jobs:
         run: python3 -I -B scripts/tests/test_km_note_fragment_boundary.py
       - name: same-vault note read stops safely where symlink-safe open is missing (Windows Python)
         run: python3 -I -B scripts/tests/test_km_note_guard_platform.py
+      - name: command bodies carry no $0-$9 (Claude Code substitutes them with argument words)
+        run: python3 -I -B scripts/tests/test_command_posargs.py
       - name: search rules route contract
         run: python3 -I -B scripts/tests/test_km_rules_route.py
       - name: km-tools pytest

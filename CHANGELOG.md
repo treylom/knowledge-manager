@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.8.9 (2026-11-06) — 명령 본문의 `$0`·`$1`·`$2` 가 질문 낱말로 바뀌던 문제
+- Claude Code 는 슬래시 명령 본문을 싣기 전에 `$ARGUMENTS` 와 함께 `$0`·`$1`·`$2`… 도 사용자가 친 낱말로 바꿔 넣는다(`$0` = 첫 낱말, `$1` = 둘째 낱말) — 코드 블록·작은따옴표 안도 가리지 않는다. 그래서 `/km:search 8월 중순 회의 기록` 처럼 낱말이 두 개 이상인 질문이면 1단 검색 함수가 `"중순/api/search?q=…"` 로 깨져 서버를 못 부르고, 메모리뱅크 축 awk 가 `{print "V\t" 8월}` 로 깨졌다(실제 모델은 부르지 않고, 가짜 API 서버로 슬래시 명령이 보내는 첫 요청을 받아 확인). 그 번호의 낱말이 없으면 그대로 남아서 한 낱말 질문에선 안 보였다.
+- 고친 곳 10곳 — `commands/search.md` 9곳(메모리뱅크 축 awk 4 · `gr_fetch` 1 · `cliq` 2 · 최신 확인 질의 awk 2) · `commands/knowledge-manager-setup.md` 1곳(awk). 뜻이 같고 치환되지 않는 꼴로: 셸 `"$1"` → `"${1}"` · awk `$0`·`$1` → `$(0)`·`$(1)`. Codex 사본(`.agent/skills/km-search/SKILL.md`)의 같은 3줄(5곳)도 똑같이 고침 — Codex 는 치환하지 않지만, Tier 0 시험이 두 파일이 글자까지 같은지 대조한다.
+- `\$1` 로 막으면 안 된다 — Claude Code 가 역슬래시를 떼고 `$1` 을 남긴다(실측).
+- 그대로 둔 것: `commands/search-references/*.txt` 와 스킬로 등록되지 않은 `skills/*.md` 단독 파일은 Read 로만 읽혀 치환되지 않는다(가짜 서버가 받은 요청 본문에 실리지 않음을 확인).
+- 시험: `scripts/tests/test_command_posargs.py` — `commands/*.md` · `skills/*/SKILL.md` 에 `$숫자` 0 (일부러 넣은 틀린 꼴은 잡고 고친 꼴은 통과하는지 함께 확인) + 바꾼 꼴이 옛 꼴과 같은 출력(awk·bash·zsh) — CI 에 추가. 옛 판(1.8.8)에선 2파일 FAIL.
+- 매니페스트: .claude-plugin 1.8.8→1.8.9 · .codex-plugin(동시) · tier2 시험 버전 고정 2줄.
+
 ## 1.8.8 (2026-11-05) — PDF 전용 명령 지움
 - /km:pdf 명령(`commands/pdf.md`)을 지움 — PDF 도 `/km:knowledge-manager` 로 저장되므로 따로 명령이 필요 없음. 큰 PDF·한글 경로 PDF 는 `marker_single` 로 바로 바꾼다(README·명령·에이전트 안내를 그 길로 고침). PDF 처리 기능(`skills/pdf.md` 안내·추출 스킬·kordoc)은 그대로. 판 번호 1.8.7→1.8.8(플러그인 설정 2곳 · 시험 2줄).
 

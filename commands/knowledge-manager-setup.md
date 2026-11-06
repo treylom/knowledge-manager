@@ -677,7 +677,7 @@ if [ "$MOC_COUNT" -gt 0 ]; then
   while IFS= read -r f; do
     [ -n "$f" ] || continue
     REL="${f#$VAULT_PATH/}"; STEM="$(basename "$f" .md)"
-    TOP="$(printf '%s' "$REL" | awk -F/ 'NF>1{print $1} NF==1{print "(루트)"}')"
+    TOP="$(printf '%s' "$REL" | awk -F/ 'NF>1{print $(1)} NF==1{print "(루트)"}')"
     if grep -qE '^type: *MOC' "$f"; then AXIS="type"; elif grep -qE '^tags:.*moc' "$f"; then AXIS="tags"; else AXIS="파일명"; fi
     MOC_TABLE="${MOC_TABLE}| ${TOP} | [[${STEM}]] | ${REL} | 기존(${AXIS}) |
 "
