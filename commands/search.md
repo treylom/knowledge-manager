@@ -91,7 +91,7 @@ Tier 2 의 0-β 분해 JSON 을 **여기서 먼저** 산출한다(스폰 ❌ · 
 
 
 
-## Tier 0 — 메모리뱅크 축 (v1.8.0 · 2026-09-14 · 재경님 1548711800 「우리 판 km:search 는 메모리뱅크도 함께 봐야」)
+## Tier 0 — 메모리뱅크 축 (v1.8.0 · 2026-09-14)
 
 Tier 1 «앞에» 같은 질의로 과거 대화·결정 경위를 1회 조회한다(memory.md 축⑥: 과거 경위 = 메모리뱅크 / 현재 정본 = vault). 결과는 vault 결과와 **합치지 않고** 별도 절 `🧠 메모리뱅크 (과거 대화)` 에 ≤3건 병기, 각 줄 라벨 `[mb:의미]` 또는 `[mb:글자]`. CLI 부재·오류·0건 = 1줄 표기 후 **그대로 계속**(멈춤 ❌ · Tier 1 결과 불변).
 
@@ -425,19 +425,22 @@ case "$GRAPH_EXPANSION" in failed:*) false ;; esac
 정상 성공 / 오류 폴백 / 낮은결과·부재 / 다른 vault / DEEP 모두: 실제 읽은 근거·제약·조건부 보강·의무 마커·아래 영수증을 확인 후 답한다. 영수증 수행 관측을 다른 봇의 시간 구간 기록으로 대체하지 않는다. 결과 0건도 영수증을 남긴다. 정상 성공에서 참조 없이 답한 것이 품질 통과를 뜻하지 않는다.
 운영 단계 목표 ≤6: ①설정+모드+대상+Tier1 ②정합+memory+구조 ③원문 기본3 ④신선도/대상 보강 ⑤해당 조건의 확장/폴백/DEEP ⑥영수증+필수 마커. 단계는 관측치로 측정하고, 목표 때문에 조건별 계약·근거 읽기를 생략하지 않는다. 독립 셸 검사는 가능한 같은 Bash 호출에 묶되 Phase -1→Tier1 및 정합 이전 로컬 접근 금지 유지.
 
-## 영수증 — 실행 기록 (v1.8.0 · 착수 게이트 입력 · 재경님 1548711722 「스킬 만든 이유가 없지 않나」)
+## 영수증 — 실행 기록 (v1.8.0 · 착수 게이트 입력)
 
 답변을 출력하기 «직전» 1회 실행한다. 이 영수증이 없으면 착수 게이트(`.claude/hooks/km-onboarding-gate.py`, PreToolUse)가 이 세션의 `100-project/`·`deck-state/` 첫 쓰기와 02-progress 「착수」 기록을 막는다 — 안 쓰면 못 시작한다.
 
 ```bash
 # helper만 폴백한다. 측정 명령 본문은 이 사본 그대로이며 설치본 캐시 탐색은 하지 않는다.
 if [ "${VAULT_MODE:-}" = other ]; then VL_HITS=skip; elif [ "${VAULT_MODE:-}" = same ] || [[ "${GRAPHRAG_STATE:-}" =~ ^(absent|unreachable|blocked|misrouted|disabled)$ ]]; then VL_HITS=$(set -o pipefail; (set -f; set -- $(printf '%s' "${KEYWORDS_TOP:-$QUERY}"); VL_GIT="$(git rev-parse --show-toplevel 2>/dev/null)"; cd "${VAULT_PATH:?vaultPath required}" || exit 1; VL_H=.claude/scripts/vault-lookup.sh; [ -f "$VL_H" ] || VL_H="${VL_GIT:+$VL_GIT/.claude/scripts/vault-lookup.sh}"; [ -n "$VL_H" ] && [ -f "$VL_H" ] && perl -MPOSIX -e '$t=shift;$|=1;$p=fork;if(!$p){setpgid(0,0);exec @ARGV}eval{setpgid($p,$p)};$SIG{ALRM}=sub{kill("TERM",-$p);sleep 1;kill("KILL",-$p);print "__VL_TIMEOUT__\n";exit 142};alarm $t;waitpid($p,0);exit($?&127?128+($?&127):$?>>8)' "${KM_VL_TIMEOUT:-20}" bash "$VL_H" "$@") 2>/dev/null | command grep -c .); VL_RC=$?; if [ "$VL_RC" = 142 ]; then VL_HITS=timeout; echo "VL_UNAVAILABLE=1 — 부재 단정 금지 (vault-lookup ${KM_VL_TIMEOUT:-20}초 시한)"; elif [ "$VL_RC" != 0 ]; then VL_HITS=${VL_HITS:-0}; echo "VL_UNAVAILABLE=1 — 부재 단정 금지"; fi; else VL_HITS=skip; fi; echo "VL_HITS=${VL_HITS}"
-RCPT=""
 # 맨 꼴 ${CLAUDE_PLUGIN_ROOT} 만 Claude Code 가 절대 경로로 바꿔 넣는다(`:-`·$ 꼴 ❌ · Tier 0 KM_RULES 줄과 같은 이유) · 안 바뀐 하네스 = 빈 값 → 아래 폴백
+RCPT=""
 if [ -f "${CLAUDE_PLUGIN_ROOT}/scripts/km-search-receipt.py" ]; then
   RCPT="${CLAUDE_PLUGIN_ROOT}/scripts/km-search-receipt.py"
-elif [ -f "$HOME/obsidian-ai-vault/.claude/scripts/km-search-receipt.py" ]; then
-  RCPT="$HOME/obsidian-ai-vault/.claude/scripts/km-search-receipt.py"
+else
+  # 볼트(없으면 지금 폴더)의 git 뿌리에 둔 helper — 개인 경로를 박지 않는다(vault-lookup 의 VL_GIT 와 같은 방식)
+  for RCPT_GIT in "$(git -C "${VAULT_PATH:-.}" rev-parse --show-toplevel 2>/dev/null)" "$(git rev-parse --show-toplevel 2>/dev/null)"; do
+    if [ -n "$RCPT_GIT" ] && [ -f "$RCPT_GIT/.claude/scripts/km-search-receipt.py" ]; then RCPT="$RCPT_GIT/.claude/scripts/km-search-receipt.py"; break; fi
+  done
 fi
 MARKER_ARGS=(); RCPT_TAG=""
 [ -n "${KM_MODE:-}" ] && MARKER_ARGS+=(--km-mode "$KM_MODE")
