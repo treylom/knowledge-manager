@@ -83,7 +83,7 @@ Tier 2 의 0-β 분해 JSON 을 **여기서 먼저** 산출한다(스폰 ❌ · 
 - 이 JSON 을 답변 앞머리에 1회 출력한다(`KM_SEARCH_RUN_DIR` 환경변수가 있으면 그 폴더의 `decomp.json` 에도 기록).
 - 셸 변수 매핑: TARGET_STATUS ← target_status · TARGETS ← targets 배열을 공백으로 결합 · KEYWORDS_TOP ← keywords 앞 3개를 공백으로 결합(Tier 1 의 T1_QUERY 가 이 세 값을 쓴다).
 
-## Tier 0 — 메모리뱅크 축 (v1.8.0 · 2026-09-14 · 재경님 1548711800 「우리 판 km:search 는 메모리뱅크도 함께 봐야」)
+## Tier 0 — 메모리뱅크 축 (v1.8.0 · 2026-09-14)
 
 Tier 1 «앞에» 같은 질의로 과거 대화·결정 경위를 1회 조회한다(memory.md 축⑥: 과거 경위 = 메모리뱅크 / 현재 정본 = vault). 결과는 vault 결과와 **합치지 않고** 별도 절 `🧠 메모리뱅크 (과거 대화)` 에 ≤3건 병기, 각 줄 라벨 `[mb:의미]` 또는 `[mb:글자]`. CLI 부재·오류·0건 = 1줄 표기 후 **그대로 계속**(멈춤 ❌ · Tier 1 결과 불변).
 
@@ -282,7 +282,7 @@ intent: nav=위치·정본·목록·구조 / content=내용·설명·비교 / re
 | content | ④ `search query=keywords format=json limit=1000` → ④-b `search:context query=keywords path=<상위 1건 폴더> limit=3` | DEEP 이면 상위 TOPN `backlinks` | 현행 ④/④-b |
 | temporal | Tier 1-S 신선도 보강 강제(RECENT=1) + `search query="[created:<time.date 또는 YYYY-MM>]" format=json limit=20` | content 규칙 | 날짜 없으면 이번 달 |
 | mixed | axes 순서대로 위 행을 이어 붙임(중복 호출 제거) | — | 호출 상한 = 현행 유지 |
-분해가 없거나(0-β 생략) intent 를 못 정하면 아래 0단·1단을 «그대로» 실행한다(1.7.0 은 앞머리 추가이지 1.6.0 을 빼지 않는다). **1단 규칙 확장(TOPN 노트의 ①prop ②bl ③ln)은 intent 와 무관하게 항상 실행**(재경님 2026-09-07 1546446498).
+분해가 없거나(0-β 생략) intent 를 못 정하면 아래 0단·1단을 «그대로» 실행한다(1.7.0 은 앞머리 추가이지 1.6.0 을 빼지 않는다). **1단 규칙 확장(TOPN 노트의 ①prop ②bl ③ln)은 intent 와 무관하게 항상 실행**(2026-09-07).
 
 **0단 진입(신호어가 있으면 그 축을 먼저 · 신호 축이 돌아도 ④ 전문 검색은 항상 함께 실행 = 1단 TOPN 모집단) — 신호어 없으면 ④ 부터:**
 | 질의 신호 | 서브커맨드 | 출력 |
@@ -493,12 +493,21 @@ grep -rln --include="*.md" -F "[[${KEYWORD}" "${VAULT_PATH}" | head -10
 - 상태 메시지 없이 바로 결과 출력 · Read 실패 시 다음 노트로
 - QUICK: 5줄 이내 + 출처 1-2개 / DEEP: 제한 없음 + 출처 3-5개
 
-## 영수증 — 실행 기록 (v1.8.0 · 착수 게이트 입력 · 재경님 1548711722 「스킬 만든 이유가 없지 않나」)
+## 영수증 — 실행 기록 (v1.8.0 · 착수 게이트 입력)
 
 답변을 출력하기 «직전» 1회 실행한다. 이 영수증이 없으면 착수 게이트(`.claude/hooks/km-onboarding-gate.py`, PreToolUse)가 이 세션의 `100-project/`·`deck-state/` 첫 쓰기와 02-progress 「착수」 기록을 막는다 — 안 쓰면 못 시작한다.
 
 ```bash
-RCPT="$HOME/obsidian-ai-vault/.claude/scripts/km-search-receipt.py"
+# 플러그인 사본 먼저(Claude Code 가 그 변수를 채운 경우) · 없으면 볼트·지금 폴더의 git 뿌리
+RCPT=""
+if [ -f "${CLAUDE_PLUGIN_ROOT}/scripts/km-search-receipt.py" ]; then
+  RCPT="${CLAUDE_PLUGIN_ROOT}/scripts/km-search-receipt.py"
+else
+  # 볼트(없으면 지금 폴더)의 git 뿌리에 둔 helper — 개인 경로를 박지 않는다(vault-lookup 의 VL_GIT 와 같은 방식)
+  for RCPT_GIT in "$(git -C "${VAULT_PATH:-.}" rev-parse --show-toplevel 2>/dev/null)" "$(git rev-parse --show-toplevel 2>/dev/null)"; do
+    if [ -n "$RCPT_GIT" ] && [ -f "$RCPT_GIT/.claude/scripts/km-search-receipt.py" ]; then RCPT="$RCPT_GIT/.claude/scripts/km-search-receipt.py"; break; fi
+  done
+fi
 GRAPH_ARGS=()
 if [ "${KM_MODE:-}" = DEEP ]; then
   # DEEP 이면 모드·vault 판정을 늘 넘기고 그래프 칸은 그 묶음에 붙인다(helper 가 교차 검증 · 미관측 vault = unknown ·
