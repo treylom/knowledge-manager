@@ -234,6 +234,26 @@ printf '%s\n' "$MAP_RESULT"
 
 - `STRUCT_DOCS` 가 3 미만이면 답변에 「구조 문서 없음(<빠진 것>) — `/km:setup` 재실행으로 생성」 1줄을 적고 **그대로 계속 진행**한다(멈춤 ❌).
 
+##### Phase 0.4-D: 지도 하강 — 글자 점수가 애매할 때만 (1.8.10)
+`MAP_RESULT` 의 `ambiguous` 가 true 이거나 Phase 0.6 `target_status=ambiguous` 이면, 글자 점수로 고른 `ROUTE_HUBS` 를 그대로 쓰지 않고 **이 스킬을 실행하는 모델이** 지도에 적힌 허브 한 줄 설명을 읽고 골라 내려간다. `ambiguity` 값 = `no_match`(키워드가 걸린 허브 0) · `partial_match`(모든 키워드를 가진 허브 없음) · `tie_at_cut`(3번째와 4번째 허브 점수가 같아 줄 순서로 잘림). 둘 다 아니면 이 절은 1줄 마커만 내고 건너뛴다(현행 그대로). `VAULT_MODE=other` 면 로컬 지도 접근 0회.
+```bash
+ROUTE_AMBIGUOUS="$(printf '%s' "$MAP_RESULT" | python3 -I -c 'import json,sys
+try: print(1 if json.load(sys.stdin).get("ambiguous") else 0)
+except Exception: print(0)')"
+[ "${TARGET_STATUS:-}" = "ambiguous" ] && ROUTE_AMBIGUOUS=1
+echo "ROUTE_AMBIGUOUS=${ROUTE_AMBIGUOUS}"
+if [ "$ROUTE_AMBIGUOUS" = 1 ] && [ "${VAULT_MODE:-}" != "other" ]; then
+  python3 -I -B "${CLAUDE_PLUGIN_ROOT}/scripts/km_search_guard.py" \
+    menu --map "$STRUCT_DIR/MOC-Map.md" --keywords "$QUERY_KEYWORDS"
+fi
+```
+- **1단 · 메뉴**: 출력 `items`(글자가 하나라도 걸린 허브 ≤60 · 점수순 · 제목·폴더·한 줄 설명·vault 경로 `note`)와 `folders`(최상위 폴더별 허브 수)를 읽고, 질문 «원문»에 맞는 허브를 순위대로 ≤5 고른다(앞 3 = 📌 고정 후보 · 나머지 = 후보). 맞는 게 없으면(빈 목록 포함) 폴더 하나를 2단으로 연다.
+- **2단 · 폴더(선택)**: `python3 -I -B "${CLAUDE_PLUGIN_ROOT}/scripts/km_search_guard.py" menu --map "$STRUCT_DIR/MOC-Map.md" --folder "<폴더>"` — 그 폴더 아래 허브(들어오는 링크 많은 순 ≤60)와 `subfolders`. 고르는 규칙은 1단과 같다.
+- **3단 · 허브 안(선택)**: 질문이 허브 «아래» 특정 노트를 찾는 것이면 고른 허브 1개의 `note` 로 `python3 -I -B "${CLAUDE_PLUGIN_ROOT}/scripts/km_search_guard.py" outlinks --root "$VAULT_PATH" --hub "<note>"` — 그 허브 노트에 적힌 링크 ≤40(링크가 놓인 줄 글 포함 · 본문 2,500자 예산과 별개로 링크 목록만)에서 노트를 고른다. 열기는 원문 찾기와 같은 «심볼릭 링크를 따라가지 않는 열기» · vault 밖 경로 = `unmeasured`.
+- **예산·규칙**: 하강 단계 합계 ≤3(메뉴 1 + 폴더 ≤1 + 허브 안 ≤1) · 목록 밖 이름 지어내기 ❌. 고른 허브는 `ROUTE_HUBS` 를 대신하고(📌 고정 후보 · `[descent]` 라벨), 3단에서 고른 노트(허브와 섞어 최종 ≤5)는 `[descent:note]` 라벨로 Tier 1 결과 **아래**에 덧붙인다(Tier 1 순위 재배열 ❌ · 채택은 본문 근거로).
+- **폴백**: 메뉴 `unmeasured`·고를 것 없음·단계 실패 = 글자 점수 `ROUTE_HUBS` 그대로(현행 경로).
+- 마커 1줄: `ROUTE_DESCENT=used(<단계 수>)` 또는 `ROUTE_DESCENT=skipped(clear|other|fallback)`. 마지막 티어 줄의 `허브 <k>` = 최종 허브 수.
+
 #### Tier 1-S — 신선도 보강 (v1.5.1 · P2 · 서버 무변경 · Tier 1 결과 불변)
 Tier 1 이 `GRAPHRAG_STATE=ok` 로 끝난 «직후» 1회 실행한다. 색인 세대 밖(최근 생성·수정) 노트를 «부재»로 읽지 않기 위한 완충 — Tier 1 결과에 없는 최근 노트를 Tier 2 명령으로 «보강»한다(폴백 아님).
 ```bash
