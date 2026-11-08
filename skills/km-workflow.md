@@ -12,7 +12,7 @@
 
 | Phase | 필수 행동 | 절대 금지 |
 |-------|----------|----------|
-| **Phase 2: 콘텐츠 추출** | `scrapling-crawl.py` 또는 `playwright` 도구 호출하여 실제 크롤링 | 도구 없이 추측 |
+| **Phase 2: 콘텐츠 추출** | 브라우저 자동 탐색 · `playwright-cli` · `WebFetch` 중 해당 도구를 호출하여 실제 크롤링 (`scrapling-crawl.py` 는 따로 설치한 경우만 선택) | 도구 없이 추측 |
 | **Phase 5: 내보내기** | `create_note` 또는 `Write` 도구 호출 | JSON만 출력 |
 
 ⚠️ **Phase 2/5에서 도구 호출 없이 다음 단계 진행 금지!**
@@ -303,7 +303,7 @@ Agent Team 구성:
 
 **CRITICAL**: vault 탐색 시 반드시 다음 순서를 따릅니다:
 1. 저장 대상 root의 `VAULT-STRUCTURE.md`가 있으면 먼저 읽어 폴더 구조·소유 경계를 확인
-2. `MOC-Map.md`가 있으면 읽어 기존 허브·관련 문서를 확인 (`MOC-Map.md`는 연결 지도, 폴더 구조 정본은 `VAULT-STRUCTURE.md`)
+2. `MOC-Map.md`가 있으면 읽어 기존 허브·관련 문서를 확인 (`MOC-Map.md`는 연결 지도, 폴더 구조의 기준 문서는 `VAULT-STRUCTURE.md`)
 3. CLAUDE.md에 "Vault 구조 네비게이션 맵"이 있으면 보조 지침으로 참조한 뒤 targeted 검색
 4. Obsidian CLI/MCP 연결 root와 `target_root`가 같을 때만 CLI backlinks/links로 기존 관계를 확인:
    ```bash
@@ -328,9 +328,10 @@ User input analysis:
 │   ├─ instagram.com/p/* → 소셜 미디어 (→ km-social-media.md) ⭐
 │   ├─ instagram.com/reel/* → 소셜 미디어 (→ km-social-media.md) ⭐
 │   ├─ notion.so/* → Notion Import
-│   └─ 기타 URL → Web Crawling (playwright MCP)
+│   └─ 기타 URL → Web Crawling (브라우저 자동 탐색 ego lite → Aside → playwright-cli → WebFetch · km-content-extraction)
 │
 ├─ File path
+│   ├─ .hwp, .hwp3, .hwpx, .hwpml → 한글 문서 (`npx -y kordoc@4.24.47` 자동 변환 · km-content-extraction)
 │   ├─ .pdf → PDF Processing (Marker 우선)
 │   ├─ .docx, .doc → Word Processing
 │   ├─ .xlsx, .xls, .csv → Excel Processing
@@ -350,7 +351,7 @@ User input analysis:
 
 ### 소셜 미디어 URL 자동 감지 규칙
 
-**CRITICAL**: 다음 패턴 감지 시 자동으로 playwright MCP 사용
+**CRITICAL**: 다음 패턴 감지 시 자동으로 브라우저 자동 탐색(ego lite → Aside) 사용 · 없으면 `playwright-cli` (SNS 에서 playwright MCP 사용 금지)
 
 ```python
 social_media_patterns = [
@@ -451,12 +452,13 @@ else:
 
 | 소스 유형 | 🚨 필수 도구 호출 |
 |----------|------------------|
-| **소셜 미디어 (Threads/Instagram)** | `mcp__playwright__browser_navigate` → `wait_for` → `snapshot` ⭐ |
-| **일반 웹 페이지** | `mcp__playwright__browser_navigate` → `snapshot` |
+| **소셜 미디어 (Threads/Instagram)** | 브라우저 자동 탐색(ego lite → Aside) ⭐ 1순위 → 없으면 `playwright-cli open → snapshot` (MCP 사용 금지) |
+| **일반 웹 페이지** | 브라우저 자동 탐색(ego lite → Aside) → `playwright-cli` → (Playwright MCP) → `WebFetch` · Scrapling = 선택(플러그인 미포함) |
+| **한글 (HWP/HWPX)** | `npx -y kordoc@4.24.47 <files> -d <outdir>` → 변환 md 를 `Read` (자동 — 사용자에게 수동 변환을 요구하지 않는다) |
 | PDF | `marker_single` 또는 `Read` |
-| DOCX | `npx -y @firecrawl/anydoc "[파일]"` → 실패 시 `Read` |
+| DOCX | `npx -y @firecrawl/anydoc@0.2.4 "[파일]"` → 실패 시 `Read` · 표가 깨지면 kordoc |
 | TXT/MD | `Read` 도구 |
-| Excel (XLSX) | `npx -y @firecrawl/anydoc "[파일]"` (수식 없는 표) → 수식·분석은 `xlsx` 스킬 |
+| Excel (XLSX) | `npx -y @firecrawl/anydoc@0.2.4 "[파일]"` (수식 없는 표) → 수식·분석은 `xlsx` 스킬 |
 | CSV | `Read` 도구 |
 | PowerPoint | `Read` 도구 |
 | 이미지 | `Read` 도구 (Vision) |
@@ -649,7 +651,7 @@ Research/[프로젝트명]/
 
 ## Phase 3.4: 저장 루트·구조 선독 (Phase 5 진입 전 필수! 🔴)
 
-> 정본 동형: `.agent/skills/km-workflow/SKILL.md` STEP 2-0 (수강생 설치판). 원리는 동일 — **backend가 아니라 사용자가 연 프로젝트가 저장 root를 정한다.**
+> 같은 내용의 짝: `.agent/skills/km-workflow/SKILL.md` STEP 2-0 (Codex 설치판). 원리는 동일 — **backend가 아니라 사용자가 연 프로젝트가 저장 root를 정한다.**
 
 1. **`target_root` 확정**: 사용자 명시 대상 폴더 > host가 제공한 primary project/workspace root > project-scoped 요청이 아닐 때만 `km-config.json` backend 순이다. ChatGPT Work 로컬 프로젝트는 primary 연결 폴더, Codex CLI는 대화를 시작한 작업 디렉터리, IDE는 선택한 workspace root를 쓴다. host가 cwd와 project root를 구분하면 cwd를 추측값으로 쓰지 않는다. 로컬 폴더 접근이 없는 ChatGPT 프로젝트에서는 저장 root를 추측하지 않고 사용자에게 연결 폴더를 요청한다.
 2. **canonicalize·봉쇄**: `target_root = realpath(host_project_root)`. 정규화한 후보 경로가 `target_root 밖`이면 저장 금지(`..`, 절대경로, symlink escape 포함).

@@ -92,7 +92,7 @@ Task 도구로 호출된 경우:
 | 입력 유형 | 필수 도구 호출 | 절대 금지 |
 |----------|--------------|----------|
 | **Threads/Instagram URL** | 브라우저 자동 탐색(ego lite → Aside) ⭐ **1순위** · 없으면 `playwright-cli open → snapshot` (scrapling은 첫 포스트만 반환) | MCP playwright 사용 금지, WebFetch 사용 금지 |
-| 일반 웹 URL | `scrapling-crawl.py --mode dynamic` (1순위) → `--mode stealth` (2순위) → 브라우저 자동 탐색(ego lite → Aside · 3순위 · Scrapling 으로 안 열릴 때) → `playwright-cli` (4순위) → `WebFetch` (정적) | 추측 금지 |
+| 일반 웹 URL | 브라우저 자동 탐색(ego lite → Aside · 1순위) → `playwright-cli` (2순위) → `WebFetch` (정적) · Scrapling: `scrapling-crawl.py --mode dynamic` → `--mode stealth` (선택 — `scripts/scrapling-crawl.py` 는 플러그인 미포함 · 따로 설치한 경우에만 1순위 앞에서 먼저 시도) | 추측 금지 |
 | **PDF 파일 (작은)** | `Read` 직접 시도 (< 5MB, < 20p) | 실패 시 marker 변환 |
 | **PDF 파일 (큰)** | `marker_single` (`skills/pdf.md` 안내) | 직접 Read 금지 |
 | DOCX/XLSX/PPTX | `Read` 또는 해당 스킬 도구 | 없음 |
@@ -228,10 +228,10 @@ print(response.text)
 
 ## CRITICAL: Path Configuration
 
-**IMPORTANT**: Obsidian vault root = `AI_Second_Brain` 폴더입니다.
+**IMPORTANT**: Obsidian vault root = vault 폴더 자체입니다(아래 예시의 `<vault 폴더>`).
 - Vault 경로: `{{VAULT_PATH}}`
 - Obsidian MCP 사용 시 경로는 vault root 기준 **상대 경로**
-- **NEVER** prefix paths with `AI_Second_Brain/` - 중첩 폴더 생성됨!
+- **NEVER** prefix paths with the vault folder name (`<vault 폴더>/`) - 중첩 폴더 생성됨!
 
 ### Correct Path Examples:
 ```
@@ -241,17 +241,17 @@ print(response.text)
 ✅ Correct: Mine/Threads/my-thread.md
 ✅ Correct: Mine/Essays/my-essay.md
 
-❌ Wrong: AI_Second_Brain/Library/Zettelkasten/...  (중첩!)
+❌ Wrong: <vault 폴더>/Library/Zettelkasten/...  (중첩!)
 ❌ Wrong: Zettelkasten/AI-연구/note.md  (Mine/Library 접두어 누락!)
 ```
 
 ### 저장 경로 결정 (CRITICAL — Mine vs Library)
 
 ```
-Q: "원저자가 tofukyung(김재경)인가?"
+Q: "원저자가 vault 주인(사용자 본인)인가?"
 
 YES → Mine/ 하위:
-  얼룩소 원문 → Mine/얼룩소/  |  @tofukyung Threads → Mine/Threads/
+  얼룩소 원문 → Mine/얼룩소/  |  본인 계정 Threads → Mine/Threads/
   강의 자료 → Mine/Lectures/  |  에세이/분석 → Mine/Essays/
   업무 산출물 → Mine/Projects/
 
@@ -261,10 +261,10 @@ NO → Library/ 하위 (기본):
   클리핑 → Library/Clippings/  |  기타 → Library/Resources/
 ```
 
-판별: author=tofukyung/김재경, source에 @tofukyung, tags에 tofukyung → Mine/
+판별: author=본인 이름·핸들, source에 본인 계정, tags에 본인 핸들 → Mine/
 
 ### Available Top-Level Folders:
-- `Mine/` - 김재경(tofukyung) 직접 작성 콘텐츠
+- `Mine/` - vault 주인(사용자 본인) 직접 작성 콘텐츠
   - `Mine/얼룩소/` | `Mine/Threads/` | `Mine/Essays/` | `Mine/Lectures/` | `Mine/Projects/`
 - `Library/` - 외부 자료 + AI 생성 정리
   - `Library/Zettelkasten/{주제}/` | `Library/Research/` | `Library/Threads/` | `Library/Papers/` | `Library/Clippings/` | `Library/Resources/`
@@ -323,12 +323,12 @@ Phase 0.5: 복잡도 판정 (Simple/Standard/Complex)
 Phase 1: 입력 소스 감지
     │
     ├─ 소셜 미디어 URL 자동 감지 ⭐
-    │   - threads.net/* → playwright-cli (1순위, fallback: MCP → hyperbrowser)
-    │   - instagram.com/p/* → playwright-cli (1순위, fallback: MCP → hyperbrowser)
-    │   - instagram.com/reel/* → playwright-cli (1순위, fallback: MCP → hyperbrowser)
+    │   - threads.net/* → 브라우저 자동 탐색 ego lite → Aside (1순위) → playwright-cli (2순위, fallback: MCP → hyperbrowser)
+    │   - instagram.com/p/* → 브라우저 자동 탐색 ego lite → Aside (1순위) → playwright-cli (2순위, fallback: MCP → hyperbrowser)
+    │   - instagram.com/reel/* → 브라우저 자동 탐색 ego lite → Aside (1순위) → playwright-cli (2순위, fallback: MCP → hyperbrowser)
     │   → km-social-media.md 스킬 자동 적용
     │
-    ├─ 일반 URL → playwright-cli (1순위) → WebFetch (fallback)
+    ├─ 일반 URL → 브라우저 자동 탐색 ego lite → Aside (1순위) → playwright-cli (2순위) → WebFetch (fallback) · Scrapling = 선택(플러그인 미포함)
     ├─ 파일 (PDF/DOCX/XLSX/PPTX) → 해당 스킬
     ├─ Notion URL → Notion MCP
     ├─ "종합해줘" 키워드 → Vault Synthesis
@@ -429,7 +429,7 @@ Research/[프로젝트명]/
 
 ## Social Media Auto-Detection (NEW!) ⭐
 
-**CRITICAL**: 다음 URL 패턴 감지 시 자동으로 **브라우저 자동 탐색(ego lite → Aside)** 사용 (1순위 · 없으면 playwright-cli, scrapling은 SNS에서 첫 포스트만 반환)
+**CRITICAL**: 다음 URL 패턴 감지 시 자동으로 **브라우저 자동 탐색(ego lite → Aside)** 사용 (scrapling은 SNS에서 첫 포스트만 반환 · 이 브라우저가 1순위, 없으면 playwright-cli)
 
 | 플랫폼 | URL 패턴 | 처리 |
 |--------|----------|------|
@@ -439,29 +439,29 @@ Research/[프로젝트명]/
 | Instagram Reel | `instagram.com/reel/*` | → **브라우저 자동 탐색(ego lite → Aside)** (1순위 · 없으면 playwright-cli) + km-social-media.md |
 
 > ❌ SNS에서 Playwright MCP 사용 금지 — CLI만 사용합니다.
-> (1.8.6) SNS 는 브라우저 자동 탐색(ego lite → Aside)이 1순위 — 예전 playwright-cli 자리. 일반 웹 페이지는 Scrapling 부터.
+> (1.8.6) SNS 는 브라우저 자동 탐색(ego lite → Aside)이 1순위 — 예전 playwright-cli 자리. 일반 웹 페이지도 브라우저 자동 탐색부터(Scrapling 은 따로 설치한 경우에만 그 앞에서 선택).
 
 상세 워크플로우는 `km-social-media.md` 참조.
 
 ### 크롤링 사용 패턴 (권장)
 
 ```bash
-# 1순위: Scrapling (Python, JS 렌더링, 빠름)
+# 선택: Scrapling (Python, JS 렌더링, 빠름) — scripts/scrapling-crawl.py 는 플러그인 미포함 · 따로 설치한 경우에만 1순위 앞에서 먼저 시도
 python3 scripts/scrapling-crawl.py fetch "https://example.com/article" --mode dynamic --output markdown
 
-# 2순위: Scrapling Stealth (안티봇 우회)
+# 선택: Scrapling Stealth (안티봇 우회)
 python3 scripts/scrapling-crawl.py fetch "https://example.com/article" --mode stealth --output markdown
 
-# 3순위: 브라우저 (1.8.6 — 자동 탐색: ego lite → Aside → 다음 순위)
+# 1순위: 브라우저 (1.8.6 — 자동 탐색: ego lite → Aside → 다음 순위)
 # 먼저 «브라우저 자동 탐색» 블록(skills/km-browser-abstraction.md · commands/knowledge-manager.md 같은 글자)을 실행해 provider·bin 을 얻는다.
 # provider=ego   → "<bin>" nodejs -e '…page.goto("[URL]") … document.body.innerText …'  (블록의 예시 그대로)
 # provider=aside → "<bin>" exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
-# provider=fallback → 4순위(Playwright CLI)로.
+# provider=fallback → 2순위(Playwright CLI)로.
 # 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 어느 브라우저로도 열지 않는다.
 # 실패하면: 실패 이유를 남기고 다음 순위로 넘어간다.
 # 단, ego lite 가 사용자 차례로 멈추면(권한 창 등 · 오류에 permission prompt / user now controls) 넘어가지 않는다 — 자동 탐색 블록의 예외대로 누를 곳을 안내하고 같은 작업 공간에서 이어 간다.
 
-# 4순위 Fallback: Playwright CLI (스크린샷 필요 시)
+# 2순위 Fallback: Playwright CLI (스크린샷 필요 시)
 playwright-cli open "https://threads.net/@user/post/abc123"
 playwright-cli press End           # 스크롤
 playwright-cli snapshot            # 접근성 스냅샷으로 텍스트 추출
@@ -469,14 +469,19 @@ playwright-cli close
 ```
 
 ```tool-call
-# 5순위 Fallback: Playwright MCP (CLI 실패 시)
+# 3순위 Fallback: Playwright MCP (CLI 실패 시)
 mcp__playwright__browser_navigate({ url: "https://threads.net/@user/post/abc123" })
 mcp__playwright__browser_wait_for({ time: 3 })
 mcp__playwright__browser_snapshot()
 ```
 
 ```tool-call
-# 6순위 Fallback: hyperbrowser (크레딧 있을 때)
+# 4순위 Fallback: WebFetch (정적 웹페이지 — JS 렌더링이 필요 없는 글)
+WebFetch({ url: "https://example.com/article", prompt: "본문 전체를 마크다운으로" })
+```
+
+```tool-call
+# 5순위 Fallback: hyperbrowser (크레딧 있고 위 모두 실패 시)
 mcp__hyperbrowser__scrape_webpage({
   url: "https://example.com/article",
   outputFormat: ["markdown"]
@@ -609,7 +614,7 @@ mcp__obsidian__create_note
 
 // Tier 3: Write 도구 (MCP도 실패 시):
 Write
-- file_path: "C:\...\AI_Second_Brain\Library\Zettelkasten\AI-연구\note.md"
+- file_path: "C:\...\MyVault\Library\Zettelkasten\AI-연구\note.md"
 - content: "[노트 내용]"
 ```
 
@@ -833,13 +838,12 @@ AI 모델명 작성 시:
 
 | 순위 | 도구 | 장점 | 사용 시점 |
 |------|------|------|----------|
-| 1순위 | **scrapling-crawl.py --mode dynamic** | 빠름, JS 렌더링, Python | 기본 (소셜 미디어 포함) |
-| 2순위 | **scrapling-crawl.py --mode stealth** | 안티봇 우회 | 봇 차단 시 |
-| 3순위 | **브라우저 자동 탐색** — ego lite → Aside (`scripts/km_browser_detect.py`) | 실제 브라우저, 로그인 세션 | scrapling 실패·없음 시 (1.8.6) |
-| 4순위 | **playwright-cli** (Bash) | 안정적, JS 렌더링, 스크린샷 | 자동 탐색 브라우저 없음·실패 시 |
-| 5순위 | **Playwright MCP** | 동일 기능, MCP 프로토콜 | CLI 실패 시 |
-| 6순위 | **WebFetch** | 빠름, 정적 콘텐츠 | 정적 웹페이지 |
-| 7순위 | **Hyperbrowser** | 클라우드, stealth | 크레딧 있고 위 모두 실패 시 |
+| 선택 | **scrapling-crawl.py --mode dynamic / stealth** | 빠름, JS 렌더링, 안티봇 우회, Python | 플러그인 미포함 — 따로 설치한 경우에만 1순위 앞에서 먼저 시도 |
+| 1순위 | **브라우저 자동 탐색** — ego lite → Aside (`scripts/km_browser_detect.py`) | 실제 브라우저, 로그인 세션 | 기본 (소셜 미디어 포함 · 1.8.6) |
+| 2순위 | **playwright-cli** (Bash) | 안정적, JS 렌더링, 스크린샷 | 자동 탐색 브라우저 없음·실패 시 |
+| 3순위 | **Playwright MCP** | 동일 기능, MCP 프로토콜 | CLI 실패 시 |
+| 4순위 | **WebFetch** | 빠름, 정적 콘텐츠 | 정적 웹페이지 |
+| 5순위 | **Hyperbrowser** | 클라우드, stealth | 크레딧 있고 위 모두 실패 시 |
 
 모든 스킬은 플러그인 설치에서는 `skills/`, 프로젝트 설치에서는 `.claude/skills/`(install-to-project.sh 가 복사)에서 로드됩니다.
 

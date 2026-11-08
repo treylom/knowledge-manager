@@ -17,7 +17,10 @@ description: Output format specifications for Obsidian, Notion, and Markdown exp
 ---
 tags: [{category}, {topic}]
 created: {YYYY-MM-DD}
-source: {original_url}
+aliases: [{English or other spelling}]
+author: {original_author_or_writer}
+date: {YYYY-MM-DD}
+source: {original_url_or_file — written from scratch with no source: "original" (Korean vault: "직접 작성")}
 type: {zettelkasten/reference/literature}
 ---
 

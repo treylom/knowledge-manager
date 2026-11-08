@@ -15,7 +15,7 @@ usage() {
   echo "Usage: bash scripts/install-to-project.sh <project-dir>" >&2
   echo "  Copies commands/, skills/, and agents/ into <project-dir>/.claude/," >&2
   echo "  plus scripts/send_kakao.py and km-config.example.json." >&2
-  echo "  Not copied (available only in a repo clone or the plugin install): scripts/configure-vault-paths.sh, scripts/_lib-config.sh, scripts/km-update.sh, scripts/km_link_gate.py, templates/start-here/." >&2
+  echo "  Not copied (available only in a repo clone or the plugin install): scripts/configure-vault-paths.sh, scripts/_lib-config.sh, scripts/km-update.sh, scripts/km_link_gate.py, scripts/km_ofm_lint.py, scripts/km_base_check.py, templates/start-here/." >&2
   echo "  Existing files in the project's .claude/ are overwritten only when they have the same path; other files are left as they are." >&2
   echo "  Files are staged and checked first. If anything fails before the final swap the project is left unchanged; if the swap fails or HUP/INT/TERM interrupts it, the previous files are put back (anything that could not be put back is kept beside the new files and listed)." >&2
   echo "  SIGKILL and power loss cannot run cleanup. A retry refuses retained .km-install-staging.* paths until you review and recover them; this is not a disk-durability guarantee." >&2

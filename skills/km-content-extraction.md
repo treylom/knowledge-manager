@@ -13,23 +13,23 @@
 **URL 감지 시 반드시 다음 우선순위로 호출:**
 
 ```bash
-# 1순위: Scrapling (Python, JS 렌더링, 3x 빠름)
-# scripts/scrapling-crawl.py 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 3순위(브라우저 자동 탐색)로
+# 선택: Scrapling (플러그인 미포함 · 따로 설치한 경우에만 1순위 앞에서 먼저 시도 · Python, JS 렌더링, 3x 빠름)
+# scripts/scrapling-crawl.py 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 1순위(브라우저 자동 탐색)로
 python3 scripts/scrapling-crawl.py fetch "[URL]" --mode dynamic --output markdown
 
-# 2순위: Scrapling Stealth (안티봇 우회 필요 시)
+# 선택: Scrapling Stealth (안티봇 우회 필요 시)
 python3 scripts/scrapling-crawl.py fetch "[URL]" --mode stealth --output markdown
 
-# 3순위: 브라우저 (1.8.6 — 자동 탐색: ego lite → Aside → 다음 순위)
+# 1순위: 브라우저 (1.8.6 — 자동 탐색: ego lite → Aside → 다음 순위)
 # 먼저 «브라우저 자동 탐색» 블록(skills/km-browser-abstraction.md · commands/knowledge-manager.md 같은 글자)을 실행해 provider·bin 을 얻는다.
 # provider=ego   → "<bin>" nodejs -e '…page.goto("[URL]") … document.body.innerText …'  (블록의 예시 그대로)
 # provider=aside → "<bin>" exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
-# provider=fallback → 4순위(Playwright CLI)로.
+# provider=fallback → 2순위(Playwright CLI)로.
 # 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 어느 브라우저로도 열지 않는다.
 # 실패하면: 실패 이유를 남기고 다음 순위로 넘어간다.
 # 단, ego lite 가 사용자 차례로 멈추면(권한 창 등 · 오류에 permission prompt / user now controls) 넘어가지 않는다 — 자동 탐색 블록의 예외대로 누를 곳을 안내하고 같은 작업 공간에서 이어 간다.
 
-# 4순위: Playwright CLI (Bash 기반 - 폴백 + 스크린샷)
+# 2순위: Playwright CLI (Bash 기반 - 폴백 + 스크린샷)
 playwright-cli open [URL]
 playwright-cli snapshot          # 접근성 스냅샷으로 전체 텍스트 추출
 playwright-cli screenshot        # 시각적 확인 필요 시
@@ -37,15 +37,15 @@ playwright-cli close
 ```
 
 ```tool-call
-# 5순위: Playwright MCP (CLI 실패 시)
+# 3순위: Playwright MCP (CLI 실패 시)
 mcp__playwright__browser_navigate({ url: "[URL]" })
 mcp__playwright__browser_wait_for({ time: 3 })
 mcp__playwright__browser_snapshot()
 
-# 6순위: WebFetch (정적 콘텐츠 추출 가능)
+# 4순위: WebFetch (정적 콘텐츠 추출 가능)
 WebFetch({ url: "[URL]", prompt: "전체 내용 추출" })
 
-# 7순위: Hyperbrowser (클라우드, 크레딧 소진 주의)
+# 5순위: Hyperbrowser (클라우드, 크레딧 소진 주의)
 mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 ```
 
@@ -68,13 +68,13 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 |----------|------------------|-----------|----------|
 | **YouTube** | `youtube-transcript-api` → `yt-dlp` 폴백 | 썸네일만 | → km-youtube-transcript.md |
 | **소셜 미디어** | 브라우저 자동 탐색(ego lite → Aside) ⭐ (fallback: playwright-cli → MCP → WebFetch · 실패 이유 기록) | 미디어 URL 수집 | → km-social-media.md |
-| **일반 웹 페이지** | Scrapling ⭐ (막히면 브라우저 자동 탐색(ego lite → Aside) → playwright-cli → MCP → WebFetch) | img/figure 파싱 + 차트 스크린샷 | 이 문서 |
+| **일반 웹 페이지** | 브라우저 자동 탐색(ego lite → Aside) ⭐ → playwright-cli → MCP → WebFetch (Scrapling 은 선택 — 플러그인 미포함 · 따로 설치한 경우에만 맨 앞에서 먼저 시도) | img/figure 파싱 + 차트 스크린샷 | 이 문서 |
 | PDF | **1순위**: `Read` → **2순위**: `opendataloader-pdf` → **3순위**: `marker_single` → **4순위**: `GLM-OCR` → **5순위**: Gemini OCR | ODL/marker images/ 폴더 스캔 | → pdf 스킬, km-glm-ocr |
-| Word (DOCX) | **1순위**: `npx -y @firecrawl/anydoc "[파일]"` → **2순위**: `Read` | 임베디드 이미지 설명 추출 | → 아래 "Word 문서" · docx 스킬은 **편집 전용** |
-| Excel (XLSX) | **1순위**: `npx -y @firecrawl/anydoc "[파일]"` (수식 없는 표 한정) → **2순위**: `xlsx` 스킬 (수식·분석·편집) | 차트 없음 (데이터만) | → 아래 "Excel" — 🔴 수식 셀 소실·헤더 밀림 주의 |
+| Word (DOCX) | **1순위**: `npx -y @firecrawl/anydoc@0.2.4 "[파일]"` → **2순위**: `Read` | 임베디드 이미지 설명 추출 | → 아래 "Word 문서" · docx 스킬은 **편집 전용** |
+| Excel (XLSX) | **1순위**: `npx -y @firecrawl/anydoc@0.2.4 "[파일]"` (수식 없는 표 한정) → **2순위**: `xlsx` 스킬 (수식·분석·편집) | 차트 없음 (데이터만) | → 아래 "Excel" — 🔴 수식 셀 소실·헤더 밀림 주의 |
 | CSV | `Read` 도구 (anydoc 편입 보류 — 헤더 밀림) | 해당 없음 | → 아래 "CSV" |
 | PowerPoint | `Read` 도구 | 슬라이드 이미지 설명 추출 | → pptx 스킬 (anydoc 은 슬라이드 경계 소실로 미편입) |
-| 한글 (HWP/HWPX) | **kordoc**: `npx -y kordoc@latest <files> -d <outdir>` → md 변환 후 `Read` | 변환 md 표·수치 원문 대조 | → 아래 "한국어 로컬 문서 fallback" |
+| 한글 (HWP/HWPX) | **kordoc**: `npx -y kordoc@4.24.47 <files> -d <outdir>` → md 변환 후 `Read` | 변환 md 표·수치 원문 대조 | → 아래 "한국어 로컬 문서 fallback" |
 | 이미지 | `Read` 도구 (Vision) | 원본 그대로 활용 | 이 문서 |
 | Notion | `mcp__notion__API-get-block-children` | image 블록 URL 수집 | 이 문서 |
 | Vault 종합 | Obsidian CLI search (fallback: MCP search) | 기존 attachments/ 참조 | 이 문서 |
@@ -82,12 +82,12 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 > **한국어 로컬 문서 변환 fallback = kordoc**: 입력이 로컬 문서인데 기본 경로(`Read`·기존 어댑터)로 충실히 못 읽는 형식 — **HWP·HWPX, 표가 복잡한 XLSX/DOCX, 한국어 PDF** — 은 [kordoc](https://github.com/chrisryugj/kordoc)으로 마크다운 변환 후 진행한다.
 >
 > ```bash
-> npx -y kordoc@latest <files> -d <outdir>   # HWP3/HWP/HWPX/HWPML/PDF/XLS/XLSX/DOCX/이미지(OCR — 기본은 Read) → Markdown
+> npx -y kordoc@4.24.47 <files> -d <outdir>   # HWP3/HWP/HWPX/HWPML/PDF/XLS/XLSX/DOCX/이미지(OCR — 기본은 Read) → Markdown
 > ```
 >
 > - 변환된 md 는 **원문 보존 검증**(표 행수·수치 표본 대조) 후 사용한다.
-> - `@latest` 를 붙여 항상 최신판을 받는다(npx 캐시에 옛 판이 남아 있어도 최신으로 교체). 2026-09-28 확인 판 = 4.15.7.
-> - PDF 처리용 `pdfjs-dist` 와 OCR 런타임은 kordoc 의 선택 의존성으로 함께 설치된다(별도 peer 설치 불필요 — 4.15.7 실측). OCR 모델은 첫 사용 때 자동으로 받는다 — 스캔 PDF `--ocr`(~18MB) · 수식 `--formula-ocr`(~155MB).
+> - 버전 고정 = kordoc 4.24.47 · anydoc 0.2.4 (2026-11-06 실행 확인) — 올릴 때는 `npm view <패키지> version` 으로 새 버전을 확인하고 한 번 돌려 본 뒤 이 줄과 호출을 함께 바꾼다.
+> - PDF 처리용 `pdfjs-dist` 와 OCR 런타임은 kordoc 의 선택 의존성으로 함께 설치된다(별도 peer 설치 불필요 — 4.15.7 실측 · 고정 버전 4.24.47 은 docx(2026-11-06)·HWP·HWPX(2026-11-08) 변환을 다시 확인 · PDF·OCR 은 다시 확인하지 않음). OCR 모델은 첫 사용 때 자동으로 받는다 — 스캔 PDF `--ocr`(~18MB) · 수식 `--formula-ocr`(~155MB).
 > - RAG 용 구조 청크가 필요하면 `--format chunks`(헤딩 위계·표 독립 청크 JSON).
 > - MCP 로도 쓸 수 있다(`kordoc-mcp` 바이너리). 다만 KM ingest 는 CLI 일괄 변환이 기본 핏이라 CLI 를 우선한다.
 
@@ -136,7 +136,7 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 - https://threads.net/@user/post/123
 - https://example2.com/docs
 
-→ Scrapling 으로 안 열리는 페이지일 때, 3개 aside exec Bash 호출 차례로 실행:
+→ 자동 탐색이 aside 로 잡히는 페이지일 때, 3개 aside exec Bash 호출 차례로 실행:
 
 3개 도구 호출:
 1. aside exec "example1.com/... 본문 그대로"
@@ -315,18 +315,17 @@ OBSIDIAN_CLI="$OBSIDIAN_CLI"
 
 ---
 
-## 2A. 웹 크롤링 (🚨 Scrapling 우선!)
+## 2A. 웹 크롤링 (🚨 브라우저 자동 탐색 먼저!)
 
 ### 브라우징 스택 우선순위 (CRITICAL!)
 
 ```
-1순위: scrapling-crawl.py --mode dynamic (Python, JS 렌더링, 3x 빠름)
-2순위: scrapling-crawl.py --mode stealth (Python, 안티봇 우회)
-3순위: 브라우저 자동 탐색 — ego lite → Aside (1.8.6 · 막히는 사이트·SNS · 실패하면 이유를 남긴다)
-4순위: playwright-cli (Bash, 폴백 + 스크린샷)
-5순위: Playwright MCP (CLI 실패 시 - 동일 기능, MCP 프로토콜)
-6순위: WebFetch (정적 콘텐츠 추출 가능 - 허용)
-7순위: Hyperbrowser (클라우드, 유료 - 크레딧 소진 주의)
+선택: scrapling-crawl.py --mode dynamic / stealth (플러그인 미포함 · 따로 설치한 경우에만 1순위 앞에서 먼저 시도 · Python, JS 렌더링, 3x 빠름, 안티봇 우회)
+1순위: 브라우저 자동 탐색 — ego lite → Aside (1.8.6 · 일반 페이지·막히는 사이트·SNS · 실패하면 이유를 남긴다)
+2순위: playwright-cli (Bash, 폴백 + 스크린샷)
+3순위: Playwright MCP (CLI 실패 시 - 동일 기능, MCP 프로토콜)
+4순위: WebFetch (정적 콘텐츠 추출 가능 - 허용)
+5순위: Hyperbrowser (클라우드, 유료 - 크레딧 소진 주의)
 ```
 
 ### YouTube URL (🚨 전용 파이프라인!)
@@ -360,7 +359,7 @@ Step 4: 콘텐츠 분석 (프리셋 반영 — 타임라인, 인사이트, 인�
 - `instagram.com/p/*` → km-social-media.md 스킬 참조
 - `instagram.com/reel/*` → km-social-media.md 스킬 참조
 
-### 1순위: Scrapling (🚨 MUST TRY FIRST!)
+### 선택: Scrapling (플러그인 미포함 · 따로 설치한 경우에만 1순위 앞에서 먼저 시도)
 
 ```bash
 # 기본 크롤링 (dynamic 모드 — JS 렌더링, 가장 빠름)
@@ -370,27 +369,27 @@ python3 scripts/scrapling-crawl.py fetch "[URL]" --mode dynamic --output markdow
 python3 scripts/scrapling-crawl.py fetch "[URL]" --mode dynamic --images --output json
 ```
 
-### 2순위: Scrapling Stealth (봇 탐지 시)
+### 선택: Scrapling Stealth (봇 탐지 시 · 위와 같은 조건)
 
 ```bash
 # 안티봇 우회 크롤링
 python3 scripts/scrapling-crawl.py fetch "[URL]" --mode stealth --output markdown
 ```
 
-### 3순위: 브라우저 자동 탐색 — ego lite → Aside (1.8.6 — Scrapling 으로 안 열리는 공개 페이지·SNS)
+### 1순위: 브라우저 자동 탐색 — ego lite → Aside (1.8.6 — 일반 웹 페이지·공개 페이지·SNS)
 
 ```bash
 # 브라우저 (1.8.6 — 자동 탐색: ego lite → Aside → 다음 순위)
 # 먼저 «브라우저 자동 탐색» 블록(skills/km-browser-abstraction.md · commands/knowledge-manager.md 같은 글자)을 실행해 provider·bin 을 얻는다.
 # provider=ego   → "<bin>" nodejs -e '…page.goto("[URL]") … document.body.innerText …'  (블록의 예시 그대로)
 # provider=aside → "<bin>" exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
-# provider=fallback → 4순위(Playwright CLI)로.
+# provider=fallback → 2순위(Playwright CLI)로.
 # 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 어느 브라우저로도 열지 않는다.
 # 실패하면: 실패 이유를 남기고 다음 순위로 넘어간다.
 # 단, ego lite 가 사용자 차례로 멈추면(권한 창 등 · 오류에 permission prompt / user now controls) 넘어가지 않는다 — 자동 탐색 블록의 예외대로 누를 곳을 안내하고 같은 작업 공간에서 이어 간다.
 ```
 
-### 4순위: Playwright CLI (자동 탐색 브라우저 실패·없음 + 스크린샷)
+### 2순위: Playwright CLI (자동 탐색 브라우저 실패·없음 + 스크린샷)
 
 ```bash
 playwright-cli open "[URL]"
@@ -400,7 +399,7 @@ playwright-cli screenshot          # 시각적 캡처 (선택)
 playwright-cli close
 ```
 
-### 5순위: Playwright MCP (CLI 실패 시)
+### 3순위: Playwright MCP (CLI 실패 시)
 
 ```tool-call
 mcp__playwright__browser_navigate({ url: "[URL]" })
@@ -408,7 +407,7 @@ mcp__playwright__browser_wait_for({ time: 3 })
 mcp__playwright__browser_snapshot()
 ```
 
-### 6순위: WebFetch (Playwright 모두 실패 시 - 허용)
+### 4순위: WebFetch (Playwright 모두 실패 시 - 허용)
 
 ```tool-call
 WebFetch({ url: "[URL]", prompt: "전체 내용을 추출해줘" })
@@ -419,8 +418,8 @@ WebFetch({ url: "[URL]", prompt: "전체 내용을 추출해줘" })
 ### 웹 크롤링 완료 검증 (필수!)
 
 ```
-□ Scrapling 으로 안 열리거나 SNS 면 자동 탐색 브라우저(ego lite → Aside)로 열었나? (실패하면 이유를 남겼나?)
-□ scrapling-crawl.py 또는 playwright-cli snapshot 호출 완료?
+□ 자동 탐색 브라우저(ego lite → Aside)로 먼저 열었나? (실패하면 이유를 남겼나? · Scrapling 을 따로 설치했다면 그보다 먼저 시도했나?)
+□ 자동 탐색 브라우저 또는 playwright-cli snapshot 호출 완료? (Scrapling 을 쓴 경우 scrapling-crawl.py 포함)
 □ 출력에서 실제 콘텐츠 확인 가능?
 □ 실패 시 다음 순위 Fallback 시도 완료?
 
@@ -431,15 +430,15 @@ WebFetch({ url: "[URL]", prompt: "전체 내용을 추출해줘" })
 
 | 에러 | 대응 |
 |------|------|
-| scrapling 미설치 | `pip install "scrapling[fetchers]"` 후 재시도 |
-| 봇 감지/차단 | **scrapling --mode stealth** → playwright-cli 폴백 |
+| scrapling 미설치 | 선택 기능 — 쓰려면 `pip install "scrapling[fetchers]"` + 별도 `scripts/scrapling-crawl.py` 준비, 아니면 자동 탐색 브라우저로 |
+| 봇 감지/차단 | 자동 탐색 브라우저 → playwright-cli 폴백 (Scrapling 설치했다면 **--mode stealth** 를 먼저) |
 | 콘텐츠 미로드 | stealth 모드 재시도, Playwright 폴백 |
 | 네트워크 오류 | 지수 백오프로 재시도 |
 | 스크린샷 필요 | **Playwright 사용** (Scrapling은 스크린샷 미지원) |
 
 ### 레거시 스텔스 스크립트 폴백 (Scrapling stealth 모드로 대체)
 
-예전 문서가 가리키던 TS 스텔스 스크립트는 이 플러그인에 포함되어 있지 않습니다. Scrapling stealth 모드가 실패하면 `playwright-cli` 폴백으로 넘어갑니다.
+예전 문서가 가리키던 TS 스텔스 스크립트는 이 플러그인에 포함되어 있지 않습니다. 브라우저 자동 탐색이 실패하면 `playwright-cli` 폴백으로 넘어갑니다(Scrapling stealth 는 따로 설치한 경우의 선택).
 
 상세 참조: → stealth-browsing.md 스킬
 
@@ -625,8 +624,8 @@ print(response.text)
 ```
 1순위: anydoc (기본 경로 — 로컬 실행, API 키 불필요, MIT)
 
-npx -y @firecrawl/anydoc "{파일경로}"                # Markdown 을 stdout 으로
-npx -y @firecrawl/anydoc "{파일경로}" -o "{출력.md}"  # 파일로 저장
+npx -y @firecrawl/anydoc@0.2.4 "{파일경로}"                # Markdown 을 stdout 으로
+npx -y @firecrawl/anydoc@0.2.4 "{파일경로}" -o "{출력.md}"  # 파일로 저장
 
 - 헤딩/리스트/테이블을 GitHub-Flavored Markdown 으로 변환
 - 한글 docx 1건 실측(2026-08-05): 한글 글자수 1258 = 1258, 문단 순서 보존
@@ -652,7 +651,7 @@ Step 2: 구조화된 정보 추출
 ```
 1순위: anydoc — 단, 수식이 없는 데이터 표에 한정
 
-npx -y @firecrawl/anydoc "{파일경로}"
+npx -y @firecrawl/anydoc@0.2.4 "{파일경로}"
 
 - 표 구조·병합 셀을 마크다운 표로 보존
 - 🔴 실측 결함 2개 (fixture 대조) — 호출 전 확인:

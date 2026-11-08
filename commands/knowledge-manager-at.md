@@ -899,9 +899,9 @@ Write({ file_path: "{vault_absolute_path}/적절한/경로/파일명.md", conten
 ```
 
 **경로 규칙** (CLAUDE.md 참조):
-- Vault root = `AI_Second_Brain`
+- Vault root = vault 폴더 자체(예: `MyVault`)
 - 경로는 vault root 기준 상대 경로
-- `AI_Second_Brain/`를 prefix로 붙이지 말 것!
+- vault 폴더 이름(`MyVault/`)을 prefix로 붙이지 말 것!
 
 ### 5-0. 저장 경로 결정 (CRITICAL — 모든 노트 생성 전 필수!)
 
@@ -992,7 +992,7 @@ NO → Library/ 하위 (기본):
    - 로컬 전용 이미지: callout 블록으로 대체 — "[이미지: Resources/images/{topic-folder}/{filename}]"
 
 7. 저장 검증:
-   Glob("AI_Second_Brain/Resources/images/{topic-folder}/*") → 파일 존재 확인
+   Glob("{vault_absolute_path}/Resources/images/{topic-folder}/*") → 파일 존재 확인
    각 이미지 파일 크기 > 0 확인
 ```
 

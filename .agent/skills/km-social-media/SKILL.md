@@ -135,8 +135,10 @@ reply_urls.forEach(url => {
 tags: [threads, 소셜미디어, {주제태그}]
 source: {original_url}
 author: {작성자}
-created: {작성일}
-captured: {수집일}
+aliases: [{영문 또는 다른 표기}]
+created: {YYYY-MM-DD 작성일}
+date: {YYYY-MM-DD 작성일}
+captured: {YYYY-MM-DD 수집일}
 depth: {1 or 2}
 ---
 

@@ -10,11 +10,14 @@
 ---
 id: {YYYYMMDDHHmm}
 title: {노트 제목}
-created: {YYYY-MM-DDTHH:mm:ss}
-modified: {YYYY-MM-DDTHH:mm:ss}
+created: {YYYY-MM-DD}
+modified: {YYYY-MM-DD}
 tags: [{태그1}, {태그2}, {태그3}]
+aliases: [{영문 또는 다른 표기}]
+author: {원저자 또는 작성자}
+date: {YYYY-MM-DD}
 category: {카테고리}
-source: {원본 URL 또는 파일명}
+source: {원본 URL 또는 파일명 — 원본 없이 직접 쓴 노트면 "직접 작성"(영어 vault 면 "original")}
 type: {atomic | moc | literature | permanent}
 ---
 
@@ -59,6 +62,10 @@ type: {atomic | moc | literature | permanent}
 ---
 type: atomic
 tags: [{주제}, {키워드1}, {키워드2}]
+aliases: [{영문 또는 다른 표기}]
+author: {원저자 또는 작성자}
+date: {YYYY-MM-DD}
+source: {이 노트를 만든 원본 URL·파일명 — 원본 없이 직접 쓴 노트면 "직접 작성"(영어 vault 면 "original")}
 ---
 
 # {개념명}
@@ -88,6 +95,10 @@ tags: [{주제}, {키워드1}, {키워드2}]
 ---
 type: moc
 tags: [MOC, {주제}]
+aliases: [{영문 또는 다른 표기}]
+author: {원저자 또는 작성자}
+date: {YYYY-MM-DD}
+source: {이 MOC 가 묶는 노트들의 원본 URL·파일명 — 여러 개면 대표 1개, 원본이 없으면 "직접 작성"(영어 vault 면 "original")}
 ---
 
 # {주제} - MOC
@@ -132,6 +143,8 @@ type: literature
 tags: [{주제}, {저자}, {출처유형}]
 source: {URL 또는 서지정보}
 author: {저자명}
+aliases: [{영문 또는 다른 표기}]
+date: {YYYY-MM-DD}
 published: {발행일}
 ---
 

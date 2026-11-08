@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.8.12 (2026-11-08) — kepano/obsidian-skills 에서 세 조각 흡수: 설명서 정합 · 노트 문법 경고 검사 · 폴더 노트 표(.base) 검사기
+- 설명서 = 실제로 도는 순서: 일반 웹 페이지 추출 1순위 = 브라우저 자동 탐색(ego lite → Aside) → playwright-cli → WebFetch. Scrapling(`scripts/scrapling-crawl.py`)은 플러그인에 없으므로 «선택 — 따로 설치한 경우에만 맨 앞에서 먼저 시도»로 내림(명령·에이전트·스킬·Codex 사본). 소셜 1순위도 명령 문서를 에이전트·스킬과 같게(브라우저 자동 탐색).
+- 버전 고정: `kordoc@latest` → `kordoc@4.24.47` · `@firecrawl/anydoc` → `@0.2.4`(2026-11-06 두 버전 모두 실제 변환 실행 확인 · kordoc 4.24.47 은 2026-11-08 HWP·HWPX 각 1건도 다시 변환 확인). 1.8.3 은 «npx 캐시의 옛 버전» 문제로 `@latest` 를 골랐는데, 정확한 버전 번호를 적으면 같은 문제가 풀리고, 버전이 바뀌는 때를 알 수 있다. 올릴 때 = `npm view` 확인 + 1회 실행 + 문서 줄 함께.
+- 노트 틀 = lint 필수 필드: 생성 틀에 `aliases`·`author`·`date` 추가(`agent-office/km-tools/lib/lint.py` 의 `REQUIRED_FIELDS` 와 맞춤) · 원자·MOC 틀에 빠져 있던 `source` 도 추가(원본 URL·파일명, 원본 없이 직접 쓴 노트면 «직접 작성» · 영어 vault 면 «original» 등 — 원본이 없을 수 있는 노트 틀 전부에 같은 규칙 · 소셜·유튜브·카톡·문헌 노트처럼 출처가 늘 있는 틀은 그대로) — 틀대로 만든 원자·MOC 노트의 lint 완전성(필수 5칸 중 채운 비율) 0.2 → 1.0(1.8.11 틀은 `tags` 만 있었음) · 카테고리 MOC 틀에도 `source` · 틀 안 날짜 꼴 = `YYYY-MM-DD` 하나(`created` 는 검색 시간축이 읽으므로 유지).
+- 소셜 미디어 스킬 소개문(«Playwright CLI 기반»)도 실제 순서(브라우저 자동 탐색 → playwright-cli)로.
+- 검색 설명서 `base:query` 줄: «쓰지 않는다(문법 미확정)» → 검색 축엔 안 쓰되 .base 검증용 문법·함정(오류도 종료코드 0 + `Error:` · 빈 .base 는 vault 전체) 실측으로 고침.
+- 새 `scripts/km_ofm_lint.py`(경고 모드 · 표준 라이브러리): 헤딩·블록 링크 대상 · 콜아웃 타입 · 접기 위치 · `%%`/`==` 짝 · tags 공백·`#`. 링크 게이트와 «함께» 돌고(대체 ❌), 게이트가 면제하는 MOC 도 검사. 저장을 막지 않음(exit 0 · `--strict` 일 때만 1 · 측정 불가 2 — vault·노트 없음, 읽을 수 없는 노트(끊긴 심링크·권한)). 콜아웃 타입 검사는 사용자 CSS 로 만든 콜아웃에도 경고를 낸다(그땐 무시). 실제 vault 3만여 노트에 돌려 헛경고 3종(표 안 `\|` 별칭 · 조사·문장부호 앞에서 닫는 `==` · `f(x)==2` 같은 코드식)과 tags 경고 줄 번호 오귀속을 찾아 고침. 참고로 작성자 vault 에서는 경고가 1,854건(2026-11-06)에서 377건(2026-11-08 다시 측정 · 32,725 노트 · exit 0)으로 줄었다 — 다른 vault 에선 수치가 그대로 재현되지 않는다.
+- 새 `scripts/km_base_check.py` + 문안 초안 `docs/plans/2026-11-06-folder-base-save-step-draft.md`: 폴더 노트 표(.base) 저장 조건 5 검사(시범 · 저장 흐름엔 아직 안 넣음 · exit 1 = 미통과 판정이고 저장을 막을지는 부르는 쪽이 정함). 폴더 조건은 경로 단위로 비교(`topic-x` 가 `topic-xy` 에 걸리지 않음) · 읽을 수 없는 .base·MOC = 측정 불가 2.
+- `km_base_check.py` 는 Obsidian CLI 를 열어 둔 빈 파이프를 표준입력으로 주고 부른다 — 표준입력이 `/dev/null`(cron·CI)이면 큰 응답(2.3MB)이 0바이트로 오는 CLI 동작이 있어서다(실측).
+- 시험: `scripts/tests/test_km_ofm_lint.py`(18) · `scripts/tests/test_km_base_check.py`(19) — CI 에 추가.
+- 알려진 한계(다음 판): 닫히지 않은 `==` 가 아주 많은 긴 줄은 느림(40KB 한 줄 20~25초 · 두 번 측정) · `km_base_check.py` 중복 셈은 점 폴더(`.trash` 등) 안 .base 도 셈 · `--folder /` 는 폴더 조건이 늘 통과 · 끊긴 심링크 노트 하나가 있으면 전체 스캔이 측정 불가(2)로 끝남.
+- 프로젝트 폴더 설치(`install-to-project.sh`)는 링크 게이트처럼 두 새 검사기도 복사하지 않는다 — 안내 문구의 «복사 안 함» 목록에 추가(그 설치에선 OFM 검사가 «측정 불가»로 건너뜀).
+- 매니페스트: .claude-plugin 1.8.11→1.8.12 · .codex-plugin(동시) · `scripts/tests/test_search_tier2_axes.sh` 의 버전 고정 2줄.
+
 ## 1.8.11 (2026-11-07) — 검색 명령 문서의 내부 흔적 정리 · 영수증 helper 를 개인 경로 대신 git 뿌리에서 찾기
 - `commands/search.md`·`.agent/skills/km-search/SKILL.md` 의 제목 괄호 3곳(메모리뱅크 축 · 영수증 · 1단 규칙 확장)에서 내부 사람 이름·메시지 번호·인용을 지우고 판·날짜만 남김(뜻 그대로).
 - 영수증 helper(`km-search-receipt.py`) 폴백이 특정 사용자 홈 아래 고정 경로를 보던 것을, 플러그인 사본(`${CLAUDE_PLUGIN_ROOT}/scripts/`) → 볼트의 git 뿌리 → 지금 폴더의 git 뿌리 순으로 `.claude/scripts/km-search-receipt.py` 를 찾게 바꿈. 두 문서가 같은 꼴. 못 찾으면 기존처럼 영수증을 건너뜀. 실측: 볼트가 git 저장소가 아닌 설정(볼트 경로 = 동기화 사본)에서도 지금 폴더 쪽으로 찾음(bash·zsh × 볼트 경로 3가지 6/6) · git 밖 폴더 = 빈 값.

@@ -230,7 +230,10 @@ tags: [kakao-chat, {채팅방이름}, {주요주제태그}]
 source: KakaoTalk - {채팅방이름}
 period: {시작일} ~ {종료일}
 message_count: {메시지 수}
-created: {날짜}
+created: {YYYY-MM-DD}
+aliases: [{영문 또는 다른 표기}]
+author: {정리한 사람}
+date: {YYYY-MM-DD 종료일}
 ---
 
 # {채팅방이름} - {기간} 정리

@@ -34,7 +34,10 @@ description: Create atomic, interconnected notes following Zettelkasten methodol
 ---
 tags: [{domain}, {topic}, {type}]
 created: {YYYY-MM-DD}
-source: {url_or_reference}
+aliases: [{English or other spelling}]
+author: {original_author_or_writer}
+date: {YYYY-MM-DD}
+source: {url_or_reference — written from scratch with no source: "original" (Korean vault: "직접 작성")}
 type: zettelkasten
 ---
 

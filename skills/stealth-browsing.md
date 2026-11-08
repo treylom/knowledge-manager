@@ -32,7 +32,7 @@ triggers:
 # 먼저 «브라우저 자동 탐색» 블록(skills/km-browser-abstraction.md · commands/knowledge-manager.md 같은 글자)을 실행해 provider·bin 을 얻는다.
 # provider=ego   → "<bin>" nodejs -e '…page.goto("[URL]") … document.body.innerText …'  (블록의 예시 그대로)
 # provider=aside → "<bin>" exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."
-# provider=fallback → 4순위(Playwright CLI)로.
+# provider=fallback → 2순위(Playwright CLI)로.
 # 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 어느 브라우저로도 열지 않는다.
 # 실패하면: 실패 이유를 남기고 다음 순위로 넘어간다.
 # 단, ego lite 가 사용자 차례로 멈추면(권한 창 등 · 오류에 permission prompt / user now controls) 넘어가지 않는다 — 자동 탐색 블록의 예외대로 누를 곳을 안내하고 같은 작업 공간에서 이어 간다.
@@ -40,18 +40,20 @@ triggers:
 
 ```
 단순 스크래핑 (봇 탐지 없음)
-  → scrapling-crawl.py --mode dynamic (1순위, 가장 빠름)
+  → (선택 — 플러그인 미포함·따로 설치한 경우만 먼저) scrapling-crawl.py --mode dynamic (가장 빠름)
+  → 브라우저 자동 탐색 (1순위) → playwright-cli (2순위)
   → 기존 Playwright MCP (폴백)
 
 봇 탐지 있는 사이트 (소셜미디어, CloudFlare 등)
-  → scrapling-crawl.py --mode stealth (1순위, 내장 안티봇)
+  → (선택 — 플러그인 미포함·따로 설치한 경우만 먼저) scrapling-crawl.py --mode stealth (내장 안티봇)
+  → 브라우저 자동 탐색 (1순위)
   → playwright-cli (폴백)
 
 복잡한 클라우드 자동화 (API 키 필요)
   → Hyperbrowser MCP
 
 단순 HTML 가져오기
-  → scrapling-crawl.py --mode http (가장 빠름)
+  → (선택 — 플러그인 미포함·따로 설치한 경우만) scrapling-crawl.py --mode http (가장 빠름)
   → WebFetch (폴백)
 ```
 
@@ -59,7 +61,7 @@ triggers:
 
 > **이 스킬의 TS 스크립트(`stealth-browser.ts` · `stealth-actions.ts` · `stealth-navigate-and-extract.ts`)는 이 플러그인에 포함되어 있지 않습니다.** 플러그인 설치(`scripts/install-to-project.sh`)로는 이 스킬의 `scripts/` 디렉터리가 만들어지지 않으므로, 이 문서는 도구 선택 기준과 기법 참조만 제공합니다.
 
-봇 탐지가 있는 사이트는 `km-content-extraction` 스킬의 Scrapling stealth 모드를 사용합니다. 아래 `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않습니다 — 별도로 준비한 경우에만 쓰고, 없으면 브라우저 자동 탐색(ego lite → Aside), 그다음 `playwright-cli` 로 갑니다:
+봇 탐지가 있는 사이트는 `km-content-extraction` 스킬의 순서(브라우저 자동 탐색 → playwright-cli)를 따릅니다. Scrapling stealth 모드는 선택입니다. 아래 `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않습니다 — 별도로 준비한 경우에만 쓰고, 없으면 브라우저 자동 탐색(ego lite → Aside), 그다음 `playwright-cli` 로 갑니다:
 
 ```bash
 # scripts/scrapling-crawl.py 는 플러그인 미포함 — 별도 준비한 경우에만
@@ -118,19 +120,21 @@ npm install ghost-cursor-playwright playwright-extra puppeteer-extra-plugin-stea
 
 stealth-browsing은 knowledge-manager의 브라우징 스택에서 Tier 4로 작동합니다:
 
+> 이 스킬의 순서는 안티봇이 막는 사이트용입니다(일반 웹 추출 순서는 `km-content-extraction`).
+
 ```
 우선순위:
-1. scrapling-crawl.py --mode dynamic (Python, JS 렌더링, 3x 빠름)
-2. scrapling-crawl.py --mode stealth (Python, 안티봇 우회)
-3. playwright-cli (Bash, 폴백 + 스크린샷)
-4. 직접 준비한 스텔스 스크립트 (플러그인 미포함 — 이 스킬은 기법 참조만 제공)
-5. Playwright MCP
-6. Hyperbrowser (클라우드, 유료)
+선택. scrapling-crawl.py --mode dynamic / stealth (플러그인 미포함 · 따로 설치한 경우에만 1순위 앞에서 먼저 시도)
+1. 브라우저 자동 탐색 (ego lite → Aside)
+2. playwright-cli (Bash, 폴백 + 스크린샷)
+3. 직접 준비한 스텔스 스크립트 (플러그인 미포함 — 이 스킬은 기법 참조만 제공)
+4. Playwright MCP
+5. Hyperbrowser (클라우드, 유료)
 ```
 
 knowledge-manager에서 사용 시:
 ```bash
-# Scrapling stealth 모드 (scrapling-crawl.py 는 플러그인 미포함)
+# Scrapling stealth 모드 (선택 — scrapling-crawl.py 는 플러그인 미포함)
 python3 scripts/scrapling-crawl.py fetch "https://threads.net/@user/post/abc" --mode stealth --output markdown
 ```
 

@@ -1,11 +1,11 @@
 ---
 name: km-social-media
-description: Use when scraping social media content. Detects social media URLs and extracts content via Playwright CLI with scroll-based reply loading.
+description: Use when scraping social media content. Detects social media URLs and extracts content through the auto-detected browser (ego lite → Aside), falling back to playwright-cli, with scroll-based reply loading.
 ---
 
 # 소셜 미디어 콘텐츠 스크래핑 스킬
 
-> Knowledge Manager 파이프라인의 소셜 미디어 URL 자동 감지 및 Playwright 기반 콘텐츠 추출 스킬
+> Knowledge Manager 파이프라인의 소셜 미디어 URL 자동 감지 및 브라우저 자동 탐색(ego lite → Aside → playwright-cli) 기반 콘텐츠 추출 스킬
 
 ---
 
@@ -16,10 +16,10 @@ Run the following tools in order when a social media URL is detected.
 ### Tool Priority (CRITICAL)
 
 > Threads/Instagram use login walls and dynamic loading — scrapling returns only the first post.
-> Use Playwright CLI as the primary tool.
+> 1st: browser auto-detect (ego lite → Aside · `scripts/km_browser_detect.py` — see km-browser-abstraction). 2nd (no detected browser): Playwright CLI below.
 
 ```
-# 1. Use Playwright CLI (Bash — required for SNS. Scrolls to load replies)
+# 1. (when browser auto-detect finds no ego lite / Aside) Use Playwright CLI (Bash. Scrolls to load replies)
 Run: playwright-cli open "[URL]"       # Open browser and navigate
 Run: sleep 3                           # Wait for dynamic content
 Run: playwright-cli snapshot           # Create accessibility snapshot
@@ -30,15 +30,15 @@ Run: sleep 2
 Run: playwright-cli snapshot           # Add more content
 Run: playwright-cli close              # Close browser
 
-# 2. Use Scrapling only if CLI fails (may return first post only)
-# scripts/scrapling-crawl.py 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 브라우저 자동 탐색(ego lite → Aside), 그다음 playwright-cli
+# 2. Scrapling is optional (not bundled with the plugin) — use only if installed separately and CLI fails (may return first post only)
+# scripts/scrapling-crawl.py 는 이 플러그인에 포함되지 않음 — 따로 설치한 경우에만. 없으면 이 단계는 건너뛴다(브라우저 자동 탐색·playwright-cli 는 위에서 이미 시도함)
 Run: python3 scripts/scrapling-crawl.py fetch "[URL]" --mode dynamic --output markdown
 Run: python3 scripts/scrapling-crawl.py fetch "[URL]" --mode stealth --output markdown
 ```
 
 ### Playwright MCP — Do Not Use for SNS
 
-Use `playwright-cli` (Bash) exclusively for social media. See km-content-extraction for non-SNS sources.
+For social media: browser auto-detect (ego lite → Aside) first, then `playwright-cli` (Bash) — never Playwright MCP. See km-content-extraction for non-SNS sources.
 MCP is unstable with SNS dynamic loading and scroll control.
 
 

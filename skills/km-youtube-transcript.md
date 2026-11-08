@@ -151,9 +151,12 @@ def get_video_metadata(video_id):
     return None
 ```
 
-### 2순위: Scrapling (🚨 yt-dlp 실패/미설치 시 — MUST USE!)
+### 2순위: 브라우저 자동 탐색 (🚨 yt-dlp 실패/미설치 시)
 
-> **CRITICAL**: WebFetch는 YouTube 접근 불가. yt-dlp 실패 시 반드시 Scrapling 또는 Playwright CLI 사용!
+> **CRITICAL**: WebFetch는 YouTube 접근 불가. yt-dlp 실패 시 반드시 브라우저 자동 탐색(ego lite → Aside) 또는 Playwright CLI 사용!
+> 자동 탐색 블록은 `skills/km-browser-abstraction.md` 참조 — 열린 페이지에서 제목, 채널, 업로드일, 조회수, 챕터 등 파싱. 열 수 없으면 아래 Playwright CLI 폴백.
+
+### 선택: Scrapling (플러그인 미포함 · 따로 설치한 경우에만 2순위 앞에서 먼저 시도)
 
 ```bash
 # Step 1: Scrapling으로 YouTube 페이지 크롤링 (빠름)
@@ -162,9 +165,9 @@ python3 scripts/scrapling-crawl.py fetch "https://www.youtube.com/watch?v={video
 ```
 
 > Scrapling 출력에서 제목, 채널, 업로드일, 조회수, 챕터 등 파싱.
-> Scrapling 실패 시 아래 Playwright CLI 폴백:
+> Scrapling 실패 시 위 자동 탐색 브라우저, 그다음 아래 Playwright CLI 폴백:
 
-### 3순위: Playwright CLI (Scrapling 실패 시)
+### 3순위: Playwright CLI (자동 탐색 브라우저 없음·실패 시)
 
 ```bash
 # Step 1: YouTube 페이지 열기
@@ -276,7 +279,10 @@ upload_date: {업로드일}
 duration: {영상 길이}
 subtitle_lang: {자막 언어}
 subtitle_type: {manual/auto-generated}
-created: {처리일}
+created: {YYYY-MM-DD 처리일}
+aliases: [{영문 또는 다른 표기}]
+author: {채널명 또는 화자}
+date: {YYYY-MM-DD 업로드일}
 ---
 
 # {영상 제목}
@@ -334,8 +340,9 @@ STEP A: 트랜스크립트 추출
   ↓
 STEP B: 영상 메타데이터 + 챕터 수집 (🚨 CRITICAL — 정확성 보장!)
   1순위: yt-dlp --dump-json
-  2순위: scrapling-crawl.py --mode dynamic (⭐ 빠름)
+  2순위: 브라우저 자동 탐색 (ego lite → Aside) (⭐)
   3순위: playwright-cli open → snapshot (폴백)
+  (선택: scrapling-crawl.py --mode dynamic — 플러그인 미포함 · 따로 설치한 경우에만 2순위 앞에서)
   4순위: Playwright MCP (CLI 실패 시)
   → 제목, 채널, 업로드일, 길이, 조회수, 챕터 목록
   → 챕터가 있으면 STEP C 타임라인의 타임스탬프로 사용!

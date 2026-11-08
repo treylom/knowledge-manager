@@ -270,7 +270,7 @@ vault 이름 = km-config `obsidianCli.vault`(비면 `storage.obsidian.vaultPath`
 ```json
 {"intent":"nav|content|relation|meta|tag|temporal|mixed","targets":["노트명 후보 ≤3, 확신순"],"keywords":["핵심어 ≤5"],"tags":["태그 ≤3, # 제거"],"props":{"key":"value"},"path_hint":"폴더 힌트 or null","time":{"recent":false,"date":null},"axes":["bl|ln|prop|ctx|tag|full 실행 순서"],"topn":2}
 ```
-intent: nav=위치·정본·목록·구조 / content=내용·설명·비교 / relation=역링크·정방향·누가 참조 / meta=속성·created·aliases / tag=태그 / temporal=최근·오늘·날짜 / mixed=둘 이상. `--decomp=sub`(DEEP 전용) 이면 이 JSON 을 `claude -p --model haiku --strict-mcp-config --mcp-config '{"mcpServers":{}}' --no-session-persistence "<같은 지시+질문>" < /dev/null` 로 받는다(상한 10s · 초과·JSON 파싱 실패 = 0-β 생략 = 1.6.0 규칙 파이프라인 그대로).
+intent: nav=위치·기준 문서·목록·구조 / content=내용·설명·비교 / relation=역링크·정방향·누가 참조 / meta=속성·created·aliases / tag=태그 / temporal=최근·오늘·날짜 / mixed=둘 이상. `--decomp=sub`(DEEP 전용) 이면 이 JSON 을 `claude -p --model haiku --strict-mcp-config --mcp-config '{"mcpServers":{}}' --no-session-persistence "<같은 지시+질문>" < /dev/null` 로 받는다(상한 10s · 초과·JSON 파싱 실패 = 0-β 생략 = 1.6.0 규칙 파이프라인 그대로).
 
 **0-γ 재조립(분해 JSON → 호출 목록 · 규칙 고정)**:
 | intent | 먼저 | 그 다음 | 인자 |
@@ -308,7 +308,7 @@ TOPN = QUICK 2 / DEEP 5 (Tier 1 결과 ∪ 0단 결과에서 상위 TOPN 노트 
 - 기존 Phase 2.5-B(그래프 확장)와의 관계: Phase 2.5-B 의 backlinks 호출은 이 1단 ② 로 «대체»(중복 호출 ❌).
 - 노트명 = `file=` 는 wikilink 처럼 «이름»으로 해석(경로 ❌), 추출 우선순위: ① `[[…]]` 안 ② 따옴표(`" "` · `' '` · 「」) 안 ③ 둘 다 없으면 질의에서 조사(이/가/을/를/의/에/은/는/과/와) 직전 토큰 중 vault 노트 이름과 일치하는 것 — 확인 명령 `"$OBSIDIAN_CLI" search query="<토큰>" vault="${OBSIDIAN_VAULT}" path= total`(total ≥1). 일치 0 이면 ④ 전문 검색으로 폴백. 예: 「MOC-Map 이 링크하는 노트는?」 → ③ 「MOC-Map」.
 - **0 B·rc 0 ≠ 무결과** — 무결과 = `No matches found.`. 0 B 는 도구 순간 빈손 → 같은 명령 1회 재시도, 재현 시 Tier 3.
-- `base:query` 는 쓰지 않는다(문법 미확정).
+- `base:query` = 검색 축에는 쓰지 않는다(.base 결과는 노트 검색이 아님) · .base 가 실제로 읽히는지 확인할 때만: `"$OBSIDIAN_CLI" base:query path="<vault 상대 .base 경로>" format=paths vault="<vault 이름>"` (format = json|csv|tsv|md|paths). 없는 파일도 종료코드 0 + `Error: Base file not found: …` 한 줄이 나온다 → 종료코드가 아니라 출력 첫 줄 `Error:` 로 실패를 가른다(2026-11-06 실측). 빈 .base 는 vault 전체 노트를 돌려주므로 «1행 이상»만으로는 통과로 보지 않는다.
 - 전제: Obsidian 데스크톱 앱 설치 + 실행 중 (setup 위저드가 감지·안내).
 - **질의는 핵심 키워드 1~2개로 축약해 넣는다** — CLI 는 전문 일치(full-text) 검색이라 문장형 통짜 질의는 0히트가 정상이다(실측: 문장형 "No matches" vs 키워드 2개 다수 히트). **0건이면 키워드 변형(동의어·영/한 표기) 1회 재질의**, 그래도 0건일 때만 다음 티어로.
 - CLI는 관련도 순위가 약하므로 흔한 단어는 limit을 크게 잡고 결과에서 추린다.

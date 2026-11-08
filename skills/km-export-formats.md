@@ -360,10 +360,13 @@ Step 3: 결과 보고
 
 ```markdown
 ---
-created: YYYY-MM-DDTHH:mm:ss
+created: YYYY-MM-DD
 tags: [MOC, 주제, 연구보고서]
+aliases: [영문 또는 다른 표기]
+author: [원저자 또는 작성자]
+date: YYYY-MM-DD
 type: main-moc
-source: [원본 출처]
+source: [원본 URL·파일명 — 원본 없이 직접 쓴 노트면 "직접 작성"(영어 vault 면 "original")]
 ---
 
 # [문서제목] - MOC
@@ -414,8 +417,12 @@ source: [원본 출처]
 
 ```markdown
 ---
-created: YYYY-MM-DDTHH:mm:ss
+created: YYYY-MM-DD
 tags: [MOC, 주제, 챕터명]
+aliases: [영문 또는 다른 표기]
+author: [원저자 또는 작성자]
+date: YYYY-MM-DD
+source: [이 챕터의 원본 출처 — 책·문서 이름 또는 URL · 원본이 없으면 "직접 작성"(영어 vault 면 "original")]
 type: category-moc
 parent: "[[메인-MOC]]"
 chapter: N
@@ -475,11 +482,14 @@ chapter: N
 
 ```markdown
 ---
-created: YYYY-MM-DDTHH:mm:ss
+created: YYYY-MM-DD
 tags: [주제, 키워드1, 키워드2]
+aliases: [영문 또는 다른 표기]
+author: [원저자 또는 작성자]
+date: YYYY-MM-DD
 type: atomic
 parent: "[[챕터-MOC]]"
-source: [원본 출처]
+source: [원본 URL·파일명 — 원본 없이 직접 쓴 노트면 "직접 작성"(영어 vault 면 "original")]
 chapter: N
 ---
 
@@ -662,7 +672,10 @@ Step 2: YAML 프론트매터 생성
   category: [카테고리]
   tags: [tag1, tag2, ...]
   created: YYYY-MM-DD
-  source: [원본 소스]
+  aliases: [영문 또는 다른 표기]
+  author: [원저자 또는 작성자]
+  date: YYYY-MM-DD
+  source: [원본 URL·파일명 — 원본 없이 직접 쓴 노트면 "직접 작성"(영어 vault 면 "original")]
   ---
 
 Step 3: 콘텐츠 구조화
