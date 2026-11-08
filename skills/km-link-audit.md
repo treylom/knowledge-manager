@@ -303,7 +303,7 @@ Changelog/Vault-Link-Audit-2026-01-03.md
 ```markdown
 ---
 tags: [audit, vault-health, report]
-created: {YYYY-MM-DD HH:mm}
+created: {YYYY-MM-DD}
 type: audit-report
 ---
 

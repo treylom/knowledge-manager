@@ -144,9 +144,9 @@ Notion API는 파일 업로드를 지원하지 않으므로, 로컬 전용 이�
 ### A. 웹 URL
 
 ```
-(scripts/scrapling-crawl.py 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 브라우저 자동 탐색(ego lite → Aside), 그다음 playwright-cli)
-1. scrapling-crawl.py fetch --mode dynamic --images --output json → 텍스트 + 이미지 추출
-   (폴백: playwright navigate → 페이지 로드)
+(순서: 브라우저 자동 탐색(ego lite → Aside) → playwright-cli. scripts/scrapling-crawl.py 는 이 플러그인에 포함되지 않음 — 따로 설치한 경우에만 선택)
+1. (선택) scrapling-crawl.py fetch --mode dynamic --images --output json → 텍스트 + 이미지 추출
+   (기본: 브라우저 자동 탐색 → playwright navigate → 페이지 로드)
 2. JSON 결과의 images 배열 또는 browser_snapshot → img/figure 요소 파싱
 3. 각 이미지 요소에서 수집:
    - src URL (절대 경로로 변환)

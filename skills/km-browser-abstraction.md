@@ -2,7 +2,7 @@
 
 > Knowledge Manager의 브라우저 자동화 추상화 레이어
 > 기본 = 브라우저 자동 탐색(ego lite → Aside → Playwright) · 설정으로 Hyperbrowser·Antigravity 지정 가능
-> 이 공급자는 브라우저가 필요할 때만 쓴다 — 일반 페이지는 km-content-extraction 의 Scrapling 이 먼저.
+> Scrapling 은 따로 설치한 경우에만 선택으로 앞에서 먼저 시도한다. 이 공급자(브라우저 자동 탐색)가 일반 웹 페이지 추출의 1순위다 — 순서는 km-content-extraction 참조.
 
 ---
 
@@ -51,7 +51,7 @@ if [ -f "$KM_BD" ]; then python3 "$KM_BD" --config "./km-config.json" --config "
 ### Aside (자동 탐색 2순위 — ego lite 가 없을 때)
 
 ```bash
-# Aside (1.8.4 — 예전에 playwright 로 읽던 자리: Scrapling 으로는 안 열리지만 브라우저로는 누구나 볼 수 있는 공개 페이지 · SNS · 브라우저 조작)
+# Aside (1.8.4 — 예전에 playwright 로 읽던 자리: 정적 수집(WebFetch)으로는 안 열리지만 브라우저로는 누구나 볼 수 있는 공개 페이지 · SNS · 브라우저 조작)
 # 남의 로그인 벽·페이월·CAPTCHA·robots/ToS 금지 페이지는 aside 로도 열지 않는다.
 # 실행 이름: macOS = aside · WSL/Windows = aside.exe (실행 이름을 그대로 적는다)
 aside exec "[URL] 페이지를 열고 본문 텍스트를 요약 없이 그대로 돌려줘. 제목·작성자·날짜·이미지 설명 포함."

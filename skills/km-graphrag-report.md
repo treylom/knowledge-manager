@@ -5,7 +5,7 @@ description: Use when needing GraphRAG ReAct 보고서 생성 스킬. Thought→
 
 # GraphRAG ReAct 보고서 생성 스킬
 
-> ⚠️ **엔진 실행 정본 (2026-07-21 정정)**: 아래 예시의 `python .team-os/graphrag/scripts/graph_search.py --tool ...` 표기는 **개념 설명용 의사(pseudo) 인터페이스**로, 해당 스크립트는 배포물에 존재하지 않는다. 실제 실행 정본 = **`scripts/graphrag-ops/tofugraph.sh`**:
+> ⚠️ **엔진 실행 기준 (2026-07-21 정정)**: 아래 예시의 `python .team-os/graphrag/scripts/graph_search.py --tool ...` 표기는 **개념 설명용 의사(pseudo) 인터페이스**로, 해당 스크립트는 배포물에 존재하지 않는다. 실제 실행 경로 = **`scripts/graphrag-ops/tofugraph.sh`**:
 > - 검색: `bash scripts/graphrag-ops/tofugraph.sh search "<질의>"` (내부적으로 `${GRAPHRAG_API_URL:-http://127.0.0.1:8400}/api/search?mode=hybrid` 호출)
 > - 인덱스 구축: `bash scripts/graphrag-ops/tofugraph.sh build` · 상태: `... status` (엔진·env 계약 상세 = `skills/km-graphrag-ops.md`)
 
@@ -146,6 +146,10 @@ tags:
   - analysis
   - research
 created: YYYY-MM-DD
+date: YYYY-MM-DD
+aliases: [영문 또는 다른 표기]
+author: "<작성자>"
+source: "<분석 대상 vault·질의>"
 graph_query: "<사용자 원본 쿼리>"
 query_level: "L1"          # L0/L1/L2/L3
 graph_tools_used:

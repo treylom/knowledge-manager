@@ -22,7 +22,7 @@ Main (Opus 1M, 단일 세션) — 7-Layer Fusion
  └── Phase 3: COMPILE — raw→wiki 컴파일 + Q&A 양방향 [NEW]
  └── Phase 4: LINTING — /autoresearch 지식 Health Check [NEW]
  └── Phase 5: KNOWLEDGE STORE — 저장 + 연결 강화 + Cross-phase 검증
- └── Phase 6: OUTPUTS + FILED BACK — 산출 + Wiki 환류 [NEW]
+ └── Phase 6: OUTPUTS + FILED BACK — 산출 + Wiki 에 되돌려 넣기 [NEW]
 ```
 
 **어디서든 동작** (tmux 없어도, Agent Teams 없어도, VS Code/SDK에서도).
@@ -282,7 +282,7 @@ Main이 입력 소스를 직접 추출합니다. 스킬 참조: `km-content-extr
 
 ### 소스 유형별 추출
 
-> `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 3순위(브라우저 자동 탐색)로.
+> `scripts/scrapling-crawl.py` 는 이 플러그인에 포함되지 않음 — 별도 준비, 없으면 1순위(브라우저 자동 탐색)로.
 
 ### 브라우저 자동 탐색 (1.8.6 — 기본 · 사용자 설정 없음)
 
@@ -316,8 +316,8 @@ if [ -f "$KM_BD" ]; then python3 "$KM_BD" --config "./km-config.json" --config "
 | 입력 유형 | 추출 방법 |
 |----------|----------|
 | **YouTube** | `youtube-transcript-api` → `yt-dlp` 폴백 → 스킬: `km-youtube-transcript.md` |
-| **소셜 미디어 (Threads/Instagram)** | `playwright-cli open → snapshot` ⭐ **1순위** (scrapling은 첫 포스트만 반환, SNS에서 MCP 사용 금지) |
-| **일반 웹 URL** | `scrapling-crawl.py --mode dynamic` (1순위) → `--mode stealth` (2순위) → 브라우저 자동 탐색(ego lite → Aside · 3순위 · Scrapling 으로 안 열릴 때 · 위 블록) → `playwright-cli` (4순위) → `WebFetch` (정적) |
+| **소셜 미디어 (Threads/Instagram)** | 브라우저 자동 탐색(ego lite → Aside) ⭐ **1순위** · 없으면 `playwright-cli open → snapshot` (scrapling은 첫 포스트만 반환, SNS에서 MCP 사용 금지) |
+| **일반 웹 URL** | 브라우저 자동 탐색(ego lite → Aside · 1순위 · 위 블록) → `playwright-cli` (2순위) → `WebFetch` (정적) · Scrapling: `scrapling-crawl.py --mode dynamic` → `--mode stealth` (선택 — `scripts/scrapling-crawl.py` 는 플러그인 미포함 · 따로 설치한 경우에만 1순위 앞에서 먼저 시도) |
 | **PDF (작은)** | Read 직접 시도 (< 5MB, < 20p) |
 | **PDF (큰)** | marker_single (`skills/pdf.md` 안내) |
 | **DOCX/XLSX/PPTX** | Read 또는 해당 스킬 도구 |
@@ -515,6 +515,22 @@ echo "LINK_GATE_RC=$GATE_RC"
 | exit 0 | 통과 — STEP 4 진입 |
 | exit 1 | 미통과 — 링크 보강 재시도 **≤2회**. 출력 표의 `moc_links`/`links` 열에서 부족한 축(MOC 링크 / 일반 링크)을 읽어 draft 에 채우고 같은 명령을 다시 돌린다. 재시도 2회 뒤에도 1 이면 미통과 표(note·moc_links·links·reason)를 사용자에게 사유로 표시하고 **정지**한다(STEP 4 진입 ❌). |
 | exit 2 | 측정 불가(vault 경로 오류·노트 없음 등) — 통과 취급 ❌. 사유를 그대로 표시하고 **정지**한다. |
+
+**함께 도는 OFM 경고 검사(경고 모드 · 저장을 막지 않음)** — 링크 게이트 «대신»이 아니라 «그리고»: 게이트 exit 0 **이고** 아래 검사를 한 번 돌린 뒤 STEP 4 로 간다. 링크 게이트는 `[[노트#헤딩]]` 의 `#` 뒤를 보지 않으므로(노트 이름만 확인), 헤딩·블록 대상은 이 검사가 본다. 게이트가 면제하는 MOC(`moc-self`)도 여기서는 검사한다.
+
+```bash
+python3 "$PLUGIN_ROOT/scripts/km_ofm_lint.py" "$VAULT_PATH" --notes "$DRAFT_PATH"; OFM_RC=$?
+echo "OFM_LINT_RC=$OFM_RC"
+```
+
+검사 5종: ①`[[노트#헤딩]]`·`[[노트#^블록]]`·`[[#헤딩]]` 대상 존재(노트 자체가 없거나 이름이 겹치면 건너뜀 — 그건 링크 게이트 몫) ②콜아웃 타입 오타(`> [!warnign]` · 사용자 CSS 로 만든 콜아웃(`> [!mycustom]` 등)에도 경고가 뜬다 — 그땐 무시) ③접기 `+/-` 위치(`> [!faq]-` 가 맞는 꼴) ④`%%` 짝(문서 전체)·여는 `==` 의 짝(줄 단위 · `a==b` 같은 비교식은 셈하지 않음) ⑤frontmatter `tags` 항목의 공백·맨 앞 `#`.
+
+| exit | 처리 |
+|---|---|
+| exit 0 | 검사함 — 경고가 있으면 줄 번호·검사 이름을 보고서에 싣고, 고칠 수 있는 것은 draft 에서 고친 뒤 계속. **경고가 남아도 저장은 막지 않는다.** |
+| exit 2 | 측정 불가 — 통과로 세지 않고 사유를 보고서에 적은 뒤 계속(경고 모드). |
+
+> exit 1 은 `--strict` 를 줄 때만 나온다(이 흐름에서는 쓰지 않음).
 
 ---
 
@@ -766,9 +782,9 @@ Write({ file_path: "{vault_absolute_path}/적절한/경로/파일명.md", conten
 ```
 
 **경로 규칙** (CLAUDE.md 참조):
-- Vault root = `AI_Second_Brain`
+- Vault root = vault 폴더 자체(예: `MyVault`)
 - 경로는 vault root 기준 상대 경로
-- `AI_Second_Brain/`를 prefix로 붙이지 말 것!
+- vault 폴더 이름(`MyVault/`)을 prefix로 붙이지 말 것!
 
 ### 5-0. 저장 경로 결정 (CRITICAL — 모든 노트 생성 전 필수!)
 
@@ -835,7 +851,7 @@ NO → Library/ 하위 (기본):
    - 이미지 연속 배치 금지 (반드시 텍스트로 분리)
 
 4. 검증:
-   Glob("AI_Second_Brain/Resources/images/{topic-folder}/*") → 파일 존재 확인
+   Glob("{vault_absolute_path}/Resources/images/{topic-folder}/*") → 파일 존재 확인
 ```
 
 **auto 모드 제한**: 차트/다이어그램만, 최대 10개, > 2MB 이미지 스킵
@@ -900,6 +916,10 @@ FOR EACH target_note IN update_targets (최대 15개):
 
   4. 변경 기록:
      propagation_log에 추가: {target_note, update_type, content_added}
+
+  5. MOC/인덱스를 고쳤으면 OFM 경고 검사 1회(경고 모드 · STEP 3.5 와 같은 명령):
+     python3 "$PLUGIN_ROOT/scripts/km_ofm_lint.py" "$VAULT_PATH" --notes "{target_path}"
+     → 경고는 보고서에 싣고 저장은 계속(MOC 도 면제 없음)
 ```
 
 ### 5.5-4. Propagation 보고
@@ -950,9 +970,9 @@ FOR EACH target_note IN update_targets (최대 15개):
 4. 편입 대상이 없으면 그 사유를 로그 (진짜 신규 주제 = OK, 판정 누락 = 고아 위험)
 ```
 
-### 6-2. Filed Back — 환류 (Explorations add up)
+### 6-2. Filed Back — Wiki 에 되돌려 넣기 (Explorations add up)
 
-> **파이프라인 핵심: "모든 탐색은 Wiki로 환류된다."**
+> **파이프라인 핵심: "모든 탐색은 Wiki 로 되돌아가 쌓인다."**
 > 이번 세션에서 생성된 산출물과 발견을 Wiki에 축적한다.
 
 ```
@@ -961,13 +981,13 @@ FOR EACH target_note IN update_targets (최대 15개):
    - STEP 4.5 lint에서 발견된 인사이트
    - STEP 4.5-1 규칙 3 "Suggest new articles" 결과
 
-2. 환류 실행:
+2. 되돌려 넣기 실행:
    - lint 과정에서 발견된 기존 노트 오류 → 해당 노트 수정
    - "Suggest new articles" 항목 → Open Questions 노트 생성
      경로: Library/Research/{프로젝트명}/Open-Questions-{날짜}.md
    - Open Questions는 다음 KM 세션의 탐색 시드가 된다
 
-3. 환류 노트 생성 (Open Questions가 있을 때):
+3. Open Questions 노트 생성 (Open Questions가 있을 때):
    ---
    title: "Open Questions — {주제}"
    tags: [status/open, research, open-questions]
@@ -1007,7 +1027,7 @@ FOR EACH target_note IN update_targets (최대 15개):
 - 생성된 노트: N개
 - 추가된 양방향 링크: N개
 
-### Filed Back (환류)
+### Filed Back (되돌려 넣기)
 - 기존 노트 수정: N건
 - Open Questions 생성: N건 → {경로}
 - 다음 세션 탐색 시드: N개
@@ -1022,7 +1042,7 @@ FOR EACH target_note IN update_targets (최대 15개):
 | 노트 | 경로 | 상태 |
 |------|------|------|
 | [MOC명] | Research/... | 성공 |
-| [Open Questions] | Research/.../Open-Questions-... | 환류 |
+| [Open Questions] | Research/.../Open-Questions-... | 되돌려 넣음 |
 | ... | ... | ... |
 
 ### 파이프라인 실행 체크 (STEP 스킵 방지)
@@ -1035,7 +1055,7 @@ FOR EACH target_note IN update_targets (최대 15개):
 - [ ] STEP 5: STORE (Cross-phase 검증 + 저장)
 - [ ] STEP 5.5: PROPAGATE (기존 노트 업데이트)
 - [ ] STEP 6-1: 연결 강화 (양방향 wikilink)
-- [ ] STEP 6-2: Filed Back (환류 + Open Questions)
+- [ ] STEP 6-2: Filed Back (되돌려 넣기 + Open Questions)
 - [ ] STEP 6-4: 엔티티 페이지 제안
 - [ ] STEP 6-5: 세션 로그 (_km-log.md append)
 - [ ] STEP 7: Vault 동기화

@@ -46,6 +46,10 @@ jobs:
         run: python3 -I -B scripts/tests/test_command_posargs.py
       - name: map descent — keyword route unchanged, ambiguity flags, bounded menus inside the vault
         run: python3 -I -B scripts/tests/test_km_map_descent.py
+      - name: OFM warning lint (heading/block targets · callouts · fold · %% / == pairs · tags) — warn mode
+        run: python3 -I -B scripts/tests/test_km_ofm_lint.py
+      - name: folder .base save conditions (filter · expected set · base:query rows · MOC entry · no duplicate)
+        run: python3 -I -B scripts/tests/test_km_base_check.py
       - name: search rules route contract
         run: python3 -I -B scripts/tests/test_km_rules_route.py
       - name: km-tools pytest

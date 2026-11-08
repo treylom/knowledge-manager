@@ -6,7 +6,7 @@ description: Unified browser interface for browser auto-detect (default: ego lit
 # Browser Abstraction Layer
 
 > Unified interface for web content extraction across browser providers
-> This provider is only for when a browser is needed — for ordinary pages, the Scrapling order in km-content-extraction comes first.
+> This provider (automatic browser detection) is the first choice for ordinary web page extraction — see the order in km-content-extraction. Scrapling is optional and only tried before it when installed separately.
 
 ---
 
@@ -66,7 +66,7 @@ if [ -f "$KM_BD" ]; then python3 "$KM_BD" --config "./km-config.json" --config "
 ## Aside (auto-detect slot 2 — when ego lite is missing)
 
 ```bash
-# Aside (since 1.8.4) — where Playwright used to be needed: public pages anyone can view in a browser but Scrapling cannot open, social media, browser actions.
+# Aside (since 1.8.4) — where Playwright used to be needed: public pages anyone can view in a browser but static fetching (WebFetch) cannot open, social media, browser actions.
 # Command name: macOS = aside · WSL/Windows = aside.exe (write the command name literally)
 aside exec "Open [URL] and return the page body text verbatim, without summarizing. Include title, author, date, and image descriptions."
 # Screenshots, form input, and clicks use the same aside exec prompt (e.g. "…open and save a full-page capture to [path]")
