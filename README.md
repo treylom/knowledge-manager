@@ -176,7 +176,7 @@ Your-Vault/
 
 ## 피드백
 
-써 보고 안 된 점이나 바라는 점이 있으면 **[킷 사용 피드백](https://github.com/treylom/knowledge-manager/issues/new?template=kit-feedback.yml)** 양식으로 이슈를 열어 주세요(GitHub 계정 필요 · 이메일·실명 불필요). 받아들인 피드백은 고친 PR·커밋에 그 이슈 번호를 출처로 적고, CHANGELOG 항목 끝에도 `(피드백 #N)` 으로 남깁니다. 전체 흐름은 [CONTRIBUTING.md](CONTRIBUTING.md) 에 있습니다.
+써 보고 안 된 점이나 바라는 점이 있으면 **[킷 사용 피드백](https://github.com/treylom/knowledge-manager/issues/new?template=kit-feedback.yml)** 양식으로 이슈를 열어 주세요(GitHub 계정 필요 · 이메일·실명 불필요). 받아들인 피드백은 고친 PR·커밋에 그 이슈 번호를 출처로 적고 CHANGELOG 항목 끝에도 `(피드백 #N)` 으로 남깁니다. 전체 흐름은 [CONTRIBUTING.md](CONTRIBUTING.md) 에 있습니다.
 
 ## 기여 · 라이선스 · 링크
 
@@ -366,7 +366,7 @@ Your-Vault/
 
 ## Feedback
 
-Something did not work, or you wished it did something else? Open an issue with the **[Kit feedback](https://github.com/treylom/knowledge-manager/issues/new?template=kit-feedback.yml)** form (a GitHub account is needed; no email or real name). When we accept a piece of feedback, the pull request or commit that makes the change names that issue number as its source, and the CHANGELOG entry ends with `(feedback #N)`. The full flow is in [CONTRIBUTING.md](CONTRIBUTING.md).
+Something did not work, or you wished it did something else? Open an issue with the **[Kit feedback](https://github.com/treylom/knowledge-manager/issues/new?template=kit-feedback.yml)** form (a GitHub account is needed; no email or real name). When we accept a piece of feedback, the pull request or commit that makes the change names that issue number as its source, and the CHANGELOG entry ends with `(피드백 #N)`. The full flow is in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Contributing · License · Links
 

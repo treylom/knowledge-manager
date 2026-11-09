@@ -15,7 +15,7 @@
 ## 참고 / Reference
 
 - Issue / Ticket: <!-- 링크 -->
-- 피드백 출처 / Feedback source: #이슈 번호 (issue number) / 없음 (none)
+- 피드백 출처 / Feedback source (킷 사용 피드백 이슈 / Kit feedback issue): #이슈 번호 (issue number) / 없음 (none)
 - 스크린샷/로그: <!-- 필요시 첨부 -->
 
 ## 롤백 / Rollback

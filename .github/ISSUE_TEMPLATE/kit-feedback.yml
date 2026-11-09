@@ -6,7 +6,7 @@ body:
     id: kit-version
     attributes:
       label: 킷·버전 / Kit and version
-      description: 어떤 킷을 어느 버전으로 썼나요? 버전은 CHANGELOG 맨 위 번호나 플러그인 목록에서 볼 수 있습니다. / Which kit and which version? The version is the top entry in CHANGELOG or in your plugin list.
+      description: 어떤 킷을 어느 버전으로 썼나요? 버전은 설치한 사본의 CHANGELOG 맨 위 번호나 플러그인 목록에서 볼 수 있습니다. / Which kit and which version? The version is the top entry of CHANGELOG.md in your installed copy, or in your plugin list.
       placeholder: "knowledge-manager 1.8.12"
     validations:
       required: true
@@ -25,7 +25,7 @@ body:
     id: what-happened
     attributes:
       label: 무엇이 안 됐나요, 무엇을 바랐나요 / What did not work, or what did you wish for?
-      description: 쓴 명령(예 /km:search), 기대한 결과, 실제 결과를 적어 주세요. / The command you ran (e.g. /km:search), what you expected, and what actually happened.
+      description: "쓴 명령(예: /km:search), 기대한 결과, 실제 결과를 적어 주세요. 이 이슈는 누구나 볼 수 있으니 토큰·비밀번호·개인정보는 적지 마세요. / The command you ran (e.g. /km:search), what you expected, and what actually happened. Anyone can see this issue, so please leave out tokens, passwords and personal details."
     validations:
       required: true
   - type: textarea
