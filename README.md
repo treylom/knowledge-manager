@@ -174,6 +174,10 @@ Your-Vault/
 - **검색이 자꾸 텍스트 검색으로 떨어질 때**: `/km:tofugraph` 로 진단. GraphRAG 서버 주소는 `km-config.json` 의 `linking.semantic_adapter.endpoint`(기본 `http://127.0.0.1:8400`).
 - **링크 가중치·MOC 게이트**: `km-config.json` 의 `linking.scheme`(`"v2"` 기본) · `linking.mocGate`(`"auto"` 기본 / `"confirm"` = 후보 1개 확인). 예시는 `km-config.example.json`.
 
+## 피드백
+
+써 보고 안 된 점이나 바라는 점이 있으면 **[킷 사용 피드백](https://github.com/treylom/knowledge-manager/issues/new?template=kit-feedback.yml)** 양식으로 이슈를 열어 주세요(GitHub 계정 필요 · 이메일·실명 불필요). 받아들인 피드백은 고친 PR·커밋에 그 이슈 번호를 출처로 적고, CHANGELOG 항목 끝에도 `(피드백 #N)` 으로 남깁니다. 전체 흐름은 [CONTRIBUTING.md](CONTRIBUTING.md) 에 있습니다.
+
 ## 기여 · 라이선스 · 링크
 
 기여는 Fork → 브랜치 → 커밋 → Pull Request. MIT License — 자유롭게 사용·수정·배포하세요.
@@ -359,6 +363,10 @@ Your-Vault/
 - **Where the config files live**: Plugin settings are in `km-config.json` in your project — that's the reference file. MCP registrations: Claude Code CLI = `~/.claude.json` (user scope) · Claude Desktop = `%APPDATA%\Claude\claude_desktop_config.json` · Antigravity = `~/.gemini/antigravity/mcp_config.json`.
 - **Search keeps falling back to text search**: Run `/km:tofugraph` for a diagnosis. The GraphRAG server address is `linking.semantic_adapter.endpoint` in `km-config.json` (default `http://127.0.0.1:8400`).
 - **Link weights and the MOC gate**: In `km-config.json`, `linking.scheme` (`"v2"` by default) and `linking.mocGate` (`"auto"` by default; `"confirm"` proposes one candidate and asks). See `km-config.example.json` for examples.
+
+## Feedback
+
+Something did not work, or you wished it did something else? Open an issue with the **[Kit feedback](https://github.com/treylom/knowledge-manager/issues/new?template=kit-feedback.yml)** form (a GitHub account is needed; no email or real name). When we accept a piece of feedback, the pull request or commit that makes the change names that issue number as its source, and the CHANGELOG entry ends with `(feedback #N)`. The full flow is in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Contributing · License · Links
 
