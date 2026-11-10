@@ -1,0 +1,46 @@
+name: 킷 사용 피드백 / Kit feedback
+description: Knowledge Manager 를 써 보고 안 된 점·바라는 점을 알려 주세요. / Tell us what did not work or what you wished for after using Knowledge Manager.
+title: "[Kit feedback] "
+body:
+  - type: input
+    id: kit-version
+    attributes:
+      label: 킷·버전 / Kit and version
+      description: 어떤 킷을 어느 버전으로 썼나요? 버전은 설치한 사본의 CHANGELOG 맨 위 번호나 플러그인 목록에서 볼 수 있습니다. / Which kit and which version? The version is the top entry of CHANGELOG.md in your installed copy, or in your plugin list.
+      placeholder: "knowledge-manager 1.8.12"
+    validations:
+      required: true
+  - type: dropdown
+    id: context
+    attributes:
+      label: 어디서 썼나요 / Where did you use it?
+      options:
+        - 강의·수업 / Course or class
+        - 업무 / Work
+        - 개인 / Personal
+        - 기타 / Other
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 무엇이 안 됐나요, 무엇을 바랐나요 / What did not work, or what did you wish for?
+      description: "쓴 명령(예: /km:search), 기대한 결과, 실제 결과를 적어 주세요. 이 이슈는 누구나 볼 수 있으니 토큰·비밀번호·개인정보는 적지 마세요. / The command you ran (e.g. /km:search), what you expected, and what actually happened. Anyone can see this issue, so please leave out tokens, passwords and personal details."
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 환경 (선택) / Environment (optional)
+      description: 운영체제, 쓰는 도구(Claude Code·Codex·Antigravity 등), 오류 메시지. 토큰·비밀번호·개인정보는 지워 주세요. / OS, the tool you use (Claude Code, Codex, Antigravity, ...), error messages. Please remove tokens, passwords and personal details.
+      render: text
+    validations:
+      required: false
+  - type: checkboxes
+    id: follow-up
+    attributes:
+      label: 후속 질문 (선택) / Follow-up (optional)
+      description: 연락은 이 이슈 댓글로만 합니다. 이메일·실명은 적지 않아도 됩니다. / We only follow up in this issue's comments. No email or real name needed.
+      options:
+        - label: 이 이슈 댓글로 추가 질문을 받아도 괜찮습니다. / It is okay to ask me follow-up questions in this issue.
+          required: false
