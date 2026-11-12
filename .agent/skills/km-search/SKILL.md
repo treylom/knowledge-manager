@@ -360,10 +360,9 @@ grep -rn "${QUERY}" "${VAULT_PATH}" --include="*.md" -l | head -20
 ### B. backlinks 1-hop (DEEP 필수 · QUICK 은 top hit 이 얇을 때)
 top 1~2 노트에 대해 **backlink(그 노트를 가리키는 노트)** 와 **outlink(그 노트가 가리키는 노트)** 를 실측한다. **DEEP 이고 `VAULT_MODE` 가 `other` 가 아니면(= `same`, 또는 Tier 1 실패 뒤 로컬 검색) 이 블록은 생략할 수 없다**(1.8.5 · 참조 파일 Read 없이 본문에서 실행):
 ```bash
-# 집행 계약: DEEP 모드에서 top 1~2 노트에 반드시 실행. backlinks = 전 플랫폼 grep 근사 —
-# Obsidian CLI 의 backlinks 서브커맨드가 있으면(맥 데스크톱) 그걸 우선, 부재·오류 시 아래가 항상 동작한다.
-# Tier 2 1단 ②가 이미 돌았으면 재호출 없이 그 결과 사용(중복 호출 ❌).
-"$OBSIDIAN_CLI" backlinks file="<top노트 basename(.md 제거)>" vault="${OBSIDIAN_VAULT}" format=json
+# 집행 계약: DEEP 모드에서 top 1~2 노트에 반드시 실행. backlinks = Obsidian CLI `backlinks` (JSON 목록)를 먼저 쓰고,
+# CLI 가 없거나·목록이 아니거나(「No backlinks found」 포함) 실패하면 아래 grep 근사가 동작한다 — BL_SRC=cli|grep (CLI 단계 수리 3판 2026-11-11).
+# Tier 2 «1단 확장»이 같은 노트를 이미 돌렸으면 그 «역링크 N건» 을 그대로 쓴다(중복 호출 ❌).
 # 변수 규약: NOTE_PATH = VAULT_PATH 기준 상대경로(절대경로는 vault 안일 때만 · 현재 폴더 같은 이름으로 대체 ❌).
 # fail-closed: vault·노트를 먼저 확인하고 backlink·outlink 를 따로 재며 각 grep rc 를 본다(0 = 있음 · 1 = 0개 · 2+ = 오류).
 # 어느 하나라도 오류(없는 vault·vault 밖/없는/읽기 불가 노트·읽기 불가 하위 폴더로 모집단 불완전) = failed:<사유> · BACKLINKS_N 빈 값 · 블록 rc 1.
@@ -373,7 +372,7 @@ top 1~2 노트에 대해 **backlink(그 노트를 가리키는 노트)** 와 **o
 # 노트 = 마지막 칸까지 푼다(심볼릭 링크면 readlink 로 따라감 · 최대 8번) → 푼 실제 폴더가 vault 안일 때만 받는다.
 # 읽기 = 그 실제 폴더로 들어가(cd -P · 현재 폴더 = 확인한 그 폴더) pwd -P 재확인 뒤 perl O_NOFOLLOW 로 «한 번» 연 그 파일 바이트만
 #   (vault 밖 대상 = failed:no-note · 확인 뒤 바꿔치기 = 열기 실패 · 읽기 불가 = failed:unreadable-note · 그 밖 = failed:outlink-scan).
-GRAPH_EXPANSION=""; BACKLINKS_N=""; OUTLINKS_N=""; BL_RC=skip; OL_RC=skip; NT_RC=skip; NOTE_FILE=""; NOTE_REAL=""; IN_VAULT=no
+GRAPH_EXPANSION=""; BACKLINKS_N=""; OUTLINKS_N=""; BL_RC=skip; OL_RC=skip; NT_RC=skip; NOTE_FILE=""; NOTE_REAL=""; IN_VAULT=no; BL_SRC=skip
 NL_IN_VAULT=$(printf '%s' "${VAULT_PATH}" | wc -l | tr -d ' '); NL_IN_NOTE=$(printf '%s' "${NOTE_PATH}" | wc -l | tr -d ' ')
 VAULT_REAL="$(CDPATH= cd -P -- "${VAULT_PATH:-/nonexistent-vault}" 2>/dev/null && pwd -P)"
 STEM="${NOTE_PATH##*/}"; STEM="${STEM%.md}"
@@ -391,7 +390,16 @@ elif [ -z "${VAULT_PATH}" ] || [ "$NL_IN_VAULT" != 0 ] || [ -z "$VAULT_REAL" ] |
 elif [ -z "$STEM" ] || [ "$NL_IN_NOTE" != 0 ] || [ "$IN_VAULT" != yes ] || [ ! -f "$NOTE_REAL" ]; then GRAPH_EXPANSION="failed:no-note"
 elif [ ! -r "$NOTE_REAL" ]; then GRAPH_EXPANSION="failed:unreadable-note"
 else
-  BL_LIST="$(command grep -rl -D skip --include="*.md" -F "[[${STEM}" "${VAULT_REAL}")"; BL_RC=$?
+  BL_SRC=grep; BL_CLI_BIN="${OBSIDIAN_CLI:-/Applications/Obsidian.app/Contents/MacOS/obsidian-cli}"
+  if [ -x "$BL_CLI_BIN" ]; then
+    BL_CLI_LIST="$(perl -e 'alarm shift; exec @ARGV' "${KM_CLI_TIMEOUT:-20}" "$BL_CLI_BIN" ${OBSIDIAN_VAULT:+vault="${OBSIDIAN_VAULT}"} backlinks file="$STEM" format=json 2>/dev/null | python3 -c 'import sys,json
+try:
+    r=json.load(sys.stdin); assert isinstance(r,list) and r
+    print("\n".join((x.get("file") or "") if isinstance(x,dict) else str(x) for x in r))
+except Exception: sys.exit(3)')"
+    if [ $? = 0 ] && [ -n "$BL_CLI_LIST" ]; then BL_SRC=cli; BL_LIST="$BL_CLI_LIST"; BL_RC=0; fi
+  fi
+  if [ "$BL_SRC" = grep ]; then BL_LIST="$(command grep -rl -D skip --include="*.md" -F "[[${STEM}" "${VAULT_REAL}")"; BL_RC=$?; fi
   NOTE_TXT="$(CDPATH= cd -P -- "$NOTE_DIR_REAL" 2>/dev/null || exit 3; case "$(pwd -P)/" in ("${VAULT_REAL%/}"/*) ;; (*) exit 3 ;; esac
     command perl -MFcntl -e 'sysopen(my $f, $ARGV[0], O_RDONLY | O_NOFOLLOW | O_NONBLOCK) or exit($!{EACCES} ? 5 : 4); -f $f or exit 4; binmode $f; binmode STDOUT; local $/; my $b = <$f>; defined $b or exit 6; print $b' -- "./${NOTE_BASE}")"; NT_RC=$?
   if [ "$BL_RC" -gt 1 ]; then GRAPH_EXPANSION="failed:backlink-scan"
@@ -413,7 +421,7 @@ else
     GRAPH_EXPANSION=done
   fi
 fi
-echo "GRAPH_EXPANSION=${GRAPH_EXPANSION} BACKLINKS_N=${BACKLINKS_N} OUTLINKS_N=${OUTLINKS_N} BL_RC=${BL_RC} OL_RC=${OL_RC}"
+echo "GRAPH_EXPANSION=${GRAPH_EXPANSION} BACKLINKS_N=${BACKLINKS_N} OUTLINKS_N=${OUTLINKS_N} BL_RC=${BL_RC} OL_RC=${OL_RC} BL_SRC=${BL_SRC}"
 case "$GRAPH_EXPANSION" in failed:*) false ;; esac
 ```
 - `GRAPH_EXPANSION` 닫힌 값 = `done` · `skipped:no-top-note` · `failed:no-vault|no-note|unreadable-note|backlink-scan|outlink-scan`(`no-note` = 없음 · vault 밖 · vault 밖을 가리키는 노트 링크 · 링크 고리 · 확인 뒤 바꿔치기(열기 거절) · 줄바꿈 든 경로 · `outlink-scan` = 노트를 읽지 못함). `failed:*` 이면 블록 rc 1 이고 `BACKLINKS_N` 은 빈 값이다 — 답변 마지막 줄은 `그래프 확장(실패: <사유>)` 로 쓰고 숫자를 지어내지 않는다(`backlinks 0` ❌).

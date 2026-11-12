@@ -1,5 +1,5 @@
 ---
-description: vault 통합 검색 — GraphRAG(있으면) → Obsidian CLI → Obsidian MCP → 텍스트 검색 4단계 자동 폴백. quick(즉답)/deep(분석) 자동 라우팅
+description: vault 통합 검색 — GraphRAG(있으면) → Obsidian CLI 단계 대본(구조 문서·VS·추천 태그·CLI·1단 확장 · 다른 vault 아니면 항상) → Obsidian MCP → 텍스트 검색. quick(즉답)/deep(분석) 자동 라우팅
 allowedTools: Bash, Read, Glob, Grep, mcp__obsidian__*
 ---
 
@@ -7,17 +7,21 @@ allowedTools: Bash, Read, Glob, Grep, mcp__obsidian__*
 
 $ARGUMENTS
 
-> **핵심 설계**: 검색 창구는 이 명령 하나. **① GraphRAG → ② Obsidian CLI → ③ Obsidian MCP → ④ 텍스트 검색** 자동 폴백. GraphRAG 미설치도 ②~④로 동작.
+> **핵심 설계**: 검색 창구는 이 명령 하나. **① GraphRAG → ② Tier 2 대본 한 줄(`km_cli_stage.py` — 볼트 확인·구조 문서·VS·추천 태그·CLI 검색·1단 확장 · ①의 성공과 무관하게 항상 · 같은/다른 볼트는 대본이 다시 확인 6.2판) → ③ Obsidian MCP → ④ 텍스트 검색**(③④ = 폴백). GraphRAG 미설치도 ②~④로 동작(5판 · 6판 대본화 2026-11-11).
 
 > **찾는 범위**: vault 문서·개념·관계. 과거 대화·결정 경위는 메모리뱅크(Tier 0). 충돌은 `현재 기준`과 `과거 경위`로 나눠 표시. 한쪽 부재 ≠ 다른쪽 부재.
 
-> 🚨 **실행 순서 계약 (고정)**: ① Phase -1 로 `VAULT_PATH`·`SEARCH_ENDPOINT` 읽기 → ② **곧바로 Tier 1 curl**(스위치 꺼짐이면 Tier 2). ①② 전에 vault rg/grep/find/ls/Read ❌. 로컬 파일은 Tier 1 `VAULT_MODE=same` 또는 Tier 1 실패 후만. 예외 1 = Tier 0 블록의 규칙 원본 대본 1줄(`km_rules_route.py --auto`) — 같은/다른 vault 판정을 대본이 먼저 하고 `other` 확정이면 로컬 읽기 0.
+> 🚨 **실행 순서 계약 (고정)**: ① Phase -1 로 `VAULT_PATH`·`SEARCH_ENDPOINT` 읽기 → ② **곧바로 Tier 1 curl**(스위치 꺼짐이면 건너뜀) → ③ **Tier 2 대본 한 줄(`km_cli_stage.py` — 볼트 확인·구조 문서·VS·추천 태그·CLI 검색·1단 확장)을 «항상» 1회 «글자 그대로»** — Tier 1 이 `ok` 여도, QUICK 이어도 돈다(6판 2026-11-11). `VAULT_MODE=other` 로 판정했어도 친다 — 같은/다른 볼트는 대본이 Tier 1 결과 경로 상위 3건(`TIER1_PATHS`)으로 다시 확인해 덮는다(6.2판). **③ 대본을 치기 «전»에는 vault 를 Glob·Grep 도구나 rg/grep/find/ls/cat 으로 찾거나 Read 하지 않는다(6.3판).** 로컬 파일 읽기는 ③ 뒤이고 `VAULT_MODE` 가 `other` 가 아닐 때만. **vault 를 `rg`·`grep`·`find`·Grep 도구로 뒤지는 것은 Tier 2 대본이 `CLI_STATE` 를 찍은 «뒤»에만(CLI 단계 수리 2026-11-11).** (이 본문이 붙여 둔 블록이 스스로 도는 것 — Tier 0-R `↳ $` 줄의 `rg --files` · Tier 1-S · Phase 2.5-B 역링크 grep — 은 예외로 그대로 돈다. 금지 대상은 모델이 직접 지어 치는 vault 글자 검색이다.) 예외 1 = Tier 0 블록의 규칙 원본 대본 1줄(`km_rules_route.py --auto`) — 같은/다른 vault 판정을 대본이 먼저 하고 `other` 확정이면 로컬 읽기 0.
 
-> 📎 **참조 로드**: `search-references/` (명령 파일 기준 같은 디렉터리; Codex 스킬 기준 `../../../commands/search-references/`). **정상 Tier 1 성공·QUICK 경로 참조 Read = 0.** 아래 성공 계약을 이 엔트리에서 실행한다. 참조는 Tier 2~4 폴백·DEEP·0건/빈약/lookup exact 0건/부재 단정 때만 조건부 1회 Read — 전부 선로드 ❌. 참조 Read = 규칙 로드(primary read 예산 **미포함**). **증거 노트 Read 기본 = 3** (QUICK 명시·얕은 질의 1-2 · DEEP·요구항목 미충족 ≤5 · 링크 추적 예산은 `phase-2.5-graph.txt`).
+> 📎 **참조 로드**: `search-references/` (명령 파일 기준 같은 디렉터리; Codex 스킬 기준 `../../../commands/search-references/`). **정상 Tier 1 성공·QUICK 경로 참조 Read = 0.** 아래 성공 계약을 이 엔트리에서 실행한다. 참조는 Tier 2 «확장»(관계·속성·태그·파일명 축 — 첫 호출은 본문 대본 한 줄로 참조 없이)·Tier 3~4 폴백·DEEP·0건/빈약/lookup exact 0건/부재 단정 때만 조건부 1회 Read — 전부 선로드 ❌. 참조 Read = 규칙 로드(primary read 예산 **미포함**). **증거 노트 Read 기본 = 3** (QUICK 명시·얕은 질의 1-2 · DEEP·요구항목 미충족 ≤5 · 링크 추적 예산은 `phase-2.5-graph.txt`).
 
 ## Phase -1: 설정 읽기
 
-1. `km-config.json`: 현재 폴더 → setup이 만든 위치 순. `storage.obsidian.vaultPath` → `VAULT_PATH`; 있으면 확정값이며 Obsidian 재대조·경로 추측 금지.
+1. `km-config.json` 은 **아래 한 줄(Bash)로 읽는다 — 이 명령의 첫 도구 호출이다.** Glob·Grep 도구나 find 로 설정 파일·볼트를 찾지 않는다(6.3판):
+```bash
+cat ./km-config.json 2>/dev/null || echo "KM_CONFIG=현재 폴더에 없음"
+```
+   현재 폴더에 없을 때만 setup이 만든 위치를 본다. `storage.obsidian.vaultPath` → `VAULT_PATH`; 있으면 확정값이며 Obsidian 재대조·경로 추측 금지.
 2. vaultPath가 없을 때만 Obsidian `open:true` 경로를 확인한다. 넓은 find·후보 순회 금지:
 ```bash
 OBSIDIAN_JSON=$(ls -1 \
@@ -37,7 +41,7 @@ echo "SEARCH_ENDPOINT=${SEARCH_ENDPOINT}"
 
 ## Phase 0 — 모드·구조·대상
 
-**Tier 1 curl 이전에는 모드·대상만 결정하고 vault 접근은 금지. Phase 0.4 로컬 구조 문서는 Tier 1 `VAULT_MODE=same` 확인 또는 Tier 1 실패 후 실행한다. `other`에서는 STRUCT_DOCS=0·ROUTE_HUB_COUNT=0, 다른 vault임을 명시하고 구조 접근을 생략한다.**
+**Tier 1 curl 이전에는 모드·대상만 결정하고 vault 접근은 금지. Phase 0.4 구조 문서는 Tier 2 대본(`km_cli_stage.py`) 안에서 돈다 — Tier 1 뒤(성공·실패·꺼짐 무관) 항상(5판 2026-11-11 · 모델이 `other` 로 판정했어도 — 같은/다른 볼트는 대본이 다시 확인 6.2판). 대본 확인값이 `other` 면 STRUCT_DOCS=0·ROUTE_HUB_COUNT=0, 다른 vault임을 명시하고 구조 접근을 생략한다.**
 
 ## Phase 0: 모드 결정
 
@@ -132,7 +136,7 @@ if [ -f "$KM_RULES" ]; then python3 "$KM_RULES" --auto --config "./km-config.jso
 - 마커: 답변 마지막 티어 줄에 `+ 메모리뱅크(<MB_STATE>·<MB_HITS>건)` 병기. 부재 단정 발화 전엔 [mb] 0건도 함께 적는다(두 코퍼스는 서로 부재를 증명하지 않는다).
 
 
-## 검색 엔진 — 4단계 자동 폴백 (Tier 0 뒤)
+## 검색 엔진 — Tier 1 → Tier 2(other 아니면 항상) → Tier 3~4 폴백 (Tier 0 뒤 · 5판 2026-11-11)
 
 ### Tier 1 — GraphRAG 서버 (설치된 경우, 의미 기반 하이브리드 검색)
 resolved는 대상+핵심어 ≤7단어, unspecified는 원문.
@@ -173,22 +177,46 @@ fi
 echo "GRAPHRAG_STATE=${GRAPHRAG_STATE} endpoint=${SEARCH_ENDPOINT} rc=${TIER1_RC}"
 echo "ENDPOINT_SWITCHED=${ENDPOINT_SWITCHED:-none}"
 ```
-- `GRAPHRAG_STATE=ok` → 결과 사용. 그 외 Tier 2+ **`GRAPHRAG_STATE` 유지**.
+- `GRAPHRAG_STATE=ok` → 결과 사용. 그 외 Tier 2+ **`GRAPHRAG_STATE` 유지**. ok 여도 Tier 2 대본 한 줄은 돈다(5판 2026-11-11 · `other` 판정이어도 친다 — 대본이 다시 확인 6.2판).
 Tier 1 결과 파싱 직후 results 배열 길이를 출력한다. 오류/미파싱은 0건이 아니므로 마커를 내지 않는다:
 ```bash
 unset KM_HITS
 if [ "$GRAPHRAG_STATE" = "ok" ]; then
 KM_HITS=$(printf '%s' "$TIER1_JSON" | python3 -c 'import json,sys; r=json.load(sys.stdin)["results"]; assert isinstance(r,list); print(len(r))') && echo "KM_HITS=${KM_HITS}"
+# TIER1_TOP = source_note 상위 2개의 .md 뺀 이름(«이름1|이름2») — Tier 2 대본 1단 확장의 기본 노트(그 호출 맨 앞에 이 값을 다시 적는다)
+TIER1_TOP="$(printf '%s' "$TIER1_JSON" | python3 -I -c 'import json,sys,os
+try: r=json.load(sys.stdin)["results"]
+except Exception: r=[]
+ns=[]
+for x in (r if isinstance(r,list) else []):
+    s=(x.get("source_note") or "") if isinstance(x,dict) else ""
+    n=os.path.splitext(os.path.basename(s))[0] if s.endswith(".md") else ""
+    if n and "|" not in n and n not in ns: ns.append(n)
+    if len(ns)>=2: break
+print("|".join(ns))')"
+echo "TIER1_TOP=${TIER1_TOP}"
+# TIER1_PATHS = source_note 상위 3개의 볼트 상대 경로(«경로1|경로2|경로3») — Tier 2 대본이 같은/다른 볼트를 다시 확인하는 재료(6.2판 · 그 호출 맨 앞에 이 값을 다시 적는다)
+TIER1_PATHS="$(printf '%s' "$TIER1_JSON" | python3 -I -c 'import json,sys
+try: r=json.load(sys.stdin)["results"]
+except Exception: r=[]
+ps=[]
+for x in (r if isinstance(r,list) else []):
+    s=(x.get("source_note") or "") if isinstance(x,dict) else ""
+    s=s.strip() if isinstance(s,str) else ""
+    if s and "|" not in s and "\n" not in s and s not in ps: ps.append(s)
+    if len(ps)>=3: break
+print("|".join(ps))')"
+echo "TIER1_PATHS=${TIER1_PATHS}"
 fi
 ```
 
 #### Tier 1 성공 계약 — 참조 없이 실행
-- ok는 결과 사용, 그 외 Tier 2+로 상태 유지. 결과별 `target_hit=title|path|body|none`은 별칭 일치 위치의 관측값이며 관련성 정답이 아니다. 이름 일치만으로 채택하지 않는다.
+- ok는 결과 사용, 그 외 Tier 2+로 상태 유지. ok 여도 Tier 2 대본 한 줄은 돈다(5판 2026-11-11 · `other` 판정이어도 — 대본이 다시 확인 6.2판). 결과별 `target_hit=title|path|body|none`은 별칭 일치 위치의 관측값이며 관련성 정답이 아니다. 이름 일치만으로 채택하지 않는다.
 - 표시명=`entity`; `source_note`는 있을 때만 vault 상대 경로. 빈 `description`은 근거가 아니다. 원문 전 검색당 1회 정합 판정: 첫 응답에서 source_note 하나의 `${VAULT_PATH}/{source_note}` **존재만** `[ -f ... ]`로 확인(Read 금지). 존재면 `VAULT_MODE=same`, 부재/경로 가진 결과 0건이면 `VAULT_MODE=other`. 판정 직후 실행:
 ```bash
 echo "VAULT_MODE=${VAULT_MODE}"
 ```
-- 이후 모든 절이 이 값을 따른다. 다른 vault 탐색·Obsidian 설정 대조 금지(Phase -1의 vaultPath 미설정 판정만 별개). `same`+source_note면 로컬 Read 허용. `other`는 로컬 파일·CLI 보강·경로 변환·vault/로컬 그래프 탐색 전부 0회; QUICK/DEEP·Phase 2.5도 서버 body만 근거로 쓴다.
+- 이후 모든 절이 이 값을 따른다(단 Tier 2 대본이 `VAULT_MODE_CHECK=… → VAULT_MODE=<값>` 줄을 찍으면 그 값으로 바꿔 따른다 — 대본이 경로 상위 3건을 직접 본 값이 이긴다 · 6.2판). 다른 vault 탐색·Obsidian 설정 대조 금지(Phase -1의 vaultPath 미설정 판정만 별개). `same`+source_note면 로컬 Read 허용. `other`는 로컬 파일·CLI 보강·경로 변환·vault/로컬 그래프 탐색 전부 0회; QUICK/DEEP·Phase 2.5도 서버 body만 근거로 쓴다.
 - 원문 식별은 `entity`가 아닌 검색 결과의 `source_note`로 한다. 아래 caller에 실제 결과의 경로·표시명을 전달한다. same은 해당 vault 내부의 정확 경로만 읽고 API를 호출하지 않는다. other는 로컬 접근 없이 기존 이름 기반 API를 한 번 사용하되, 반환 `note_path`와 기대 `source_note`의 NFC 상대경로가 정확히 일치하기 전에는 본문을 출력·채택하지 않는다. basename 일치나 임의 접두어 제거는 금지한다.
 ```bash
 bash "${CLAUDE_PLUGIN_ROOT}/scripts/km_note_caller.sh" \
@@ -205,41 +233,19 @@ python3 -I -B "${CLAUDE_PLUGIN_ROOT}/scripts/km_wikilink_resolver.py" \
 - 이름 풀기 결과는 단편 SHA·frontmatter 포함 여부·링크 위치·같은 줄 힌트·전체목록 SHA/오류·해소 전후 후보를 돌려준다. 유일성은 그 시점의 비원자적 정규 md 파일목록 관측에 한정하며, 새 파일이 이후 생기지 않는다는 보장은 하지 않는다. 본문 2500자 예산과 경로 일치 검사는 유지한다.
 - ENDPOINT_SWITCHED≠none이면 반드시 `⚠️ 원래 서버(<원주소>)가 응답하지 않아 <새주소> 로 검색했습니다 — 색인된 vault 가 다를 수 있습니다`와 source_note 한 건을 그대로 표시. 경로 접두어는 vault 식별자가 아니다.
 - `--max-time 60`: 냉시작 지연 때문에 connect-timeout만으로 부족하다. 조정 시 관측 정상 시간보다 넉넉히 잡는다. `/health` 200으로 검색 정상을 판단하지 않는다.
-- 서버 미기동/미설치면 조용히 Tier 2; `/tofugraph`로 구축하면 자동 사용. 질의는 3~7단어 권장(문장도 허용); 빈손이어도 동일 질의 재시도 금지. 별칭·한/영 등 표현을 1회 바꾸고 다음 티어로 간다.
+- 서버 미기동/미설치면 조용히 Tier 2; `/tofugraph`로 구축하면 자동 사용. 질의는 3~7단어 권장(문장도 허용); 빈손이어도 동일 질의 재시도 금지. 별칭·한/영 등 표현을 1회 바꾸고 다음 티어로 간다(Tier 2 대본 한 줄은 Tier 1 결과와 무관하게 돈다).
 
 #### Phase 0.4: 구조 문서 축 (000-START-HERE)
 
-셋업의 3문서는 기존 Tier 1 정합 확인 또는 실패 후 본문 근거 확보 전에 참조한다. `MOC-Map` 전체는 로컬 메타데이터로 스캔하되 선택 허브의 원문 근거만 합계 ≤130줄 읽는다. 130줄은 근거 출력 예산이며 후보 탐색 절단선이 아니다. other의 로컬 접근 0은 유지한다.
-입력 변수는 `VAULT_PATH` 와 `QUERY_KEYWORDS`(핵심 키워드 1~3개, 공백 구분) 둘이고, 아래 블록은 그대로 실행할 수 있다.
-
-```bash
-STRUCT_DIR="${VAULT_PATH}/000-START-HERE"; STRUCT_DOCS=0; STRUCT_MISSING=""
-for f in START-HERE VAULT-STRUCTURE MOC-Map; do
-  if [ -f "$STRUCT_DIR/$f.md" ]; then STRUCT_DOCS=$((STRUCT_DOCS+1)); else STRUCT_MISSING="$STRUCT_MISSING $f"; fi
-done
-echo "STRUCT_DOCS=${STRUCT_DOCS}/3 missing=[${STRUCT_MISSING# }]"
-# 전체 지도 스캔, 기존 literal 점수/행순 정렬 및 최대 3허브 유지. 근거 출력 ≤130줄.
-ROUTE_HUBS=""
-if MAP_RESULT="$(python3 -I -B "${CLAUDE_PLUGIN_ROOT}/scripts/km_search_guard.py" \
-  route --map "$STRUCT_DIR/MOC-Map.md" --keywords "$QUERY_KEYWORDS")"; then
-  ROUTE_HUBS="$(printf '%s' "$MAP_RESULT" | python3 -I -c 'import json,sys; print("\n".join(h["path"] for h in json.load(sys.stdin)["hubs"]))')"
-  ROUTE_HUB_COUNT="$(printf '%s' "$MAP_RESULT" | python3 -I -c 'import json,sys; print(json.load(sys.stdin)["hub_count"])')"
-  echo "ROUTE_SCAN=ok ROUTE_HUB_COUNT=${ROUTE_HUB_COUNT}"
-else
-  unset ROUTE_HUB_COUNT
-  echo "ROUTE_SCAN=unmeasured ROUTE_HUB_COUNT=unmeasured"
-fi
-printf '%s\n' "$MAP_RESULT"
-```
+**6판 2026-11-11: 이 축은 Tier 2 대본(`km_cli_stage.py`) 안에서 돈다** — 그래프가 켜졌든(ok)·꺼졌든(disabled)·실패했든 Tier 1 다음에 항상 1회(6.2판: 모델이 `other` 로 판정했어도 — 대본이 다시 확인 · 그래프를 끈 실행이 이 축을 건너뛰던 문제 · 5b판 블록을 모델이 줄여 써서 구조 표지가 빠지던 문제). 대본이 `STRUCT_DOCS` + MOC-Map 경로 점수(`km_search_guard.py route` 함수 그대로)를 돌려 `ROUTE_SCAN`·`ROUTE_HUB_COUNT`·`ROUTE_AMBIGUOUS`·`ROUTE_HUBS`·`MAP_RESULT` 를 찍는다. `MOC-Map` 전체는 로컬 메타데이터로 스캔하되 선택 허브의 원문 근거만 합계 ≤130줄 읽는다. other 의 로컬 접근 0 은 유지한다(대본이 `STRUCT_STATE=skip(other)` 만 찍는다).
 
 - `STRUCT_DOCS` 가 3 미만이면 답변에 「구조 문서 없음(<빠진 것>) — `/km:setup` 재실행으로 생성」 1줄을 적고 **그대로 계속 진행**한다(멈춤 ❌).
 
 ##### Phase 0.4-D: 지도 하강 — 글자 점수가 애매할 때만 (1.8.10)
-`MAP_RESULT` 의 `ambiguous` 가 true 이거나 Phase 0.6 `target_status=ambiguous` 이면, 글자 점수로 고른 `ROUTE_HUBS` 를 그대로 쓰지 않고 **이 스킬을 실행하는 모델이** 지도에 적힌 허브 한 줄 설명을 읽고 골라 내려간다. `ambiguity` 값 = `no_match`(키워드가 걸린 허브 0) · `partial_match`(모든 키워드를 가진 허브 없음) · `tie_at_cut`(3번째와 4번째 허브 점수가 같아 줄 순서로 잘림). 둘 다 아니면 이 절은 1줄 마커만 내고 건너뛴다(현행 그대로). `VAULT_MODE=other` 면 로컬 지도 접근 0회.
+Tier 2 대본이 찍은 `ROUTE_AMBIGUOUS=1`(= `MAP_RESULT` 의 `ambiguous` true 또는 Phase 0.6 `target_status=ambiguous`)이면, 글자 점수로 고른 `ROUTE_HUBS` 를 그대로 쓰지 않고 **이 스킬을 실행하는 모델이** 지도에 적힌 허브 한 줄 설명을 읽고 골라 내려간다. `ambiguity` 값 = `no_match`(키워드가 걸린 허브 0) · `partial_match`(모든 키워드를 가진 허브 없음) · `tie_at_cut`(3번째와 4번째 허브 점수가 같아 줄 순서로 잘림). 둘 다 아니면 이 절은 1줄 마커만 내고 건너뛴다(현행 그대로). `VAULT_MODE=other` 면 로컬 지도 접근 0회.
 ```bash
-ROUTE_AMBIGUOUS="$(printf '%s' "$MAP_RESULT" | python3 -I -c 'import json,sys
-try: print(1 if json.load(sys.stdin).get("ambiguous") else 0)
-except Exception: print(0)')"
+# Tier 2 대본이 찍은 ROUTE_AMBIGUOUS·QUERY_KEYWORDS 를 다시 넣는다(셸 변수는 호출 사이에 안 남음)
+STRUCT_DIR="${VAULT_PATH}/000-START-HERE"; ROUTE_AMBIGUOUS="${ROUTE_AMBIGUOUS:-0}"; QUERY_KEYWORDS="${QUERY_KEYWORDS:-${KEYWORDS_TOP:-}}"
 [ "${TARGET_STATUS:-}" = "ambiguous" ] && ROUTE_AMBIGUOUS=1
 echo "ROUTE_AMBIGUOUS=${ROUTE_AMBIGUOUS}"
 if [ "$ROUTE_AMBIGUOUS" = 1 ] && [ "${VAULT_MODE:-}" != "other" ]; then
@@ -278,7 +284,7 @@ FRESH_JSON=""
 if [ "$GRAPHRAG_STATE" = "ok" ] && { [ "$AGE_MIN" -gt "$STALE_MIN" ] || [ "$RECENT" = 1 ]; } && [ -x "$FRESH_CLI" ]; then
   # 질의 = Phase 0.6 키워드 앞 2개(CLI 는 낱말 전부 일치라 문장형은 「No matches」가 정상 — 실측 25/26) · 키워드가 비면 원문
   FRESH_Q="$(printf '%s' "${KEYWORDS_TOP:-}" | awk '{print $(1), $(2)}' | sed 's/ *$//')"; [ -n "$FRESH_Q" ] || FRESH_Q="${QUERY}"
-  FRESH_RAW="$("$FRESH_CLI" search query="$(cliq "${FRESH_Q}")" format=json limit=20 2>/dev/null)"
+  FRESH_RAW="$(perl -e 'alarm shift; exec @ARGV' "${KM_CLI_TIMEOUT:-20}" "$FRESH_CLI" ${OBSIDIAN_VAULT:+vault="${OBSIDIAN_VAULT}"} search query="$(cliq "${FRESH_Q}")" format=json limit=20 2>/dev/null)"
   # JSON 배열 1건+ 일 때만 보강으로 인정(오류 문자열·「No matches found.」 도 비어 있지 않아 예전엔 yes 로 찍혔다)
   FRESH_JSON="$(printf '%s' "$FRESH_RAW" | python3 -c 'import sys,json
 try:
@@ -302,8 +308,26 @@ echo "FRESH: age=${AGE_MIN}m recent=${RECENT} supplement=$([ -n "${FRESH_JSON:-}
 
 **other 보호:** Tier 1-S의 로컬 CLI 보강 및 Tier 1-T의 로컬 hub/folder 탐색은 `VAULT_MODE=same`일 때만 실행한다. `other`에서는 서버 질의·서버 body만 허용한다. 규칙 원본 축(Tier 0-R)의 로컬 읽기는 대본이 `other` 를 확정하면 0회다(`RULES: v3 skip(vault_mode=other …)` 1줄).
 
-### Tier 2 — Obsidian CLI
-Tier 1 실패/불충분 시: `tier2-struct-prelude.txt` → `tier2-cli.txt` 순 Read 후 실행. 규칙 원본 후보는 Tier 0 에서 이미 나왔으니 다시 돌리지 않는다.
+### Tier 2 — Obsidian CLI 단계 대본 한 줄 (6판 2026-11-11 · 항상 1회 · 같은/다른 볼트는 대본이 다시 확인 6.2판)
+**도는 때(6판 · CLI 강제)**: `VAULT_MODE=` 를 찍은 «바로 다음» Bash 호출 = 아래 블록이다. Tier 1 이 `ok` 여도, QUICK 이어도, 그래프가 꺼졌거나(`disabled`)·실패해 `VAULT_MODE` 가 비었어도 같은 블록을 1회 친다(비면 빈 값 그대로 넘긴다). `VAULT_MODE=other` 여도 친다(6.2판) — 같은/다른 볼트는 대본이 `TIER1_PATHS`(Tier 1 결과 경로 상위 3건)를 볼트에서 직접 확인해 하나라도 있으면 `same` 으로 덮고 단계를 다 돈다 · 0건이면 `STRUCT_STATE=skip(other)` + `KM_STAGES` 만 찍는다(로컬 읽기 = 그 경로의 존재 확인뿐 · CLI 0).
+**그대로 친다**: 아래 3줄을 «글자 그대로» 한 Bash 호출로 친다 — 줄이기·다시 쓰기·단계를 손으로 나눠 치기 ❌. 볼트 확인 · 구조 문서 3개 + MOC-Map 경로 점수(Phase 0.4) · VAULT-STRUCTURE 폴더 줄 · 추천 태그 · CLI 검색 · 1단 확장(속성·역링크·링크·태그·type)은 전부 대본(`scripts/km_cli_stage.py`) 안에서 돈다(CLI 호출마다 시한 `KM_CLI_TIMEOUT` 20초 · 합계 ≤14 · 볼트 인자 맨 앞 · 앞머리 볼트 확인이 막혀도 계속). vault 를 `rg`·`grep`·`find`·Grep 도구로 뒤지기 «전에» 친다 — 참조 파일을 먼저 읽을 필요 없다.
+**넣을 값**: 셸 변수는 호출 사이에 안 남는다 — 블록 «맨 앞 줄»에 직전 출력에서 관측한 값을 다시 적는다(예: `VAULT_PATH="…"; OBSIDIAN_VAULT="…"; VAULT_MODE="same"; GRAPHRAG_STATE="…"; KEYWORDS_TOP="…"; QUERY="…"; TARGET_STATUS="…"; TIER1_TOP="…"; TIER1_PATHS="…"` — 관측 안 된 값은 빈 값 · `TIER1_TOP`·`TIER1_PATHS` = Tier 1 블록이 찍은 줄 그대로 · `TAG_PICK`·`EXT_NOTES` 는 보통 비운다). 아래 3줄 자체는 고치지 않는다.
+```bash
+KM_STAGE="${CLAUDE_PLUGIN_ROOT}/scripts/km_cli_stage.py"
+[ -f "$KM_STAGE" ] || KM_STAGE="$(find "$HOME/.claude/plugins/cache" -name km_cli_stage.py -path '*km*' 2>/dev/null | sort -V | tail -1)"
+if [ -f "$KM_STAGE" ]; then python3 -I -B "$KM_STAGE" --vault-path "${VAULT_PATH:-}" --vault-name "${OBSIDIAN_VAULT:-}" --cli "${OBSIDIAN_CLI:-}" --vault-mode "${VAULT_MODE:-}" --keywords "${KEYWORDS_TOP:-}" --query "${QUERY:-}" --target-status "${TARGET_STATUS:-}" --tier1-top "${TIER1_TOP:-}" --tier1-paths "${TIER1_PATHS:-}" --tag-map "${KM_TAG_MAP:-}" --graphrag-state "${GRAPHRAG_STATE:-}" --tag-pick "${TAG_PICK:-}" --ext-notes "${EXT_NOTES:-}"; else echo "KM_STAGE=대본 없음 — search-references/tier2-cli.txt 를 Read 해 그 블록으로 간다"; fi
+```
+- **읽는 법**: 대본이 찍은 결과 줄(`[vs]`·`[tag-rec:#t]`·`[cli]`·`[prop]`·`[bl]`·`[ln]`·`[tag:#t]`·`[type:<v>]`·`[status:<v>]`)은 Tier 1 결과가 있으면 그 «아래»에 덧붙인다(Tier 1 순위 재배열 ❌ · 채택은 노트 본문 근거로 · 역링크 많은 노트 = 허브 후보). `[vs]` 줄의 폴더는 `[cli]` 경로 추리기·path_hint 에 쓴다. 마지막 줄은 늘 `KM_STAGES …`(어느 단계가 돌았고 무엇을 냈는지 · 실제 CLI 명령 종류별 수 `c_*` · 실행마다 새로 뽑는 `run=`) — 영수증 블록에 그 줄을 다시 넣는다. 표지 줄(`CLI_STATE=`·`TAG_REC_STATE=`·`EXT_STATE=` 등) 끝의 `run=` 은 대본이 찍었다는 표지다 — 표지를 손으로 찍지 않는다(`echo "TAG_REC_STATE=…"` ❌ · 단계를 안 돌린 표지 = 형식 위반).
+- `VAULT_MODE_CHECK=<same|other>(k/n) model=<값> → VAULT_MODE=<값>` = 대본이 `TIER1_PATHS` 앞 n건 가운데 k건이 볼트에 있는지 직접 본 값(6.2판) — 모델 판정과 달라도 이 값이 이긴다: 이후 절(원문 읽기·Phase 2.5·영수증·끝 줄)은 `VAULT_MODE` 를 그 값으로 다시 적어 따른다. 이 줄 없이 `KM_STAGES … vmode=model(<값>)` 이면 경로를 못 받아 모델 값을 그대로 썼다는 뜻이다.
+- `CLI_VAULT=<경로> (front|active)` = CLI 가 실제로 본 볼트 · `CLI_VAULT=active (not-found:<이름>)` = 그 이름의 볼트가 없어 이번 실행만 이름을 뺐다(다시 칠 때 `OBSIDIAN_VAULT=""`) · `CLI_VAULT=unknown (…)` = 확인 명령이 막혔다(중계 403·시한 등) — 대본은 이름 그대로 계속 간다. `⚠ CLI 볼트 ≠ VAULT_PATH` 가 찍히면 답에 그 1줄을 적는다.
+- `STRUCT_DOCS=<D>/3` 가 3 미만이면 「구조 문서 없음(<빠진 것>) — `/km:setup` 재실행으로 생성」 1줄 · `ROUTE_HUBS` = 📌 후보 · `ROUTE_AMBIGUOUS=1` → Phase 0.4-D(지도 하강 블록).
+- **`CLI_STATE=ok` 면 Tier 4 글자 검색(`rg`·`grep`·Grep 도구) ❌** — 근거가 모자라면 대본이 이미 낸 `[prop]`·`[bl]`·`[ln]`·`[tag:#t]`·`[type:…]`·`[tag-rec:#t]` 줄을 먼저 쓰고 → 그래도 모자라면 `GREP_REASON=<까닭 1줄>` 을 먼저 찍고 grep 한다. `[cli]` 경로에서 질문과 맞는 노트를 골라 원문을 읽는다(읽기 예산 기본 3 안 · CLI 는 관련도 순위가 약하니 경로·제목으로 추린다).
+- `CLI_STATE=empty` → `KEYWORDS_TOP` 만 바꿔(동의어·영/한 표기) 같은 블록을 1회 더. 그래도 0건이면 Tier 3 → Tier 4. `CLI_STATE=absent|error` → Tier 3 → Tier 4(그 상태를 끝 줄에 적는다).
+- `→ 애매함(…)` 줄이 찍히면 첫 회는 1위 태그 1개만 찾은 것이다 — `[tag-menu:<갈래>]` 메뉴에서 물음에 맞는 태그 ≤2 를 골라(이미 찾은 태그 말고 · 목록 밖 이름 ❌) **맨 앞 값 줄에 `TAG_PICK="#a #b"` 만 더 적어** 같은 블록을 1회 더 친다(3줄은 그대로 · 대본이 추천 태그 단계만 돈다 · 볼트 확인 1 + 태그 검색 ≤2). `TAG_REC_STATE=absent` = TAG-Map 없음 — 지도 찾는 순서 = 환경값 `KM_TAG_MAP` → `--tag-map` → `VAULT_PATH/000-START-HERE/TAG-Map.md`(대본이 직접 본다 · 검색 중에 `tags counts` 를 부르지 않는다).
+- `EXT_STATE=done|partial(…)|skip(no-cli|no-notes)` · `EXT_SRC=tier1|cli|model` — 1단 확장 노트 = `TIER1_TOP` → 비면 `[cli]` 경로 상위 2(핵심어가 제목에 든 것 먼저). 같은 노트로 이 축 CLI 를 블록 밖에서 다시 부르지 않는다 — Phase 2.5-B 는 같은 노트면 `[bl] <노트> — 역링크 N건` 의 N 을 그대로 쓴다.
+- **끝 줄**: 대본이 찍은 `끝 줄(그대로 베껴 쓰기): 검색: …` 줄의 `검색:` 부터 끝까지를 답변 마지막 줄로 그대로 쓴다(제약 §«사용 티어 명시»). 바꾸는 것은 둘뿐 — Tier 3 MCP 로 답했으면 티어명, Phase 2.5-B 를 다른 노트로 돌렸으면 `backlinks` 수(그 블록의 `BACKLINKS_N`). 대본이 `+ 그래프 확장(…)` 을 안 붙였는데 DEEP 이면 2.5-B 의 `BACKLINKS_N` 으로 붙인다. TAG_PICK 으로 다시 쳤으면 `태그 추천(…)` 칸은 그 회의 `TAG_REC_STATE`.
+- 대본이 `KM_STAGES` 줄을 못 찍었으면(`KM_STAGE=대본 없음`) `search-references/tier2-cli.txt` 를 Read 해 그 절차로 간다.
+- 관계(역링크·정방향 링크)·속성·태그·파일명을 «묻는» 질문(0-β intent = relation·meta·tag·nav)이거나 DEEP 이면, 위 1단 확장에 더해 `search-references/tier2-struct-prelude.txt` → `tier2-cli.txt` 를 Read 해 그 intent 의 축 명령(본문 언급 폴백 `[mention]`·파일명 축 `[name]`·`[k:v]` 속성 검색·`tags counts`)을 쓴다. 규칙 원본 후보는 Tier 0 에서 이미 나왔으니 다시 돌리지 않는다.
 
 ### Tier 3 — Obsidian MCP
 Tier 2 실패 시 `search-references/tier3-mcp.txt` Read 후 MCP 검색.
@@ -346,10 +370,9 @@ Tier 3 불가 시 `search-references/tier4-text.txt` Read. `GRAPHRAG_STATE`별 �
 ### B. backlinks 1-hop (DEEP 필수 · QUICK 은 top hit 이 얇을 때)
 top 1~2 노트에 대해 **backlink(그 노트를 가리키는 노트)** 와 **outlink(그 노트가 가리키는 노트)** 를 실측한다. **DEEP 이고 `VAULT_MODE` 가 `other` 가 아니면(= `same`, 또는 Tier 1 실패 뒤 로컬 검색) 이 블록은 생략할 수 없다**(1.8.5 · 참조 파일 Read 없이 본문에서 실행):
 ```bash
-# 집행 계약: DEEP 모드에서 top 1~2 노트에 반드시 실행. backlinks = 전 플랫폼 grep 근사 —
-# Obsidian CLI 의 backlinks 서브커맨드가 있으면(맥 데스크톱) 그걸 우선, 부재·오류 시 아래가 항상 동작한다.
-# Tier 2 1단 ②가 이미 돌았으면 재호출 없이 그 결과 사용(중복 호출 ❌).
-"$OBSIDIAN_CLI" backlinks file="<top노트 basename(.md 제거)>" vault="${OBSIDIAN_VAULT}" format=json
+# 집행 계약: DEEP 모드에서 top 1~2 노트에 반드시 실행. backlinks = Obsidian CLI `backlinks` (JSON 목록)를 먼저 쓰고,
+# CLI 가 없거나·목록이 아니거나(「No backlinks found」 포함) 실패하면 아래 grep 근사가 동작한다 — BL_SRC=cli|grep (CLI 단계 수리 3판 2026-11-11).
+# Tier 2 «1단 확장»이 같은 노트를 이미 돌렸으면 그 «역링크 N건» 을 그대로 쓴다(중복 호출 ❌).
 # 변수 규약: NOTE_PATH = VAULT_PATH 기준 상대경로(절대경로는 vault 안일 때만 · 현재 폴더 같은 이름으로 대체 ❌).
 # fail-closed: vault·노트를 먼저 확인하고 backlink·outlink 를 따로 재며 각 grep rc 를 본다(0 = 있음 · 1 = 0개 · 2+ = 오류).
 # 어느 하나라도 오류(없는 vault·vault 밖/없는/읽기 불가 노트·읽기 불가 하위 폴더로 모집단 불완전) = failed:<사유> · BACKLINKS_N 빈 값 · 블록 rc 1.
@@ -359,7 +382,7 @@ top 1~2 노트에 대해 **backlink(그 노트를 가리키는 노트)** 와 **o
 # 노트 = 마지막 칸까지 푼다(심볼릭 링크면 readlink 로 따라감 · 최대 8번) → 푼 실제 폴더가 vault 안일 때만 받는다.
 # 읽기 = 그 실제 폴더로 들어가(cd -P · 현재 폴더 = 확인한 그 폴더) pwd -P 재확인 뒤 perl O_NOFOLLOW 로 «한 번» 연 그 파일 바이트만
 #   (vault 밖 대상 = failed:no-note · 확인 뒤 바꿔치기 = 열기 실패 · 읽기 불가 = failed:unreadable-note · 그 밖 = failed:outlink-scan).
-GRAPH_EXPANSION=""; BACKLINKS_N=""; OUTLINKS_N=""; BL_RC=skip; OL_RC=skip; NT_RC=skip; NOTE_FILE=""; NOTE_REAL=""; IN_VAULT=no
+GRAPH_EXPANSION=""; BACKLINKS_N=""; OUTLINKS_N=""; BL_RC=skip; OL_RC=skip; NT_RC=skip; NOTE_FILE=""; NOTE_REAL=""; IN_VAULT=no; BL_SRC=skip
 NL_IN_VAULT=$(printf '%s' "${VAULT_PATH}" | wc -l | tr -d ' '); NL_IN_NOTE=$(printf '%s' "${NOTE_PATH}" | wc -l | tr -d ' ')
 VAULT_REAL="$(CDPATH= cd -P -- "${VAULT_PATH:-/nonexistent-vault}" 2>/dev/null && pwd -P)"
 STEM="${NOTE_PATH##*/}"; STEM="${STEM%.md}"
@@ -377,7 +400,16 @@ elif [ -z "${VAULT_PATH}" ] || [ "$NL_IN_VAULT" != 0 ] || [ -z "$VAULT_REAL" ] |
 elif [ -z "$STEM" ] || [ "$NL_IN_NOTE" != 0 ] || [ "$IN_VAULT" != yes ] || [ ! -f "$NOTE_REAL" ]; then GRAPH_EXPANSION="failed:no-note"
 elif [ ! -r "$NOTE_REAL" ]; then GRAPH_EXPANSION="failed:unreadable-note"
 else
-  BL_LIST="$(command grep -rl -D skip --include="*.md" -F "[[${STEM}" "${VAULT_REAL}")"; BL_RC=$?
+  BL_SRC=grep; BL_CLI_BIN="${OBSIDIAN_CLI:-/Applications/Obsidian.app/Contents/MacOS/obsidian-cli}"
+  if [ -x "$BL_CLI_BIN" ]; then
+    BL_CLI_LIST="$(perl -e 'alarm shift; exec @ARGV' "${KM_CLI_TIMEOUT:-20}" "$BL_CLI_BIN" ${OBSIDIAN_VAULT:+vault="${OBSIDIAN_VAULT}"} backlinks file="$STEM" format=json 2>/dev/null | python3 -c 'import sys,json
+try:
+    r=json.load(sys.stdin); assert isinstance(r,list) and r
+    print("\n".join((x.get("file") or "") if isinstance(x,dict) else str(x) for x in r))
+except Exception: sys.exit(3)')"
+    if [ $? = 0 ] && [ -n "$BL_CLI_LIST" ]; then BL_SRC=cli; BL_LIST="$BL_CLI_LIST"; BL_RC=0; fi
+  fi
+  if [ "$BL_SRC" = grep ]; then BL_LIST="$(command grep -rl -D skip --include="*.md" -F "[[${STEM}" "${VAULT_REAL}")"; BL_RC=$?; fi
   NOTE_TXT="$(CDPATH= cd -P -- "$NOTE_DIR_REAL" 2>/dev/null || exit 3; case "$(pwd -P)/" in ("${VAULT_REAL%/}"/*) ;; (*) exit 3 ;; esac
     command perl -MFcntl -e 'sysopen(my $f, $ARGV[0], O_RDONLY | O_NOFOLLOW | O_NONBLOCK) or exit($!{EACCES} ? 5 : 4); -f $f or exit 4; binmode $f; binmode STDOUT; local $/; my $b = <$f>; defined $b or exit 6; print $b' -- "./${NOTE_BASE}")"; NT_RC=$?
   if [ "$BL_RC" -gt 1 ]; then GRAPH_EXPANSION="failed:backlink-scan"
@@ -399,7 +431,7 @@ else
     GRAPH_EXPANSION=done
   fi
 fi
-echo "GRAPH_EXPANSION=${GRAPH_EXPANSION} BACKLINKS_N=${BACKLINKS_N} OUTLINKS_N=${OUTLINKS_N} BL_RC=${BL_RC} OL_RC=${OL_RC}"
+echo "GRAPH_EXPANSION=${GRAPH_EXPANSION} BACKLINKS_N=${BACKLINKS_N} OUTLINKS_N=${OUTLINKS_N} BL_RC=${BL_RC} OL_RC=${OL_RC} BL_SRC=${BL_SRC}"
 case "$GRAPH_EXPANSION" in failed:*) false ;; esac
 ```
 - `GRAPH_EXPANSION` 닫힌 값 = `done` · `skipped:no-top-note` · `failed:no-vault|no-note|unreadable-note|backlink-scan|outlink-scan`(`no-note` = 없음 · vault 밖 · vault 밖을 가리키는 노트 링크 · 링크 고리 · 확인 뒤 바꿔치기(열기 거절) · 줄바꿈 든 경로 · `outlink-scan` = 노트를 읽지 못함). `failed:*` 이면 블록 rc 1 이고 `BACKLINKS_N` 은 빈 값이다 — 답변 마지막 줄은 `그래프 확장(실패: <사유>)` 로 쓰고 숫자를 지어내지 않는다(`backlinks 0` ❌).
@@ -412,7 +444,7 @@ case "$GRAPH_EXPANSION" in failed:*) false ;; esac
 - **읽기 전용**: 노트 생성/수정 금지
 - **hallucination 금지**: 반드시 실제 노트 내용 기반. 노트에 없는 내용은 "vault에 관련 자료가 없습니다" 명시 (Tier 1 에서는 `/api/note` 의 `body` 와 `source_note` 경로의 원문이 '실제 노트 내용'이다 — 둘 다 그 vault 노트에서 나온다. 로컬 원문 Read 는 경로가 실재할 때의 보강이지, Read 실패가 답변을 막는 게이트가 아니다)
 - **출처 필수**: 실제 읽은 노트 경로 표기
-- **사용 티어 명시 (형식 고정)**: 답변 마지막 줄은 정확히 이 형식으로 쓴다 — `검색: <티어명> + 구조 문서(<D>/3 참조 · 허브 <k>) + 그래프 확장(backlinks N)`. **D = Phase 0.4 의 `STRUCT_DOCS`, k = `ROUTE_HUB_COUNT`(둘 다 실측 정수)** · backlinks N = Phase 2.5-B 의 `BACKLINKS_N`(실측 정수 · 0 이면 0, 생략·"1-hop" 같은 서술 대체 ❌). **DEEP 이고 `VAULT_MODE` 가 `other` 가 아니면 `+ 그래프 확장(backlinks N)` 생략 ❌**(1.8.5). 생략은 QUICK(2.5-B 를 안 돌린 경우) 또는 Tier 1 `VAULT_MODE=other`(Phase 2.5 전체 생략)일 때만 `검색: <티어명> + 구조 문서(<D>/3 참조 · 허브 <k>)` 까지 허용.
+- **사용 티어 명시 (형식 고정 · 5판 2026-11-11 · 벤치가 이 줄을 grep 한다)**: 답변 마지막 줄은 정확히 이 형식으로 쓴다 — `검색: <티어명> · CLI <상태>(N건) + 구조 문서(<D>/3 참조 · 허브 <k> · VS <n>줄) + 태그 추천(<TAG_REC_STATE>) + 그래프 확장(backlinks N)`. 값 = Tier 2 대본이 찍은 `끝 줄(그대로 베껴 쓰기): 검색: …` 줄 그대로(뜻은 아래와 같다): CLI 상태·N = `CLI_STATE`·`cli_hits` · D = `STRUCT_DOCS` · k = `ROUTE_HUB_COUNT`(Phase 0.4-D 하강을 했으면 최종 허브 수) · n = `VS_STATE=ok(n줄)` 의 n(`none`·`absent` 면 0) · `TAG_REC_STATE` = 마지막으로 찍힌 값 그대로(`TAG_PICK` 을 넣어 다시 쳤으면 그 값) · backlinks N = Phase 2.5-B 의 `BACKLINKS_N`(실측 정수 · 0 이면 0, 생략·"1-hop" 같은 서술 대체 ❌ · top 2 를 돌렸으면 합). 예: `검색: GraphRAG 서버 · CLI ok(12건) + 구조 문서(3/3 참조 · 허브 2 · VS 3줄) + 태그 추천(used(2)) + 그래프 확장(backlinks 7)` · `검색: Obsidian CLI · CLI empty(0건) + 구조 문서(3/3 참조 · 허브 1 · VS 0줄) + 태그 추천(absent)`(QUICK — 2.5-B 안 돎). Tier 1 이 `ok` 가 아닌데 « · CLI …» 칸 없이 «텍스트 검색»만 적으면 형식 위반이다. **DEEP 이고 `VAULT_MODE` 가 `other` 가 아니면 `+ 그래프 확장(backlinks N)` 생략 ❌**(1.8.5) — 생략은 QUICK(2.5-B 를 안 돌린 경우)만. `VAULT_MODE=other` 면 Tier 2·Phase 2.5 를 안 도니 `검색: GraphRAG 서버 (다른 vault 인덱스 — 서버 본문 기반)` 그대로.
 - **질문/스킬/에이전트 스폰 금지**: 직접 검색만 수행 — 예외 1 = 0-β 분해(`--decomp=sub` 시 헤드리스 haiku 1회, 도구 0·질문 0), 그 외 스폰 ❌
 - 상태 메시지 없이 바로 결과 출력 · Read 실패 시 다음 노트로
 - QUICK: 5줄 이내 + 출처 1-2개 / DEEP: 제한 없음 + 출처 3-5개
@@ -452,6 +484,11 @@ if [ "${KM_MODE:-}" = DEEP ]; then
   [ -n "${GRAPH_EXPANSION:-}" ] && GRAPH_ARGS+=(--graph-expansion "$GRAPH_EXPANSION")
   [ -n "${BACKLINKS_N:-}" ] && GRAPH_ARGS+=(--backlinks "$BACKLINKS_N")
 fi
+# 6판: Tier 2 대본 마지막 줄 KM_STAGES(…) 를 다시 넣는다 — 받는 helper 만(모르는 인자 = argparse 오류로 영수증 자체가 깨짐)
+STAGES_ARGS=()
+if [ -f "$RCPT" ] && [ -n "${KM_STAGES:-}" ]; then
+  if python3 "$RCPT" --help 2>/dev/null | grep -q -- '--stages'; then STAGES_ARGS=("--stages=$KM_STAGES"); else echo "KM_RECEIPT_STAGES_FIELD=unsupported"; fi
+fi
 if [ -f "$RCPT" ]; then
   # 구형 vault helper는 신규 인자를 받지 않는다. 기존 영수증은 남기고 미지원은 표시한다.
   if ! python3 "$RCPT" --help 2>/dev/null | grep -q -- '--km-mode'; then
@@ -469,12 +506,13 @@ if [ -f "$RCPT" ]; then
     fi
   fi
   python3 "$RCPT" --session-id "${CLAUDE_CODE_SESSION_ID:-${CODEX_COMPANION_SESSION_ID:-unknown}}" \
-    --query "${QUERY}" --tiers-tried "mb:${MB_STATE:-skip},t1:${GRAPHRAG_STATE:-skip}${RCPT_TAG}" \
-    --top-hit "<상위 1건 source_note 경로 또는 no-hit>" --n-hits <Tier 1~4 히트 수 정수> "${MARKER_ARGS[@]}"
+    --query "${QUERY}" --tiers-tried "mb:${MB_STATE:-skip},t1:${GRAPHRAG_STATE:-skip},t2:${CLI_STATE:-skip}${RCPT_TAG}" \
+    --top-hit "<상위 1건 source_note 경로 또는 no-hit>" --n-hits <Tier 1~4 히트 수 정수> "${MARKER_ARGS[@]}" "${STAGES_ARGS[@]}"
 else
   echo "영수증 생략: helper 파일 없음"
 fi
 ```
+- 단계 칸(6판): Tier 2 대본이 찍은 마지막 줄(`KM_STAGES vault=… calls=… timeouts=… c_vault=… … mode=… run=…`)을 `KM_STAGES="<그 줄 그대로>"` 로 다시 적어 넘긴다 — helper `--help` 에 `--stages` 가 있으면 jsonl 에 `stages` 칸(칸=값 사전)으로 남고, 없으면 `KM_RECEIPT_STAGES_FIELD=unsupported` 1줄만 찍는다(영수증 기록은 그대로). 대본을 안 쳤으면(other 등) 비워 둔다.
 - `VL_HITS`는 stdout 전용이며 신·구형 helper 모두 인자로 전달하지 않는다(저장 필드 미지원). 실행 전 이번 검색의 `VAULT_PATH`·`VAULT_MODE`·`GRAPHRAG_STATE`·`KEYWORDS_TOP`·`QUERY`를 관측값으로 재할당하며 미관측 상태는 skip, `other`는 실패 상태여도 skip이다.
 - 마커 필드 `km_mode`·`vault_mode`·`km_hits`는 stdout과 동일; 미관측은 null — 단 `vault_mode` 는 `KM_MODE` 가 있으면 미관측 = `unknown` 으로 넘긴다(`KM_MODE` 도 없으면 안 넘김). 구형 vault helper 폴백은 기존 스키마만 기록하므로 신규 3필드는 없고 `KM_RECEIPT_MARKER_FIELDS=unsupported`로 표시한다. helper 가 구판(`--km-mode` 모름)이면 영수증 `tiers_tried` 끝에 `rcpt:repo-legacy` 꼬리표가 붙어 사후 계수로 구판 비율이 보인다(`src` 는 그대로 — 착수 게이트가 `src=manual` 만 센다). 플러그인은 helper 를 싣지 않는다 — 착수 게이트(vault 훅)와 짝인 vault 사본(`.claude/scripts/km-search-receipt.py`) 하나가 정본이고 그쪽으로 가는 것이 보통 길이다. 플러그인 자리(`${CLAUDE_PLUGIN_ROOT}/scripts/…`) 확인 줄은 그 자리에 helper 를 둔 설치본과의 호환용. `km_hits`는 Tier 1 반환 건수, 기존 `n_hits`는 Tier 1~4 최종 건수다.
 - 그래프 칸(1.8.5): DEEP 이면 Phase 2.5-B 가 찍은 `GRAPH_EXPANSION`(`done` · 못 돌렸으면 `skipped:<사유>` · 오류면 `failed:<사유>` — 이때 `BACKLINKS_N` 은 빈 값이라 `--backlinks` 를 넘기지 않는다)·`BACKLINKS_N` 을 재할당해 `--graph-expansion`·`--backlinks` 로 넘긴다. helper `--help` 에 두 인자가 없으면 넘기지 않고(`--vault-mode` 는 위 마커 칸으로 함께 간다) `KM_RECEIPT_GRAPH_FIELDS=unsupported` 1줄만 찍는다(영수증 기록은 그대로).

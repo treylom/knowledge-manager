@@ -185,15 +185,17 @@ with tempfile.TemporaryDirectory() as tmp:
         if not exe:
             print("SKIP", f"B01 block-{shell}", "shell not installed")
             continue
-        def run(map_result, vault_mode="same", target_status=""):
-            env = dict(os.environ, CLAUDE_PLUGIN_ROOT=REPO, STRUCT_DIR=os.path.join(root, "000-START-HERE"),
-                       MAP_RESULT=json.dumps(map_result, ensure_ascii=False), QUERY_KEYWORDS="프롬프트",
+        # 1.8.13: the block no longer parses MAP_RESULT — the Tier 2 stage script prints ROUTE_AMBIGUOUS and the
+        # model passes it back (plus VAULT_PATH, from which the block derives STRUCT_DIR)
+        def run(route_ambiguous, vault_mode="same", target_status=""):
+            env = dict(os.environ, CLAUDE_PLUGIN_ROOT=REPO, VAULT_PATH=root,
+                       ROUTE_AMBIGUOUS=route_ambiguous, QUERY_KEYWORDS="프롬프트",
                        VAULT_MODE=vault_mode, TARGET_STATUS=target_status)
             return subprocess.run([exe, "-c", block], capture_output=True, text=True, env=env).stdout
-        amb = run({"ambiguous": True})
-        clear = run({"ambiguous": False})
-        other = run({"ambiguous": True}, vault_mode="other")
-        forced = run({"ambiguous": False}, target_status="ambiguous")
+        amb = run("1")
+        clear = run("0")
+        other = run("1", vault_mode="other")
+        forced = run("0", target_status="ambiguous")
         check(f"B01 block-{shell}", "ROUTE_AMBIGUOUS=1" in amb and '"mode": "keywords"' in amb
               and clear.strip() == "ROUTE_AMBIGUOUS=0" and '"mode"' not in other
               and '"mode": "keywords"' in forced, repr(clear))

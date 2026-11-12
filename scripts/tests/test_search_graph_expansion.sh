@@ -139,7 +139,7 @@ run_graph() {
   GRC=$?
 }
 no_canary() { ! printf '%s\n' "$GOUT" | grep -q 'outside-canary-zz'; }
-gline() { printf '%s\n' "$GOUT" | grep '^GRAPH_EXPANSION=' | tail -1; }
+gline() { printf '%s\n' "$GOUT" | grep '^GRAPH_EXPANSION=' | tail -1 | sed 's/ BL_SRC=[a-z]*$//'; }  # 1.8.13: the block appends BL_SRC=cli|grep|skip — counts compared unchanged
 # expect_failed <id> <want state>: state exact, BACKLINKS_N empty, rc 1
 expect_failed() {
   local l; l="$(gline)"
