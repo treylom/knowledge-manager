@@ -87,7 +87,7 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 >
 > - 변환된 md 는 **원문 보존 검증**(표 행수·수치 표본 대조) 후 사용한다.
 > - kordoc = 늘 최신판(`@latest`) — npx 캐시에 옛 판이 있어도 실행할 때 npm 에서 최신판을 확인해 받는다(2026-11-17 확인: 캐시의 4.24.45 가 4.24.83 으로 바뀜). 최신판 변환이 실패하면(오류로 끝나거나 산출 md 가 없거나 비면) 마지막으로 확인한 판으로 한 번 더 돌린다: `npx -y kordoc@4.24.83 <files> -d <outdir>`(2026-11-17 HWP·HWPX·PDF·DOCX·XLSX 각 1건 변환 확인). anydoc 은 0.2.4 고정 그대로 — 올릴 때는 `npm view <패키지> version` 으로 새 판을 확인하고 한 번 돌려 본 뒤 이 줄과 호출을 함께 바꾼다.
-> - PDF 처리용 `pdfjs-dist` 와 OCR 런타임은 kordoc 의 선택 의존성으로 함께 설치된다(별도 peer 설치 불필요 — 4.15.7 실측 · 4.24.83 은 2026-11-17 HWP·HWPX·PDF·DOCX·XLSX 변환을 다시 확인 · OCR 은 다시 확인하지 않음). OCR 모델은 첫 사용 때 자동으로 받는다 — 스캔 PDF `--ocr`(~18MB) · 수식 `--formula-ocr`(~155MB).
+> - PDF 는 따로 설치할 것이 없다 — kordoc 4.24.82 부터 패키지 안에 든 엔진으로 PDF 를 읽는다(`pdfjs-dist` 빠짐 · kordoc 변경 기록). OCR 런타임은 kordoc 의 선택 의존성으로 함께 설치된다(4.15.7 실측 · 4.24.83 패키지 정보에서도 선택 의존성). 4.24.83 은 2026-11-17 HWP·HWPX·PDF·DOCX·XLSX 변환을 다시 확인 · OCR 은 다시 확인하지 않음. OCR 모델은 첫 사용 때 자동으로 받는다 — 스캔 PDF `--ocr`(~18MB) · 수식 `--formula-ocr`(~155MB).
 > - RAG 용 구조 청크가 필요하면 `--format chunks`(헤딩 위계·표 독립 청크 JSON).
 > - MCP 로도 쓸 수 있다(`kordoc-mcp` 바이너리). 다만 KM ingest 는 CLI 일괄 변환이 기본 핏이라 CLI 를 우선한다.
 
