@@ -1,7 +1,6 @@
 ---
 name: knowledge-manager-at
 description: Knowledge Manager Agent Teams - 풀스케일 병렬 처리 (Category Lead + RALPH + DA)
-tools: hyperbrowser, obsidian, notion, file-operations, read, write, bash, drawio, playwright, notebooklm
 model: opus[1m]
 permissionMode: default
 skills: km-workflow, km-content-extraction, km-glm-ocr, km-social-media, km-export-formats, km-link-strengthening, km-link-audit, stealth-browsing, zettelkasten-note, pdf, xlsx, docx, pptx, baoyu-slide-deck, notion-knowledge-capture, notion-research-documentation, drawio-diagram, km-graphrag-ops, km-graphrag-ontology, km-graphrag-search, km-graphrag-report, km-graphrag-sync
