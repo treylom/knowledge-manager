@@ -189,7 +189,7 @@ browser = {
 | `https://threads.net/*` | Social Media | → km-browser-abstraction (stealth recommended) |
 | `https://instagram.com/*` | Social Media | → km-browser-abstraction (stealth recommended) |
 | `https://*` | Web URL | → km-browser-abstraction |
-| `*.hwp` `*.hwp3` `*.hwpx` `*.hwpml` | 한글 File | → km-content-extraction (`npx -y kordoc@4.24.47` 자동 변환) |
+| `*.hwp` `*.hwp3` `*.hwpx` `*.hwpml` | 한글 File | → km-content-extraction (`npx -y kordoc@latest` 자동 변환) |
 | `*.pdf` | PDF File | → km-content-extraction (Read 1순위) |
 | `*.docx` `*.xlsx` | Office File | → km-content-extraction (anydoc 1순위) |
 | 기타 로컬 파일 (`*.md` `*.txt` `*.csv` 등) | Local File | → km-content-extraction |
@@ -209,7 +209,7 @@ browser = {
 
 | 파일 형식 | 필수 도구 |
 |----------|----------|
-| **한글 (HWP/HWPX)** | `npx -y kordoc@4.24.47 <files> -d <outdir>` → 변환 md 를 `Read` (자동 — 사용자에게 수동 변환을 요구하지 않는다) |
+| **한글 (HWP/HWPX)** | `npx -y kordoc@latest <files> -d <outdir>` → 변환 md 를 `Read` (자동 — 사용자에게 수동 변환을 요구하지 않는다 · 실패하면 km-content-extraction 에 적힌 확인된 판으로 한 번 더) |
 | PDF | `Read` → 실패 시 km-content-extraction 의 다단 경로 |
 | DOCX/XLSX | `npx -y @firecrawl/anydoc@0.2.4 "[파일]"` → 깨지면 kordoc |
 | TXT/MD/CSV/이미지 | `Read` |

@@ -331,7 +331,7 @@ User input analysis:
 │   └─ 기타 URL → Web Crawling (브라우저 자동 탐색 ego lite → Aside → playwright-cli → WebFetch · km-content-extraction)
 │
 ├─ File path
-│   ├─ .hwp, .hwp3, .hwpx, .hwpml → 한글 문서 (`npx -y kordoc@4.24.47` 자동 변환 · km-content-extraction)
+│   ├─ .hwp, .hwp3, .hwpx, .hwpml → 한글 문서 (`npx -y kordoc@latest` 자동 변환 · km-content-extraction)
 │   ├─ .pdf → PDF Processing (Marker 우선)
 │   ├─ .docx, .doc → Word Processing
 │   ├─ .xlsx, .xls, .csv → Excel Processing
@@ -454,7 +454,7 @@ else:
 |----------|------------------|
 | **소셜 미디어 (Threads/Instagram)** | 브라우저 자동 탐색(ego lite → Aside) ⭐ 1순위 → 없으면 `playwright-cli open → snapshot` (MCP 사용 금지) |
 | **일반 웹 페이지** | 브라우저 자동 탐색(ego lite → Aside) → `playwright-cli` → (Playwright MCP) → `WebFetch` · Scrapling = 선택(플러그인 미포함) |
-| **한글 (HWP/HWPX)** | `npx -y kordoc@4.24.47 <files> -d <outdir>` → 변환 md 를 `Read` (자동 — 사용자에게 수동 변환을 요구하지 않는다) |
+| **한글 (HWP/HWPX)** | `npx -y kordoc@latest <files> -d <outdir>` → 변환 md 를 `Read` (자동 — 사용자에게 수동 변환을 요구하지 않는다 · 실패하면 km-content-extraction 에 적힌 확인된 판으로 한 번 더) |
 | PDF | `marker_single` 또는 `Read` |
 | DOCX | `npx -y @firecrawl/anydoc@0.2.4 "[파일]"` → 실패 시 `Read` · 표가 깨지면 kordoc |
 | TXT/MD | `Read` 도구 |

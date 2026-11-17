@@ -74,7 +74,7 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 | Excel (XLSX) | **1순위**: `npx -y @firecrawl/anydoc@0.2.4 "[파일]"` (수식 없는 표 한정) → **2순위**: `xlsx` 스킬 (수식·분석·편집) | 차트 없음 (데이터만) | → 아래 "Excel" — 🔴 수식 셀 소실·헤더 밀림 주의 |
 | CSV | `Read` 도구 (anydoc 편입 보류 — 헤더 밀림) | 해당 없음 | → 아래 "CSV" |
 | PowerPoint | `Read` 도구 | 슬라이드 이미지 설명 추출 | → pptx 스킬 (anydoc 은 슬라이드 경계 소실로 미편입) |
-| 한글 (HWP/HWPX) | **kordoc**: `npx -y kordoc@4.24.47 <files> -d <outdir>` → md 변환 후 `Read` | 변환 md 표·수치 원문 대조 | → 아래 "한국어 로컬 문서 fallback" |
+| 한글 (HWP/HWPX) | **kordoc**: `npx -y kordoc@latest <files> -d <outdir>` → md 변환 후 `Read` | 변환 md 표·수치 원문 대조 | → 아래 "한국어 로컬 문서 fallback" |
 | 이미지 | `Read` 도구 (Vision) | 원본 그대로 활용 | 이 문서 |
 | Notion | `mcp__notion__API-get-block-children` | image 블록 URL 수집 | 이 문서 |
 | Vault 종합 | Obsidian CLI search (fallback: MCP search) | 기존 attachments/ 참조 | 이 문서 |
@@ -82,12 +82,12 @@ mcp__hyperbrowser__scrape_webpage({ url: "[URL]", outputFormat: ["markdown"] })
 > **한국어 로컬 문서 변환 fallback = kordoc**: 입력이 로컬 문서인데 기본 경로(`Read`·기존 어댑터)로 충실히 못 읽는 형식 — **HWP·HWPX, 표가 복잡한 XLSX/DOCX, 한국어 PDF** — 은 [kordoc](https://github.com/chrisryugj/kordoc)으로 마크다운 변환 후 진행한다.
 >
 > ```bash
-> npx -y kordoc@4.24.47 <files> -d <outdir>   # HWP3/HWP/HWPX/HWPML/PDF/XLS/XLSX/DOCX/이미지(OCR — 기본은 Read) → Markdown
+> npx -y kordoc@latest <files> -d <outdir>   # HWP3/HWP/HWPX/HWPML/PDF/XLS/XLSX/DOCX/이미지(OCR — 기본은 Read) → Markdown
 > ```
 >
 > - 변환된 md 는 **원문 보존 검증**(표 행수·수치 표본 대조) 후 사용한다.
-> - 버전 고정 = kordoc 4.24.47 · anydoc 0.2.4 (2026-11-06 실행 확인) — 올릴 때는 `npm view <패키지> version` 으로 새 버전을 확인하고 한 번 돌려 본 뒤 이 줄과 호출을 함께 바꾼다.
-> - PDF 처리용 `pdfjs-dist` 와 OCR 런타임은 kordoc 의 선택 의존성으로 함께 설치된다(별도 peer 설치 불필요 — 4.15.7 실측 · 고정 버전 4.24.47 은 docx(2026-11-06)·HWP·HWPX(2026-11-08) 변환을 다시 확인 · PDF·OCR 은 다시 확인하지 않음). OCR 모델은 첫 사용 때 자동으로 받는다 — 스캔 PDF `--ocr`(~18MB) · 수식 `--formula-ocr`(~155MB).
+> - kordoc = 늘 최신판(`@latest`) — npx 캐시에 옛 판이 있어도 실행할 때 npm 에서 최신판을 확인해 받는다(2026-11-17 확인: 캐시의 4.24.45 가 4.24.83 으로 바뀜). 최신판 변환이 실패하면(오류로 끝나거나 산출 md 가 없거나 비면) 마지막으로 확인한 판으로 한 번 더 돌린다: `npx -y kordoc@4.24.83 <files> -d <outdir>`(2026-11-17 HWP·HWPX·PDF·DOCX·XLSX 각 1건 변환 확인). anydoc 은 0.2.4 고정 그대로 — 올릴 때는 `npm view <패키지> version` 으로 새 판을 확인하고 한 번 돌려 본 뒤 이 줄과 호출을 함께 바꾼다.
+> - PDF 처리용 `pdfjs-dist` 와 OCR 런타임은 kordoc 의 선택 의존성으로 함께 설치된다(별도 peer 설치 불필요 — 4.15.7 실측 · 4.24.83 은 2026-11-17 HWP·HWPX·PDF·DOCX·XLSX 변환을 다시 확인 · OCR 은 다시 확인하지 않음). OCR 모델은 첫 사용 때 자동으로 받는다 — 스캔 PDF `--ocr`(~18MB) · 수식 `--formula-ocr`(~155MB).
 > - RAG 용 구조 청크가 필요하면 `--format chunks`(헤딩 위계·표 독립 청크 JSON).
 > - MCP 로도 쓸 수 있다(`kordoc-mcp` 바이너리). 다만 KM ingest 는 CLI 일괄 변환이 기본 핏이라 CLI 를 우선한다.
 
