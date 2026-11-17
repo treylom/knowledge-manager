@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.8.15 (2026-11-18) — README 에 kordoc 원본·만든 사람 표기 · PDF 안내 바로잡기
+- README(한·영): 새 절 «한글 문서 변환 — kordoc» / «Korean Document Conversion — kordoc». km 이 kordoc 을 어디에 쓰는지, km 저장소에 kordoc 코드를 복사·수정해 넣지 않고 원본 패키지 최신판을 그대로 실행한다는 것(`npx -y kordoc@latest`), 만든 사람(딴짓하는 류주임 · Threads @chris_gomdori · GitHub @chrisryugj), 원본 저장소·라이선스(MIT), 변환이 이상할 때 kordoc 으로 직접 바꿔 보고 거기서도 같으면 kordoc 저장소 이슈로, km 에서만 그러면 km 피드백으로 알려 달라는 안내. 전에는 README 어디에도 kordoc 이 나오지 않았다.
+- README `/km:knowledge-manager` 받는 입력에 한글(HWP·HWPX) 문서를 넣고, 한글 문서는 kordoc 으로 · 한국어 PDF·표가 복잡한 Excel/Word 는 기본 방법으로 잘 안 읽힐 때만 kordoc 으로 간다는 한 문장 추가(한·영).
+- 출처: 만든 사람 표기·Threads 계정 = kordoc 저장소 소유자의 GitHub 프로필(이름·연결 계정) · 라이선스 = npm `kordoc` 패키지 정보와 원본 저장소 LICENSE 표기(MIT) · 2026-11-18 확인.
+- PDF 안내 바로잡기(`skills/km-content-extraction.md` · `.agent/skills/km-content-extraction/SKILL.md`): 1.8.14 까지는 `pdfjs-dist` 를 kordoc 의 선택 의존성이라고 적었는데, kordoc 4.24.82 부터는 패키지 안에 든 엔진으로 PDF 를 읽고 `pdfjs-dist` 가 빠졌다(kordoc 변경 기록 · 4.24.83 패키지 정보에 `pdfjs-dist` 없음 확인). 따로 설치할 것이 없다는 결론은 같다. OCR 런타임은 그대로 선택 의존성.
+- 사용자가 할 일: 플러그인 업데이트 뒤 새 세션(바뀐 PDF 안내는 그때부터 쓰인다). 설정 바꿀 것 없음.
+- 매니페스트 1.8.14→1.8.15(.claude-plugin · .codex-plugin) · `scripts/tests/test_search_tier2_axes.sh` 버전 고정 2줄.
+
 ## 1.8.14 (2026-11-17) — 한글 문서 변환기 kordoc 을 늘 최신판으로
 - 무엇이 바뀌었나: 한글·한국어 문서 변환 호출 `npx -y kordoc@4.24.47` → `npx -y kordoc@latest`(스킬 문서 4개 · 8곳: `skills/km-content-extraction.md` · `skills/km-workflow.md` · `.agent/skills/km-content-extraction/SKILL.md` · `.agent/skills/km-workflow/SKILL.md`). kordoc 은 새 판이 자주 나와서(2026-11-06 4.24.47 → 2026-11-17 4.24.83) 판 번호를 박아 두면 쓰는 사람은 계속 옛 판으로 변환하게 된다.
 - 다시 `@latest` 로 가는 까닭: 1.8.3 은 npx 캐시에 남은 옛 판 때문에 `@latest` 를 골랐고, 1.8.12 는 판 번호를 박아 같은 문제를 풀면서 판이 바뀌는 때를 알 수 있게 했다. `@latest` 는 캐시에 옛 판이 있어도 실행할 때 npm 에서 최신판을 확인해 받으므로 캐시 문제는 그대로 풀린다(2026-11-17 작성자 기기에서 캐시의 4.24.45 가 4.24.83 으로 바뀌는 것을 확인). 대신 문서만 봐서는 어느 판으로 변환했는지 알 수 없다.

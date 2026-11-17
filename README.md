@@ -58,7 +58,7 @@ Claude Code 안에서 아래 세 줄을 순서대로 치면 끝이에요.
 /km:knowledge-manager https://threads.net/@user/post/123
 /km:knowledge-manager https://youtube.com/watch?v=XXX
 ```
-받는 입력: 일반 웹 URL · YouTube · Threads/Instagram 포스트 · PDF · Word·Excel·PowerPoint 문서 · Notion 페이지 · 「vault 에 있는 것 종합해줘」. 처음엔 상세 수준·연결 강도 등을 물어보지만, `/km:setup` 인터뷰에서 만든 프로필(`_meta/USER-PROFILE.md`)이 있으면 그 값을 기본으로 잡고 확인만 받아요. 저장 전에 **품질 점검(중복·모순·누락 자동 검사)** 을 통과해야 하고, 관련 노트 링크가 실제로 들어갔는지도 검사합니다.
+받는 입력: 일반 웹 URL · YouTube · Threads/Instagram 포스트 · PDF · 한글(HWP·HWPX) 문서 · Word·Excel·PowerPoint 문서 · Notion 페이지 · 「vault 에 있는 것 종합해줘」. 한글 문서는 [kordoc](https://github.com/chrisryugj/kordoc) 으로 Markdown 변환을 거쳐 정리하고, 한국어 PDF·표가 복잡한 Excel/Word 문서도 기본 방법으로 잘 안 읽히면 kordoc 을 써요(아래 «한글 문서 변환 — kordoc»). 처음엔 상세 수준·연결 강도 등을 물어보지만, `/km:setup` 인터뷰에서 만든 프로필(`_meta/USER-PROFILE.md`)이 있으면 그 값을 기본으로 잡고 확인만 받아요. 저장 전에 **품질 점검(중복·모순·누락 자동 검사)** 을 통과해야 하고, 관련 노트 링크가 실제로 들어갔는지도 검사합니다.
 
 **결과는 어디에**: vault 안. 내가 쓴 글(원저자 = 본인)은 `Mine/` 아래, 남의 자료는 `Library/` 아래(예: 웹·YouTube 정리 → `Library/Zettelkasten/<주제>/`, 논문 → `Library/Papers/`). 끝나면 「처리 결과 보고」에 노트별 경로가 표로 나오고, 세션 기록이 `_km-log.md` 에 한 줄 남아요.
 
@@ -174,6 +174,15 @@ Your-Vault/
 - **검색이 자꾸 텍스트 검색으로 떨어질 때**: `/km:tofugraph` 로 진단. GraphRAG 서버 주소는 `km-config.json` 의 `linking.semantic_adapter.endpoint`(기본 `http://127.0.0.1:8400`).
 - **링크 가중치·MOC 게이트**: `km-config.json` 의 `linking.scheme`(`"v2"` 기본) · `linking.mocGate`(`"auto"` 기본 / `"confirm"` = 후보 1개 확인). 예시는 `km-config.example.json`.
 
+## 한글 문서 변환 — kordoc
+
+km 은 한글(HWP·HWPX) 문서를 Markdown 으로 바꿀 때, 그리고 한국어 PDF·표가 복잡한 Excel/Word 문서가 기본 방법으로 잘 안 읽힐 때 **[kordoc](https://github.com/chrisryugj/kordoc)** 을 써요. km 저장소에는 kordoc 코드를 복사하거나 고쳐 넣지 않았어요. 변환할 때마다 원본 패키지([npm `kordoc`](https://www.npmjs.com/package/kordoc))의 최신판을 확인해 그대로 실행해요(`npx -y kordoc@latest` · 새 판이 나왔을 때만 내려받아요).
+
+- 만든 사람: 딴짓하는 류주임 — Threads [@chris_gomdori](https://www.threads.com/@chris_gomdori) · GitHub [@chrisryugj](https://github.com/chrisryugj)
+- 원본 저장소: [github.com/chrisryugj/kordoc](https://github.com/chrisryugj/kordoc) · 라이선스 MIT
+- kordoc 은 km 없이 따로 쓸 수도 있어요(CLI · MCP 서버 · Claude Code 플러그인 — 자세한 건 [원본 README](https://github.com/chrisryugj/kordoc#readme)).
+- 변환 결과가 이상하면 같은 파일을 `npx -y kordoc@latest <파일> -d <폴더>` 로 직접 바꿔 보세요. 거기서도 같으면 [kordoc 저장소 이슈](https://github.com/chrisryugj/kordoc/issues)로, km 에서만 그러면 아래 «피드백» 양식으로 알려 주세요.
+
 ## 피드백
 
 써 보고 안 된 점이나 바라는 점이 있으면 **[킷 사용 피드백](https://github.com/treylom/knowledge-manager/issues/new?template=kit-feedback.yml)** 양식으로 이슈를 열어 주세요(GitHub 계정 필요 · 이메일·실명 불필요). 받아들인 피드백은 고친 PR·커밋에 그 이슈 번호를 출처로 적고 CHANGELOG 항목 끝에도 `(피드백 #N)` 으로 남깁니다. 전체 흐름은 [CONTRIBUTING.md](CONTRIBUTING.md) 에 있습니다.
@@ -248,7 +257,7 @@ With no flag, the command picks a mode from the shape of your question: one to t
 /km:knowledge-manager https://threads.net/@user/post/123
 /km:knowledge-manager https://youtube.com/watch?v=XXX
 ```
-Accepted input: ordinary web URLs · YouTube · Threads/Instagram posts · PDF · Word, Excel, and PowerPoint documents · Notion pages · "synthesize what's already in my vault". The first time, it asks about detail level and how strongly to link; once the `/km:setup` interview has produced a profile (`_meta/USER-PROFILE.md`), those answers become defaults and you only confirm. Before saving, the draft must pass a **quality check** (automatic detection of duplicates, contradictions, and gaps) and a check that links to related notes were actually written in.
+Accepted input: ordinary web URLs · YouTube · Threads/Instagram posts · PDF · Korean word-processor (HWP, HWPX) files · Word, Excel, and PowerPoint documents · Notion pages · "synthesize what's already in my vault". HWP/HWPX files are converted to Markdown with [kordoc](https://github.com/chrisryugj/kordoc) first; Korean PDFs and Excel/Word files with complex tables also go through kordoc when the default reader can't handle them well (see "Korean Document Conversion — kordoc" below). The first time, it asks about detail level and how strongly to link; once the `/km:setup` interview has produced a profile (`_meta/USER-PROFILE.md`), those answers become defaults and you only confirm. Before saving, the draft must pass a **quality check** (automatic detection of duplicates, contradictions, and gaps) and a check that links to related notes were actually written in.
 
 **Where the result goes**: Into your vault. Material you authored yourself goes under `Mine/`; everything else under `Library/` (for example, web and YouTube notes → `Library/Zettelkasten/<topic>/`, papers → `Library/Papers/`). When it finishes, a "processing report" lists every note with its path, and one line is appended to `_km-log.md`.
 
@@ -363,6 +372,15 @@ Your-Vault/
 - **Where the config files live**: Plugin settings are in `km-config.json` in your project — that's the reference file. MCP registrations: Claude Code CLI = `~/.claude.json` (user scope) · Claude Desktop = `%APPDATA%\Claude\claude_desktop_config.json` · Antigravity = `~/.gemini/antigravity/mcp_config.json`.
 - **Search keeps falling back to text search**: Run `/km:tofugraph` for a diagnosis. The GraphRAG server address is `linking.semantic_adapter.endpoint` in `km-config.json` (default `http://127.0.0.1:8400`).
 - **Link weights and the MOC gate**: In `km-config.json`, `linking.scheme` (`"v2"` by default) and `linking.mocGate` (`"auto"` by default; `"confirm"` proposes one candidate and asks). See `km-config.example.json` for examples.
+
+## Korean Document Conversion — kordoc
+
+km uses **[kordoc](https://github.com/chrisryugj/kordoc)** to turn Korean word-processor files (HWP, HWPX) into Markdown, and also for Korean PDFs and Excel/Word files with complex tables when the default reader can't handle them well. The km repository does not copy or modify kordoc's code. Each conversion runs the latest version of the original package ([npm `kordoc`](https://www.npmjs.com/package/kordoc)) as-is (`npx -y kordoc@latest` — npx downloads it only when a newer version is out).
+
+- Author: 딴짓하는 류주임 — Threads [@chris_gomdori](https://www.threads.com/@chris_gomdori) · GitHub [@chrisryugj](https://github.com/chrisryugj)
+- Original repository: [github.com/chrisryugj/kordoc](https://github.com/chrisryugj/kordoc) · MIT License
+- You can also use kordoc on its own, without km (CLI · MCP server · Claude Code plugin — see [its README](https://github.com/chrisryugj/kordoc#readme)).
+- If a conversion looks wrong, try the same file directly with `npx -y kordoc@latest <file> -d <folder>`. If it looks the same there, please report it to [kordoc's issues](https://github.com/chrisryugj/kordoc/issues); if it only happens in km, use the Feedback form below.
 
 ## Feedback
 
