@@ -309,16 +309,12 @@ NO → Library/ 하위 (기본):
 
 전체 워크플로우. 상세 내용은 `km-workflow.md` 참조.
 
-**CRITICAL**: `/knowledge-manager` 호출 시 `commands/knowledge-manager.md`가 Agent Teams를 자동 구성합니다.
-에이전트 파일(이 파일)은 참조 문서 역할이며, 실제 오케스트레이션은 commands 파일이 담당합니다.
+**CRITICAL**: `/knowledge-manager`(`commands/knowledge-manager.md`)는 단일 에이전트가 모든 단계를 순차로 직접 처리합니다 — 팀을 꾸리지 않습니다.
+팀 병렬 처리는 `/knowledge-manager-at`(`commands/knowledge-manager-at.md`)이 맡습니다.
+이 파일은 혼자 띄울 수 있는 단일 에이전트(순차) 사양이고 `-at` 도 입출력 · PDF · 소셜 미디어 · 경로 규칙은 이 파일을 공통 사양으로 참조합니다.
 
 ```
-Phase 0: 병렬 모드 결정 ⭐ (commands 파일에서 자동 실행)
-    - 터미널 CLI → Agent Teams (TeamCreate + Teammate 3명)
-    - VS Code/SDK → 병렬 Task 서브에이전트
-    ↓
-Phase 0.5: 복잡도 판정 (Simple/Standard/Complex)
-    - Simple: Main 단독 | Standard: 2 에이전트 | Complex: 3 에이전트
+Phase 0: 환경 감지 + 모드/선호도 (commands/knowledge-manager.md STEP 0 · 0.5 · 1)
     ↓
 Phase 1: 입력 소스 감지
     │
@@ -343,15 +339,10 @@ Phase 1: 입력 소스 감지
 Phase 1.5: 사용자 선호도 수집
     - 상세 수준, 중점 영역, 노트 구조, 연결 수준
     ↓
-★ Agent Teams 생성 (Standard/Complex) ⭐
-    - TeamCreate → TaskCreate × 2~3 → Task 스폰 (병렬!)
-    - @graph-navigator: wikilink 2-hop 추적
-    - @retrieval-specialist: 키워드+태그 넓은 검색
-    - @deep-reader: 핵심 노트 깊이 읽기 (Complex만)
+(팀 구성 단계 없음 — 팀 병렬은 /knowledge-manager-at · 아래 «-at 전용» 절)
     ↓
 Phase 2: 콘텐츠 추출 (→ km-content-extraction.md)
-    - Agent Teams 병렬 실행 ⭐
-    - Main이 결과 수집 + 교차 검증
+    - Main이 순차로 직접 추출 + 결과 교차 확인
     ↓
 Phase 3: 콘텐츠 분석
     - 선호도에 따른 깊이/초점 조정
@@ -371,6 +362,20 @@ Phase 5.5: 연결 강화 (→ km-link-strengthening.md) [Main 직접 실행!]
     - 양방향 링크 생성
     ↓
 Phase 6: 검증 및 보고
+```
+
+### -at 전용 — 이 에이전트는 실행하지 않음
+
+`/knowledge-manager` 와 이 에이전트는 아래 단계를 실행하지 않습니다.
+팀 구성(TeamCreate → TaskCreate → Task 스폰 · @graph-navigator · @retrieval-specialist · @deep-reader)은 `commands/knowledge-manager-at.md` STEP 2 · STEP 3 이 맡습니다.
+아래 두 단계는 `-at` 명령 파일에도 없는 옛 설계 메모라 지우지 않고 여기에 둡니다(`-at` 은 9명 고정 팀이고, 자세한 내용은 `km-environment-detection.md` 0.05 · `km-workflow.md` «작업 복잡도 판정»에 있습니다).
+
+```
+Phase 0: 병렬 모드 결정
+    - 터미널 CLI → Agent Teams (TeamCreate + Teammate 3명)
+    - VS Code/SDK → 병렬 Task 서브에이전트
+Phase 0.5: 복잡도 판정 (Simple/Standard/Complex)
+    - Simple: Main 단독 | Standard: 2 에이전트 | Complex: 3 에이전트
 ```
 
 ---

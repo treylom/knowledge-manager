@@ -28,7 +28,7 @@ Phase 1: 입력 소스 감지
     ↓
 Phase 1.5: 사용자 선호도 수집
     ↓
-★ 병렬 검색 자동 구성 (복잡도 판정 → 병렬 Task 또는 Agent Teams)
+★ 병렬 검색 (/knowledge-manager-at 에서만 — /knowledge-manager 단일 에이전트는 이 단계 없이 순차 처리)
     ↓
 Phase 2: 콘텐츠 추출 (→ km-content-extraction.md) [병렬 실행]
     ↓
@@ -69,6 +69,8 @@ Phase 6: 검증 및 보고 [Main 통합 검증]
 | **Phase 5.5** (연결) | 키워드 + wikilink Grep | + 벡터 유사도 추천 | + 그래프 경로 연결 |
 
 ### 병렬 검색 오케스트레이션 (환경별 자동 분기)
+
+> **적용 범위**: 이 절은 팀 병렬 명령 `/knowledge-manager-at` 의 설계 메모입니다. `/knowledge-manager`(단일 에이전트)는 이 절을 건너뛰고 순차로 직접 처리합니다.
 
 > **검증 결과 (2026-02-06)**: Agent Teams는 **터미널 CLI 전용** 기능입니다.
 > VS Code / Claude Agent SDK 환경에서는 **병렬 Task 서브에이전트**를 사용합니다.

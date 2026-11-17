@@ -121,10 +121,11 @@ Bash("curl -s http://localhost:3747/api/status 2>/dev/null") → JSON 응답 여
 ### 0.05 실행 환경 감지 (병렬 모드 결정)
 
 Knowledge Manager의 병렬화 모드는 실행 환경에 따라 자동 결정됩니다.
+`/knowledge-manager` 는 이 표와 무관하게 단일 에이전트 순차 처리입니다(팀 없음) — 병렬화는 `/knowledge-manager-at` 에서만 씁니다.
 
 | 환경 | 병렬화 모드 | 판별 방법 |
 |------|-----------|----------|
-| **터미널 CLI** (interactive) | Agent Teams (Teammate 인스턴스) | 기본 가정 — `/knowledge-manager` 직접 호출 |
+| **터미널 CLI** (interactive) | Agent Teams (Teammate 인스턴스) | `/knowledge-manager-at` 으로 부른 경우만 (`/knowledge-manager` = 단일 순차) |
 | **VS Code / SDK** | 병렬 Task 서브에이전트 | Task 내부에서 호출된 경우 |
 
 > **IMPORTANT**: Task 도구의 `team_name` 파라미터는 Agent Teams를 활성화하지 **않습니다**.
