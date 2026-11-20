@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.8.16 (2026-11-20) — 에이전트 둘이 뜨게: `tools:` 줄 빼기 · `/knowledge-manager` 설명 바로잡기
+- 에이전트 둘(`knowledge-manager` · `knowledge-manager-at`)이 뜨지 않던 것을 고쳤다. 앞머리(frontmatter) `tools:` 줄의 이름이 실제 도구 이름이 아니어서 Claude Code 가 «쓸 도구가 0개»로 보고 에이전트를 띄우지 않았다. 그 줄을 뺐다.
+- 달라지는 점: 이제 두 에이전트는 **세션이 가진 도구를 그대로 물려받는다**(옛 `tools:` 줄이 적으려던 목록보다 넓다 — 세션에 있는 도구는 다 쓸 수 있다). 좁히고 싶으면 설치된 플러그인의 에이전트 파일(`agents/knowledge-manager.md` · `agents/knowledge-manager-at.md`) 앞머리에 `tools:` 줄을 직접 적는다(예: `tools: Read, Write, Bash`). MCP 도구도 쓰려면 `mcp__<서버>__*` 꼴로 함께 적는다. 도구 이름은 대소문자를 구별한다. 플러그인을 업데이트하면 에이전트 파일이 새 버전으로 바뀌므로 직접 적은 `tools:` 줄은 업데이트 뒤 다시 적어야 한다.
+- `/knowledge-manager` 설명을 사실대로: 단일 에이전트 순차 처리이고 팀을 꾸리지 않는다. 팀 병렬은 `/knowledge-manager-at`. 에이전트 파일의 «명령 파일이 Agent Teams 를 자동 구성» 줄은 사실대로 고쳐 쓰고, 어느 명령도 실행하지 않던 Phase 0 · 0.5 는 «-at 전용» 절로 옮겼다. 스킬 두 곳(`km-environment-detection.md` 0.05 · `km-workflow.md` 병렬 검색 절)도 같은 뜻으로 고쳤다.
+- 시험: 새 `scripts/tests/test_agent_frontmatter.py`(앞머리 tools 이름 · 본문이 쓰는 도구 · «명령이 팀을 꾸린다» 거짓 문장을 본다) — CI 에 추가.
+- 사용자가 할 일: 플러그인 업데이트(`/plugin` 에서 km 업데이트 또는 `/km:km-update`) 뒤 새 세션(에이전트 목록은 세션을 열 때 읽는다). 설정 바꿀 것 없음.
+- 매니페스트 1.8.15→1.8.16(.claude-plugin · .codex-plugin) · `scripts/tests/test_search_tier2_axes.sh` 버전 고정 2줄.
+
 ## 1.8.15 (2026-11-18) — README 에 kordoc 원본·만든 사람 표기 · PDF 안내 바로잡기
 - README(한·영): 새 절 «한글 문서 변환 — kordoc» / «Korean Document Conversion — kordoc». km 이 kordoc 을 어디에 쓰는지, km 저장소에 kordoc 코드를 복사·수정해 넣지 않고 원본 패키지 최신판을 그대로 실행한다는 것(`npx -y kordoc@latest`), 만든 사람(딴짓하는 류주임 · Threads @chris_gomdori · GitHub @chrisryugj), 원본 저장소·라이선스(MIT), 변환이 이상할 때 kordoc 으로 직접 바꿔 보고 거기서도 같으면 kordoc 저장소 이슈로, km 에서만 그러면 km 피드백으로 알려 달라는 안내. 전에는 README 어디에도 kordoc 이 나오지 않았다.
 - README `/km:knowledge-manager` 받는 입력에 한글(HWP·HWPX) 문서를 넣고, 한글 문서는 kordoc 으로 · 한국어 PDF·표가 복잡한 Excel/Word 는 기본 방법으로 잘 안 읽힐 때만 kordoc 으로 간다는 한 문장 추가(한·영).

@@ -155,6 +155,8 @@ Claude Code 안에서 아래 세 줄을 순서대로 치면 끝이에요.
 
 **자주 하는 실수**: tmux 없는 환경에서 치기. 그땐 「Agent Teams 는 tmux 가 필요합니다」 안내가 나오니 `/km:knowledge-manager` 를 쓰세요.
 
+**에이전트 도구**: 에이전트 두 개(`knowledge-manager` · `knowledge-manager-at`)는 `tools:` 줄 없이 배포돼요 — 세션이 가진 도구를 그대로 물려받아요. 좁히고 싶으면 설치된 플러그인의 에이전트 파일에 `tools:` 줄을 적으세요. 플러그인을 업데이트하면 에이전트 파일이 새 버전으로 바뀌니, 업데이트한 뒤 다시 적어야 해요.
+
 ## 저장 방식
 
 Obsidian 을 쓰면 vault 안에, 안 쓰면 `/km:setup` 에서 정한 로컬 폴더(`km-notes/`)에 Obsidian 호환 Markdown 으로 저장돼요. 뼈대는 같아요.
@@ -353,6 +355,8 @@ Input types, questions, and save rules are identical to `/km:knowledge-manager`.
 **Where the result goes**: Notes land in the same places as `/km:knowledge-manager` (`Mine/`, `Library/`). The team's working records go to `.team-os/artifacts/TEAM_PLAN.md`, `TEAM_PROGRESS.md`, and `TEAM_FINDINGS.md` in your project.
 
 **Common mistake**: Running it without tmux. You'll see "Agent Teams requires tmux" — use `/km:knowledge-manager` instead.
+
+**Agent tools**: The two agents (`knowledge-manager` and `knowledge-manager-at`) ship without a `tools:` line — they inherit the tools your session has. To narrow them, add a `tools:` line to the agent file in your own install. Updating the plugin replaces the agent files with the new version, so add the line again after each update.
 
 ## How Notes Are Stored
 
