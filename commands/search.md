@@ -61,7 +61,7 @@ IF query가 비어있으면:
 - 플래그 없음 → **AUTO**
 
 ### AUTO 라우팅
-- WIDE: 답에 노트가 «여럿 따로» 들어가야 하는 질문 — 전수·나열(「전부/모두/빠짐없이/하나도/목록/각각/노트별/몇 개/타임라인/변천/all/every/list」) · 요구 항목 6개+ · 따로 짚은 대상 4개+. 질문이 길다는 것만으로는 WIDE 가 아니다.
+- WIDE: 답에 노트가 «여럿 따로» 들어가야 하는 질문 — 전수·나열(「전부/모두/빠짐없이/하나도/목록/각각/노트별/몇 개/타임라인/변천」 · 영어는 낱말 단위 all/every/list — install·small 의 일부 ❌) · 요구 항목 6개+ · 따로 짚은 대상 4개+. 묻는 대상이 2~3개뿐이면 「각각·모두」가 있어도 DEEP. 질문이 길다는 것만으로는 WIDE 가 아니다.
 - DEEP: 문장형 5단어+, "~하려면/방법/비교/차이/관계/영향", 분석 요청("설명해줘/정리해줘"), 복수 개념("A vs B"), 방법론("어떻게/왜")
 - QUICK: 그 외 (키워드 1-3개, 정의형 "~란?", 노트 찾기)
 
@@ -349,7 +349,7 @@ Tier 3 불가 시 `search-references/tier4-text.txt` Read. `GRAPHRAG_STATE`별 �
   - 들어오는 길 = `--wide`·`--notes N` 깃발 · AUTO 의 WIDE 조건 · **DEEP 에서 승격**: DEEP 총 8 을 다 읽었는데 근거 없는 요구 항목이 남았고, 안 읽은 후보(Tier 1 결과·`[cli]`·링크) 가운데 target_hit ≠ none 이거나 읽은 노트가 링크로 가리키는 것이 있으면 WIDE 로 올린다 — `READ_BUDGET=WIDE(cap 20) promoted:<까닭 1줄>` 을 찍는다.
   - WIDE 읽는 차례 = 후보를 Tier 1 순위 → 허브(📌) → `[cli]`·`[bl]`·`[ln]` 순으로 줄 세우고, **4개씩 묶어 한 응답에서 Read 를 동시에 부른다**(한 번에 하나씩 ❌ — 시간이 노트 수에 비례해 늘어난다). 묶음마다 요구 항목 커버리지를 다시 본다.
   - 멈춤 = ① 요구 항목이 다 근거를 얻고 남은 후보가 중복·비관련 ② 두 묶음 연속으로 새 근거 0(`notes_pending_skipped` 에 까닭) ③ `READ_CAP` 도달. **WIDE 총 20 초과 ❌**(링크 추적·규칙 원본 Read 포함 · 참조 파일 Read 는 셈 밖).
-  - WIDE 본문 예산 = 앞 5개는 Read 그대로, **6번째부터는 노트당 본문 2,500자**(`km_note_caller.sh` — same 이면 로컬 2,500자 · other 면 `/api/note` 2,500자, 기존 Tier 1 원문 계약과 같은 값). 2,500자 밖에 필요한 절이 있으면 그 노트를 `offset`/`limit` 로 한 번 더 읽어도 같은 노트 1건으로 센다. 20개 × 2,500자 ≈ 5만 자가 본문 쪽 상한이다.
+  - WIDE 본문 예산 = 앞 5개는 Read 그대로, **6번째부터는 노트당 본문 2,500자**(`km_note_caller.sh` — same 이면 로컬 2,500자 · other 면 `/api/note` 2,500자, 기존 Tier 1 원문 계약과 같은 값). caller 출력의 `"truncated": true` = 뒤가 잘렸다는 표지 — 그 노트가 근거 없는 요구 항목과 맞는데 앞 2,500자에 답이 없으면(제목·목차·링크 줄로 판단) 그 절을 `offset`/`limit` 로 한 번 더 읽는다(같은 노트 1건으로 센다). 20개 × 2,500자 ≈ 5만 자가 본문 쪽 상한이다.
   - 읽기를 마치면 `echo "READ_BUDGET=${KM_MODE}(cap ${READ_CAP}) reads=<읽은 근거 노트 수>"` 1줄을 찍는다(벤치·영수증 사후 계수용 · 숫자를 지어내지 않는다).
 
 ### 성공 근거·QUICK 출력 — 참조 없이 실행
@@ -380,10 +380,10 @@ Tier 3 불가 시 `search-references/tier4-text.txt` Read. `GRAPHRAG_STATE`별 �
 - 검색 0건, lookup 제목 exact 0건, 또는 부재 문장을 쓸 경우에만 `search-references/phase-2.5-graph.txt` Read 후 C 계약을 반드시 실행한다(A 는 위 인라인 그대로). 부재 3단 실행 및 lookup exact 0건 의무 줄 생략 금지.
 - 정상 QUICK은 frontmatter 인라인 A만 적용(참조 Read = 0). 링크 추가 Read ≤1, 총 ≤3. DEEP 추가 ≤3·총 ≤8, 허브로 올라가는 링크 우선. WIDE 는 링크 추가도 총 ≤20 안에서(따로 칸 없음). 기본 primary=3은 참조 Read와 별도.
 
-### B. backlinks 1-hop (DEEP 필수 · QUICK 은 top hit 이 얇을 때)
+### B. backlinks 1-hop (DEEP·WIDE 필수 · QUICK 은 top hit 이 얇을 때)
 top 1~2 노트에 대해 **backlink(그 노트를 가리키는 노트)** 와 **outlink(그 노트가 가리키는 노트)** 를 실측한다. **DEEP 이고 `VAULT_MODE` 가 `other` 가 아니면(= `same`, 또는 Tier 1 실패 뒤 로컬 검색) 이 블록은 생략할 수 없다**(1.8.5 · 참조 파일 Read 없이 본문에서 실행):
 ```bash
-# 집행 계약: DEEP 모드에서 top 1~2 노트에 반드시 실행. backlinks = Obsidian CLI `backlinks` (JSON 목록)를 먼저 쓰고,
+# 집행 계약: DEEP·WIDE 모드에서 top 1~2 노트에 반드시 실행. backlinks = Obsidian CLI `backlinks` (JSON 목록)를 먼저 쓰고,
 # CLI 가 없거나·목록이 아니거나(「No backlinks found」 포함) 실패하면 아래 grep 근사가 동작한다 — BL_SRC=cli|grep (CLI 단계 수리 3판 2026-11-11).
 # Tier 2 «1단 확장»이 같은 노트를 이미 돌렸으면 그 «역링크 N건» 을 그대로 쓴다(중복 호출 ❌).
 # 변수 규약: NOTE_PATH = VAULT_PATH 기준 상대경로(절대경로는 vault 안일 때만 · 현재 폴더 같은 이름으로 대체 ❌).
@@ -528,7 +528,7 @@ fi
 - 단계 칸(6판): Tier 2 대본이 찍은 마지막 줄(`KM_STAGES vault=… calls=… timeouts=… c_vault=… … mode=… run=…`)을 `KM_STAGES="<그 줄 그대로>"` 로 다시 적어 넘긴다 — helper `--help` 에 `--stages` 가 있으면 jsonl 에 `stages` 칸(칸=값 사전)으로 남고, 없으면 `KM_RECEIPT_STAGES_FIELD=unsupported` 1줄만 찍는다(영수증 기록은 그대로). 대본을 안 쳤으면(other 등) 비워 둔다.
 - `VL_HITS`는 stdout 전용이며 신·구형 helper 모두 인자로 전달하지 않는다(저장 필드 미지원). 실행 전 이번 검색의 `VAULT_PATH`·`VAULT_MODE`·`GRAPHRAG_STATE`·`KEYWORDS_TOP`·`QUERY`를 관측값으로 재할당하며 미관측 상태는 skip, `other`는 실패 상태여도 skip이다.
 - 마커 필드 `km_mode`·`vault_mode`·`km_hits`는 stdout과 동일; 미관측은 null — 단 `vault_mode` 는 `KM_MODE` 가 있으면 미관측 = `unknown` 으로 넘긴다(`KM_MODE` 도 없으면 안 넘김). 구형 vault helper 폴백은 기존 스키마만 기록하므로 신규 3필드는 없고 `KM_RECEIPT_MARKER_FIELDS=unsupported`로 표시한다. helper 가 구판(`--km-mode` 모름)이면 영수증 `tiers_tried` 끝에 `rcpt:repo-legacy` 꼬리표가 붙어 사후 계수로 구판 비율이 보인다(`src` 는 그대로 — 착수 게이트가 `src=manual` 만 센다). 플러그인은 helper 를 싣지 않는다 — 착수 게이트(vault 훅)와 짝인 vault 사본(`.claude/scripts/km-search-receipt.py`) 하나가 정본이고 그쪽으로 가는 것이 보통 길이다. 플러그인 자리(`${CLAUDE_PLUGIN_ROOT}/scripts/…`) 확인 줄은 그 자리에 helper 를 둔 설치본과의 호환용. `km_hits`는 Tier 1 반환 건수, 기존 `n_hits`는 Tier 1~4 최종 건수다.
-- 그래프 칸(1.8.5): DEEP 이면 Phase 2.5-B 가 찍은 `GRAPH_EXPANSION`(`done` · 못 돌렸으면 `skipped:<사유>` · 오류면 `failed:<사유>` — 이때 `BACKLINKS_N` 은 빈 값이라 `--backlinks` 를 넘기지 않는다)·`BACKLINKS_N` 을 재할당해 `--graph-expansion`·`--backlinks` 로 넘긴다. helper `--help` 에 두 인자가 없으면 넘기지 않고(`--vault-mode` 는 위 마커 칸으로 함께 간다) `KM_RECEIPT_GRAPH_FIELDS=unsupported` 1줄만 찍는다(영수증 기록은 그대로).
+- 그래프 칸(1.8.5): DEEP·WIDE 이면 Phase 2.5-B 가 찍은 `GRAPH_EXPANSION`(`done` · 못 돌렸으면 `skipped:<사유>` · 오류면 `failed:<사유>` — 이때 `BACKLINKS_N` 은 빈 값이라 `--backlinks` 를 넘기지 않는다)·`BACKLINKS_N` 을 재할당해 `--graph-expansion`·`--backlinks` 로 넘긴다. helper `--help` 에 두 인자가 없으면 넘기지 않고(`--vault-mode` 는 위 마커 칸으로 함께 간다) `KM_RECEIPT_GRAPH_FIELDS=unsupported` 1줄만 찍는다(영수증 기록은 그대로).
 - 영수증 = `~/.claude-state/km-search-receipts.jsonl` 1행(ts·session_id·bot·query·tiers_tried·top_hit·n_hits). no-hit 도 영수증이다(검색을 «했다»는 기록이지 «찾았다»는 기록이 아니다).
 - 스킬을 거치지 않고 curl 만 던진 검색은 영수증이 없다 — 그건 게이트가 의도한 대로 막는다.
 

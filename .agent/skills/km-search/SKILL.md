@@ -56,6 +56,7 @@ IF query가 비어있으면:
 ### 플래그 파싱
 - `--quick` 또는 `-q` → **QUICK** (플래그 제거 후 나머지가 query)
 - `--deep` 또는 `-d` → **DEEP** (플래그 제거 후 나머지가 query)
+- `--wide`·`-w` 또는 `--notes N` → **WIDE** (근거 노트를 필요한 만큼 ≤20 · N 은 1~20 으로 자름 · 정본 = commands/search.md «모드·읽기 예산»)
 - `--no-moc` → MOC 제외, 원자 노트 전용
 - 플래그 없음 → **AUTO**
 
@@ -335,6 +336,7 @@ grep -rn "${QUERY}" "${VAULT_PATH}" --include="*.md" -l | head -20
 ### 모드별 파라미터
 - **QUICK**: top_k=5, 노트 읽기 1-2개
 - **DEEP**: top_k=10, 노트 읽기 3-5개
+- **WIDE**: top_k=20, 노트 읽기 필요한 만큼 ≤20(4개씩 묶어 읽기 · 6번째부터 노트당 2,500자) — 순위가 아니라 «읽을 후보 수»를 늘리는 것이라 아래 top_k 주의와 다르다
 
 > 💡 **top_k 를 더 올리고 싶을 때** — 후보 수를 늘리면 결과가 좋아질 것 같지만, 실제로는 반대로 가는 경우가 많습니다. 풀이 커지면 원래 상위에 있던 정답이 뒤로 밀립니다. **품질을 올리는 지렛대는 후보 수가 아니라 순위**라서, DEEP 의 심화는 top_k 보다 Phase 2.5(frontmatter·backlinks 그래프 확장) 쪽이 담당합니다.
 > 올려야 할 때는 하나뿐입니다 — **"정말 없는지" 확인할 때.** 상위 결과만으로 부재를 단정할 수 없으면 경계 확인용으로 넓히고, 그 결과는 상위 근거와 **분리해서** 표기하세요.
@@ -357,10 +359,10 @@ grep -rn "${QUERY}" "${VAULT_PATH}" --include="*.md" -l | head -20
 - `tags:` · `type:` → MOC/허브 판정(Phase 0.5 입력) + 답변의 분류 근거.
 - `related:` · `parent:` · 본문 `[[링크]]` → 추가 Read 후보(질문과 키워드가 겹치는 것 1~2개).
 
-### B. backlinks 1-hop (DEEP 필수 · QUICK 은 top hit 이 얇을 때)
+### B. backlinks 1-hop (DEEP·WIDE 필수 · QUICK 은 top hit 이 얇을 때)
 top 1~2 노트에 대해 **backlink(그 노트를 가리키는 노트)** 와 **outlink(그 노트가 가리키는 노트)** 를 실측한다. **DEEP 이고 `VAULT_MODE` 가 `other` 가 아니면(= `same`, 또는 Tier 1 실패 뒤 로컬 검색) 이 블록은 생략할 수 없다**(1.8.5 · 참조 파일 Read 없이 본문에서 실행):
 ```bash
-# 집행 계약: DEEP 모드에서 top 1~2 노트에 반드시 실행. backlinks = Obsidian CLI `backlinks` (JSON 목록)를 먼저 쓰고,
+# 집행 계약: DEEP·WIDE 모드에서 top 1~2 노트에 반드시 실행. backlinks = Obsidian CLI `backlinks` (JSON 목록)를 먼저 쓰고,
 # CLI 가 없거나·목록이 아니거나(「No backlinks found」 포함) 실패하면 아래 grep 근사가 동작한다 — BL_SRC=cli|grep (CLI 단계 수리 3판 2026-11-11).
 # Tier 2 «1단 확장»이 같은 노트를 이미 돌렸으면 그 «역링크 N건» 을 그대로 쓴다(중복 호출 ❌).
 # 변수 규약: NOTE_PATH = VAULT_PATH 기준 상대경로(절대경로는 vault 안일 때만 · 현재 폴더 같은 이름으로 대체 ❌).
