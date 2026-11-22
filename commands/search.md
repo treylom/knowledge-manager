@@ -13,7 +13,7 @@ $ARGUMENTS
 
 > 🚨 **실행 순서 계약 (고정)**: ① Phase -1 로 `VAULT_PATH`·`SEARCH_ENDPOINT` 읽기 → ② **곧바로 Tier 1 curl**(스위치 꺼짐이면 건너뜀) → ③ **Tier 2 대본 한 줄(`km_cli_stage.py` — 볼트 확인·구조 문서·VS·추천 태그·CLI 검색·1단 확장)을 «항상» 1회 «글자 그대로»** — Tier 1 이 `ok` 여도, QUICK 이어도 돈다(6판 2026-11-11). `VAULT_MODE=other` 로 판정했어도 친다 — 같은/다른 볼트는 대본이 Tier 1 결과 경로 상위 3건(`TIER1_PATHS`)으로 다시 확인해 덮는다(6.2판). **③ 대본을 치기 «전»에는 vault 를 Glob·Grep 도구나 rg/grep/find/ls/cat 으로 찾거나 Read 하지 않는다(6.3판).** 로컬 파일 읽기는 ③ 뒤이고 `VAULT_MODE` 가 `other` 가 아닐 때만. **vault 를 `rg`·`grep`·`find`·Grep 도구로 뒤지는 것은 Tier 2 대본이 `CLI_STATE` 를 찍은 «뒤»에만(CLI 단계 수리 2026-11-11).** (이 본문이 붙여 둔 블록이 스스로 도는 것 — Tier 0-R `↳ $` 줄의 `rg --files` · Tier 1-S · Phase 2.5-B 역링크 grep — 은 예외로 그대로 돈다. 금지 대상은 모델이 직접 지어 치는 vault 글자 검색이다.) 예외 1 = Tier 0 블록의 규칙 원본 대본 1줄(`km_rules_route.py --auto`) — 같은/다른 vault 판정을 대본이 먼저 하고 `other` 확정이면 로컬 읽기 0.
 
-> 📎 **참조 로드**: `search-references/` (명령 파일 기준 같은 디렉터리; Codex 스킬 기준 `../../../commands/search-references/`). **정상 Tier 1 성공·QUICK 경로 참조 Read = 0.** 아래 성공 계약을 이 엔트리에서 실행한다. 참조는 Tier 2 «확장»(관계·속성·태그·파일명 축 — 첫 호출은 본문 대본 한 줄로 참조 없이)·Tier 3~4 폴백·DEEP·0건/빈약/lookup exact 0건/부재 단정 때만 조건부 1회 Read — 전부 선로드 ❌. 참조 Read = 규칙 로드(primary read 예산 **미포함**). **증거 노트 Read 기본 = 3** (QUICK 명시·얕은 질의 1-2 · DEEP·요구항목 미충족 ≤5 · 링크 추적 예산은 `phase-2.5-graph.txt`).
+> 📎 **참조 로드**: `search-references/` (명령 파일 기준 같은 디렉터리; Codex 스킬 기준 `../../../commands/search-references/`). **정상 Tier 1 성공·QUICK 경로 참조 Read = 0.** 아래 성공 계약을 이 엔트리에서 실행한다. 참조는 Tier 2 «확장»(관계·속성·태그·파일명 축 — 첫 호출은 본문 대본 한 줄로 참조 없이)·Tier 3~4 폴백·DEEP·0건/빈약/lookup exact 0건/부재 단정 때만 조건부 1회 Read — 전부 선로드 ❌. 참조 Read = 규칙 로드(primary read 예산 **미포함**). **증거 노트 Read 기본 = 3** (QUICK 명시·얕은 질의 1-2 · DEEP·요구항목 미충족 ≤5 · 링크 추적 예산은 `phase-2.5-graph.txt`) · **WIDE(많이 읽어야 하는 질문) = 필요한 만큼 ≤20** — 아래 «모드·읽기 예산».
 
 ## Phase -1: 설정 읽기
 
@@ -55,17 +55,24 @@ IF query가 비어있으면:
 ### 플래그 파싱
 - `--quick` 또는 `-q` → **QUICK** (플래그 제거 후 나머지가 query)
 - `--deep` 또는 `-d` → **DEEP** (플래그 제거 후 나머지가 query)
+- `--wide` 또는 `-w` → **WIDE** (플래그 제거 후 나머지가 query · 근거 노트를 필요한 만큼 ≤20 읽는다)
+- `--notes N` → **WIDE** + 읽기 상한 N (N 은 1~20 으로 자른다 · 20 넘게 적어도 20)
 - `--no-moc` → MOC 제외, 원자 노트 전용
 - 플래그 없음 → **AUTO**
 
 ### AUTO 라우팅
+- WIDE: 답에 노트가 «여럿 따로» 들어가야 하는 질문 — 전수·나열(「전부/모두/빠짐없이/하나도/목록/각각/노트별/몇 개/타임라인/변천/all/every/list」) · 요구 항목 6개+ · 따로 짚은 대상 4개+. 질문이 길다는 것만으로는 WIDE 가 아니다.
 - DEEP: 문장형 5단어+, "~하려면/방법/비교/차이/관계/영향", 분석 요청("설명해줘/정리해줘"), 복수 개념("A vs B"), 방법론("어떻게/왜")
 - QUICK: 그 외 (키워드 1-3개, 정의형 "~란?", 노트 찾기)
 
-판정 직후 KM_MODE를 QUICK 또는 DEEP로 할당하고 실행(AUTO는 최종값 아님):
+판정 직후 KM_MODE를 QUICK, DEEP 또는 WIDE로 할당하고 실행(AUTO는 최종값 아님 · `KM_NOTES` = `--notes N` 의 N, 없으면 빈 값):
 ```bash
-echo "KM_MODE=${KM_MODE}"
+case "${KM_MODE}" in QUICK) TOP_K=5; READ_CAP=3 ;; WIDE) TOP_K=20; READ_CAP="${KM_NOTES:-20}" ;; *) TOP_K=10; READ_CAP=8 ;; esac
+case "$READ_CAP" in ''|*[!0-9]*) READ_CAP=20 ;; esac; [ "$READ_CAP" -gt 20 ] && READ_CAP=20; [ "$READ_CAP" -lt 1 ] && READ_CAP=1
+echo "KM_MODE=${KM_MODE} TOP_K=${TOP_K}"
+echo "READ_BUDGET=${KM_MODE}(cap ${READ_CAP})"
 ```
+Tier 1 블록 맨 앞에 이 `TOP_K` 를 다시 적는다(셸 변수는 호출 사이에 안 남는다).
 검색 시작마다 이전 KM_MODE·VAULT_MODE·KM_HITS를 버린다. 아래 마커는 실제 판정값만 출력한다. Bash 호출이 나뉘면 직전 stdout에서 관측한 값을 다음 호출에 명시적으로 재할당한다(셸 변수 지속 가정 금지). 영수증에는 이 검색에서 출력한 동일값을 넘긴다; 미관측 값은 인자를 생략한다.
 
 
@@ -128,7 +135,7 @@ KM_RULES="${CLAUDE_PLUGIN_ROOT}/scripts/km_rules_route.py"
 if [ -f "$KM_RULES" ]; then python3 "$KM_RULES" --auto --config "./km-config.json" --config "${VAULT_PATH}/km-config.json" --query "${QUERY}"; else echo "RULES: helper 없음"; fi
 ```
 - `RULES:` 아래 `[rules:index]`·`[rules:rg]` 줄 = repo 루트 규칙 원본 후보(≤5 · vault 노트 아님). 답변에 별도 절 `📐 규칙 원본 (N)` 으로 붙인다(Tier 1~4 결과 아래 · 순위 재배열 ❌).
-- **원본 우선 원칙**: 질문이 운영 규칙·절차·봇·스킬·«지금 기준»을 묻고 후보가 1개+ 면, 후보 중 질문과 맞는 원본을 **최소 1개 Read** 해 vault 노트(사본·옛 기록)와 대조한다 — 둘이 다르면 원본이 «현재 기준», vault 노트는 «과거 경위». 읽은 경로는 출처에 그대로 적는다. 읽기 예산(기본 3)은 늘리지 않는다(이 Read 도 3 안).
+- **원본 우선 원칙**: 질문이 운영 규칙·절차·봇·스킬·«지금 기준»을 묻고 후보가 1개+ 면, 후보 중 질문과 맞는 원본을 **최소 1개 Read** 해 vault 노트(사본·옛 기록)와 대조한다 — 둘이 다르면 원본이 «현재 기준», vault 노트는 «과거 경위». 읽은 경로는 출처에 그대로 적는다. 읽기 예산은 늘리지 않는다(이 Read 도 그 모드 예산 안 — 기본 3 · WIDE 면 `READ_CAP` 안).
 - **끝 결정까지 읽기**: 연 원본은 날짜순 마지막 결정(해제·대체·정정·철회 표지)까지 읽고 그걸 «현재 기준»으로 쓴다 — 후보 아래 `↳ 결정 표지 …` 줄이 «질문과 맞는 절»의 줄 범위와 표지 줄 번호를 준다(그 줄까지 Read 범위에 넣는다 · 앞 문단의 «재개·도입»만 읽고 단정 ❌).
 - **노트 찾기 = 대본 줄 먼저**: 원본이 가리키는 노트(`[[…]]`)는 후보 아래 `↳ 가리키는 노트` 줄(대본이 vault 안에서 미리 찾은 경로 · «볼트에 없음» · «규칙 원본»)을 그대로 쓴다 — 레포 루트 `find .`·`grep -r` ❌(수백만 파일 · 시한 초과 실측). 그 줄이 «노트 찾기 못 함»이면 바로 다음 `↳ $` 줄의 명령(`rg --files --hidden -g '<이름>.md' … -- "$VAULT_PATH"` — 이름은 대본이 작은따옴표로 감쌌고 경로는 `VAULT_PATH` 변수)만 `↳ $ ` 를 떼고 고치지 말고 그대로 1회 친다(이름·경로를 손으로 따옴표에 넣어 다시 쓰기 ❌ — 작은따옴표·`$(…)`·백틱이 든 이름이 명령이 된다 · 본문 grep·`vault-lookup.sh` 로 노트 이름 찾기 ❌ — 부하 때 3분+ 실측).
 - `RULES: off` = km-config `search.ruleCorpus` 미설정(현행과 동일) · `RULES: v3 skip(vault_mode=other …)` = 다른 vault 색인이라 로컬 0회.
@@ -321,7 +328,7 @@ if [ -f "$KM_STAGE" ]; then python3 -I -B "$KM_STAGE" --vault-path "${VAULT_PATH
 - `VAULT_MODE_CHECK=<same|other>(k/n) model=<값> → VAULT_MODE=<값>` = 대본이 `TIER1_PATHS` 앞 n건 가운데 k건이 볼트에 있는지 직접 본 값(6.2판) — 모델 판정과 달라도 이 값이 이긴다: 이후 절(원문 읽기·Phase 2.5·영수증·끝 줄)은 `VAULT_MODE` 를 그 값으로 다시 적어 따른다. 이 줄 없이 `KM_STAGES … vmode=model(<값>)` 이면 경로를 못 받아 모델 값을 그대로 썼다는 뜻이다.
 - `CLI_VAULT=<경로> (front|active)` = CLI 가 실제로 본 볼트 · `CLI_VAULT=active (not-found:<이름>)` = 그 이름의 볼트가 없어 이번 실행만 이름을 뺐다(다시 칠 때 `OBSIDIAN_VAULT=""`) · `CLI_VAULT=unknown (…)` = 확인 명령이 막혔다(중계 403·시한 등) — 대본은 이름 그대로 계속 간다. `⚠ CLI 볼트 ≠ VAULT_PATH` 가 찍히면 답에 그 1줄을 적는다.
 - `STRUCT_DOCS=<D>/3` 가 3 미만이면 「구조 문서 없음(<빠진 것>) — `/km:setup` 재실행으로 생성」 1줄 · `ROUTE_HUBS` = 📌 후보 · `ROUTE_AMBIGUOUS=1` → Phase 0.4-D(지도 하강 블록).
-- **`CLI_STATE=ok` 면 Tier 4 글자 검색(`rg`·`grep`·Grep 도구) ❌** — 근거가 모자라면 대본이 이미 낸 `[prop]`·`[bl]`·`[ln]`·`[tag:#t]`·`[type:…]`·`[tag-rec:#t]` 줄을 먼저 쓰고 → 그래도 모자라면 `GREP_REASON=<까닭 1줄>` 을 먼저 찍고 grep 한다. `[cli]` 경로에서 질문과 맞는 노트를 골라 원문을 읽는다(읽기 예산 기본 3 안 · CLI 는 관련도 순위가 약하니 경로·제목으로 추린다).
+- **`CLI_STATE=ok` 면 Tier 4 글자 검색(`rg`·`grep`·Grep 도구) ❌** — 근거가 모자라면 대본이 이미 낸 `[prop]`·`[bl]`·`[ln]`·`[tag:#t]`·`[type:…]`·`[tag-rec:#t]` 줄을 먼저 쓰고 → 그래도 모자라면 `GREP_REASON=<까닭 1줄>` 을 먼저 찍고 grep 한다. `[cli]` 경로에서 질문과 맞는 노트를 골라 원문을 읽는다(그 모드 읽기 예산 안 — 기본 3 · WIDE ≤20 · CLI 는 관련도 순위가 약하니 경로·제목으로 추린다).
 - `CLI_STATE=empty` → `KEYWORDS_TOP` 만 바꿔(동의어·영/한 표기) 같은 블록을 1회 더. 그래도 0건이면 Tier 3 → Tier 4. `CLI_STATE=absent|error` → Tier 3 → Tier 4(그 상태를 끝 줄에 적는다).
 - `→ 애매함(…)` 줄이 찍히면 첫 회는 1위 태그 1개만 찾은 것이다 — `[tag-menu:<갈래>]` 메뉴에서 물음에 맞는 태그 ≤2 를 골라(이미 찾은 태그 말고 · 목록 밖 이름 ❌) **맨 앞 값 줄에 `TAG_PICK="#a #b"` 만 더 적어** 같은 블록을 1회 더 친다(3줄은 그대로 · 대본이 추천 태그 단계만 돈다 · 볼트 확인 1 + 태그 검색 ≤2). `TAG_REC_STATE=absent` = TAG-Map 없음 — 지도 찾는 순서 = 환경값 `KM_TAG_MAP` → `--tag-map` → `VAULT_PATH/000-START-HERE/TAG-Map.md`(대본이 직접 본다 · 검색 중에 `tags counts` 를 부르지 않는다).
 - `EXT_STATE=done|partial(…)|skip(no-cli|no-notes)` · `EXT_SRC=tier1|cli|model` — 1단 확장 노트 = `TIER1_TOP` → 비면 `[cli]` 경로 상위 2(핵심어가 제목에 든 것 먼저). 같은 노트로 이 축 CLI 를 블록 밖에서 다시 부르지 않는다 — Phase 2.5-B 는 같은 노트면 `[bl] <노트> — 역링크 N건` 의 N 을 그대로 쓴다.
@@ -336,8 +343,14 @@ Tier 2 실패 시 `search-references/tier3-mcp.txt` Read 후 MCP 검색.
 Tier 3 불가 시 `search-references/tier4-text.txt` Read. `GRAPHRAG_STATE`별 폴백 문구 필수.
 
 ### 모드·읽기 예산
-- **primary evidence reads 기본 = 3** (명시 `--quick`/얕은 질의 1-2 · DEEP·requirements 미충족 ≤5).
-- top_k: QUICK 5 / DEEP 10. QUICK 정상 성공은 아래 인라인 형식을 사용한다. DEEP일 때만 `search-references/modes-output.txt` Read(요구항목 커버리지·읽기 중단 규칙 포함).
+- **primary evidence reads 기본 = 3** (명시 `--quick`/얕은 질의 1-2 · DEEP·requirements 미충족 ≤5 · 링크 포함 DEEP 총 ≤8 · **WIDE 총 ≤20**).
+- top_k: QUICK 5 / DEEP 10 / WIDE 20. QUICK 정상 성공은 아래 인라인 형식을 사용한다. DEEP·WIDE일 때만 `search-references/modes-output.txt` Read(요구항목 커버리지·읽기 중단 규칙 포함).
+- **WIDE(넓게 읽기 · 1.8.17)** — 노트 10~20개가 답에 따로 들어가야 하는 질문용. 기본값이 아니다: 얕은 질문은 QUICK·DEEP 그대로.
+  - 들어오는 길 = `--wide`·`--notes N` 깃발 · AUTO 의 WIDE 조건 · **DEEP 에서 승격**: DEEP 총 8 을 다 읽었는데 근거 없는 요구 항목이 남았고, 안 읽은 후보(Tier 1 결과·`[cli]`·링크) 가운데 target_hit ≠ none 이거나 읽은 노트가 링크로 가리키는 것이 있으면 WIDE 로 올린다 — `READ_BUDGET=WIDE(cap 20) promoted:<까닭 1줄>` 을 찍는다.
+  - WIDE 읽는 차례 = 후보를 Tier 1 순위 → 허브(📌) → `[cli]`·`[bl]`·`[ln]` 순으로 줄 세우고, **4개씩 묶어 한 응답에서 Read 를 동시에 부른다**(한 번에 하나씩 ❌ — 시간이 노트 수에 비례해 늘어난다). 묶음마다 요구 항목 커버리지를 다시 본다.
+  - 멈춤 = ① 요구 항목이 다 근거를 얻고 남은 후보가 중복·비관련 ② 두 묶음 연속으로 새 근거 0(`notes_pending_skipped` 에 까닭) ③ `READ_CAP` 도달. **WIDE 총 20 초과 ❌**(링크 추적·규칙 원본 Read 포함 · 참조 파일 Read 는 셈 밖).
+  - WIDE 본문 예산 = 앞 5개는 Read 그대로, **6번째부터는 노트당 본문 2,500자**(`km_note_caller.sh` — same 이면 로컬 2,500자 · other 면 `/api/note` 2,500자, 기존 Tier 1 원문 계약과 같은 값). 2,500자 밖에 필요한 절이 있으면 그 노트를 `offset`/`limit` 로 한 번 더 읽어도 같은 노트 1건으로 센다. 20개 × 2,500자 ≈ 5만 자가 본문 쪽 상한이다.
+  - 읽기를 마치면 `echo "READ_BUDGET=${KM_MODE}(cap ${READ_CAP}) reads=<읽은 근거 노트 수>"` 1줄을 찍는다(벤치·영수증 사후 계수용 · 숫자를 지어내지 않는다).
 
 ### 성공 근거·QUICK 출력 — 참조 없이 실행
 ### A. frontmatter 구조 신호 (읽는 모든 노트 공통)
@@ -363,9 +376,9 @@ Tier 3 불가 시 `search-references/tier4-text.txt` Read. `GRAPHRAG_STATE`별 �
 
 ### Phase 2.5 — 조건부 로드
 - `VAULT_MODE=other`는 전체 생략; 로컬 접근 0회.
-- DEEP(그리고 QUICK top hit 빈약)은 아래 **B 블록을 본문에서 바로 실행**한다 — 참조 Read 없이(1.8.5). DEEP 이고 `other` 가 아니면 생략 ❌.
+- DEEP·WIDE(그리고 QUICK top hit 빈약)은 아래 **B 블록을 본문에서 바로 실행**한다 — 참조 Read 없이(1.8.5). DEEP 이고 `other` 가 아니면 생략 ❌.
 - 검색 0건, lookup 제목 exact 0건, 또는 부재 문장을 쓸 경우에만 `search-references/phase-2.5-graph.txt` Read 후 C 계약을 반드시 실행한다(A 는 위 인라인 그대로). 부재 3단 실행 및 lookup exact 0건 의무 줄 생략 금지.
-- 정상 QUICK은 frontmatter 인라인 A만 적용(참조 Read = 0). 링크 추가 Read ≤1, 총 ≤3. DEEP 추가 ≤3·총 ≤8, 허브로 올라가는 링크 우선. 기본 primary=3은 참조 Read와 별도.
+- 정상 QUICK은 frontmatter 인라인 A만 적용(참조 Read = 0). 링크 추가 Read ≤1, 총 ≤3. DEEP 추가 ≤3·총 ≤8, 허브로 올라가는 링크 우선. WIDE 는 링크 추가도 총 ≤20 안에서(따로 칸 없음). 기본 primary=3은 참조 Read와 별도.
 
 ### B. backlinks 1-hop (DEEP 필수 · QUICK 은 top hit 이 얇을 때)
 top 1~2 노트에 대해 **backlink(그 노트를 가리키는 노트)** 와 **outlink(그 노트가 가리키는 노트)** 를 실측한다. **DEEP 이고 `VAULT_MODE` 가 `other` 가 아니면(= `same`, 또는 Tier 1 실패 뒤 로컬 검색) 이 블록은 생략할 수 없다**(1.8.5 · 참조 파일 Read 없이 본문에서 실행):
@@ -447,7 +460,7 @@ case "$GRAPH_EXPANSION" in failed:*) false ;; esac
 - **사용 티어 명시 (형식 고정 · 5판 2026-11-11 · 벤치가 이 줄을 grep 한다)**: 답변 마지막 줄은 정확히 이 형식으로 쓴다 — `검색: <티어명> · CLI <상태>(N건) + 구조 문서(<D>/3 참조 · 허브 <k> · VS <n>줄) + 태그 추천(<TAG_REC_STATE>) + 그래프 확장(backlinks N)`. 값 = Tier 2 대본이 찍은 `끝 줄(그대로 베껴 쓰기): 검색: …` 줄 그대로(뜻은 아래와 같다): CLI 상태·N = `CLI_STATE`·`cli_hits` · D = `STRUCT_DOCS` · k = `ROUTE_HUB_COUNT`(Phase 0.4-D 하강을 했으면 최종 허브 수) · n = `VS_STATE=ok(n줄)` 의 n(`none`·`absent` 면 0) · `TAG_REC_STATE` = 마지막으로 찍힌 값 그대로(`TAG_PICK` 을 넣어 다시 쳤으면 그 값) · backlinks N = Phase 2.5-B 의 `BACKLINKS_N`(실측 정수 · 0 이면 0, 생략·"1-hop" 같은 서술 대체 ❌ · top 2 를 돌렸으면 합). 예: `검색: GraphRAG 서버 · CLI ok(12건) + 구조 문서(3/3 참조 · 허브 2 · VS 3줄) + 태그 추천(used(2)) + 그래프 확장(backlinks 7)` · `검색: Obsidian CLI · CLI empty(0건) + 구조 문서(3/3 참조 · 허브 1 · VS 0줄) + 태그 추천(absent)`(QUICK — 2.5-B 안 돎). Tier 1 이 `ok` 가 아닌데 « · CLI …» 칸 없이 «텍스트 검색»만 적으면 형식 위반이다. **DEEP 이고 `VAULT_MODE` 가 `other` 가 아니면 `+ 그래프 확장(backlinks N)` 생략 ❌**(1.8.5) — 생략은 QUICK(2.5-B 를 안 돌린 경우)만. `VAULT_MODE=other` 면 Tier 2·Phase 2.5 를 안 도니 `검색: GraphRAG 서버 (다른 vault 인덱스 — 서버 본문 기반)` 그대로.
 - **질문/스킬/에이전트 스폰 금지**: 직접 검색만 수행 — 예외 1 = 0-β 분해(`--decomp=sub` 시 헤드리스 haiku 1회, 도구 0·질문 0), 그 외 스폰 ❌
 - 상태 메시지 없이 바로 결과 출력 · Read 실패 시 다음 노트로
-- QUICK: 5줄 이내 + 출처 1-2개 / DEEP: 제한 없음 + 출처 3-5개
+- QUICK: 5줄 이내 + 출처 1-2개 / DEEP: 제한 없음 + 출처 3-5개 / WIDE: 제한 없음 + 실제로 근거로 쓴 노트 전부(읽고 안 쓴 노트는 `notes_pending_skipped`)
 
 
 ## 부재·단정 확인 절차
@@ -455,7 +468,7 @@ case "$GRAPH_EXPANSION" in failed:*) false ;; esac
 
 ## 완료 전 게이트 — 모든 분기 공통
 정상 성공 / 오류 폴백 / 낮은결과·부재 / 다른 vault / DEEP 모두: 실제 읽은 근거·제약·조건부 보강·의무 마커·아래 영수증을 확인 후 답한다. 영수증 수행 관측을 다른 봇의 시간 구간 기록으로 대체하지 않는다. 결과 0건도 영수증을 남긴다. 정상 성공에서 참조 없이 답한 것이 품질 통과를 뜻하지 않는다.
-운영 단계 목표 ≤6: ①설정+모드+대상+Tier1 ②정합+memory+구조 ③원문 기본3 ④신선도/대상 보강 ⑤해당 조건의 확장/폴백/DEEP ⑥영수증+필수 마커. 단계는 관측치로 측정하고, 목표 때문에 조건별 계약·근거 읽기를 생략하지 않는다. 독립 셸 검사는 가능한 같은 Bash 호출에 묶되 Phase -1→Tier1 및 정합 이전 로컬 접근 금지 유지.
+운영 단계 목표 ≤6: ①설정+모드+대상+Tier1 ②정합+memory+구조 ③원문(모드 예산 — 기본 3 · WIDE ≤20) ④신선도/대상 보강 ⑤해당 조건의 확장/폴백/DEEP ⑥영수증+필수 마커. 단계는 관측치로 측정하고, 목표 때문에 조건별 계약·근거 읽기를 생략하지 않는다. 독립 셸 검사는 가능한 같은 Bash 호출에 묶되 Phase -1→Tier1 및 정합 이전 로컬 접근 금지 유지.
 
 ## 영수증 — 실행 기록 (v1.8.0 · 착수 게이트 입력)
 
@@ -480,7 +493,7 @@ MARKER_ARGS=(); RCPT_TAG=""
 [ -n "${KM_MODE:-}" ] && MARKER_ARGS+=(--vault-mode "${VAULT_MODE:-unknown}")
 [ -n "${KM_HITS:-}" ] && MARKER_ARGS+=(--km-hits "$KM_HITS")
 GRAPH_ARGS=()
-if [ "${KM_MODE:-}" = DEEP ]; then
+if [ "${KM_MODE:-}" = DEEP ] || [ "${KM_MODE:-}" = WIDE ]; then
   [ -n "${GRAPH_EXPANSION:-}" ] && GRAPH_ARGS+=(--graph-expansion "$GRAPH_EXPANSION")
   [ -n "${BACKLINKS_N:-}" ] && GRAPH_ARGS+=(--backlinks "$BACKLINKS_N")
 fi
