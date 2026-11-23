@@ -46,6 +46,8 @@ jobs:
         run: python3 -I -B scripts/tests/test_command_posargs.py
       - name: map descent — keyword route unchanged, ambiguity flags, bounded menus inside the vault
         run: python3 -I -B scripts/tests/test_km_map_descent.py
+      - name: search read budget — WIDE reads up to 20 notes when needed, QUICK/DEEP defaults unchanged
+        run: python3 -I -B scripts/tests/test_search_read_budget.py
       - name: OFM warning lint (heading/block targets · callouts · fold · %% / == pairs · tags) — warn mode
         run: python3 -I -B scripts/tests/test_km_ofm_lint.py
       - name: folder .base save conditions (filter · expected set · base:query rows · MOC entry · no duplicate)

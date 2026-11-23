@@ -1,6 +1,6 @@
 # km:search reference — lazy-load module
 
-> **로드 규칙**: 이 파일은 규칙·절차 참조다. **primary read 예산(기본 3)에 포함하지 않는다.**
+> **로드 규칙**: 이 파일은 규칙·절차 참조다. **primary read 예산(기본 3 · DEEP 총 ≤8 · WIDE 총 ≤20)에 포함하지 않는다.**
 > 증거로 쓸 vault 노트 Read 만 primary read 로 센다.
 
 #### Tier 2·3 공통 — 구조 문서 선실행 (본 검색 전에 1회)

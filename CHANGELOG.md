@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.8.17 (2026-11-23) — `/km:search` 가 근거 노트를 필요하면 20개까지 읽게
+- 새 읽기 모드 WIDE(넓게 읽기): 답에 노트가 여럿 따로 들어가야 하는 질문에서 근거 노트를 최대 20개까지 읽는다. 들어가는 법은 셋이다 — 깃발 `--wide`·`-w` 또는 `--notes N`(1~20 으로 자름) · AUTO(전부·빠짐없이·목록·노트별 같은 전수 낱말, 요구 항목 6개 이상, 따로 짚은 대상 4개 이상) · DEEP 에서 8개를 다 읽고도 근거 없는 요구 항목이 남으면 올림.
+- 읽는 법: 4개씩 묶어 한 번에 읽고 묶음마다 빠진 항목을 다시 본다. 앞 5개는 통째로, 6번째부터는 노트당 2,500자로 읽고(`km_note_caller.sh`), 잘린 노트가 필요한 항목과 맞으면 그 절을 다시 읽는다. 링크 추적과 규칙 원본 읽기도 20 안에 센다. 후보 수(top_k)는 WIDE 에서 20.
+- 바뀌지 않은 것: QUICK(근거 1-2 · 총 3 · top_k 5)과 DEEP(3-5 · 링크 포함 총 8 · top_k 10) 기본값. 얕은 질문은 그대로 QUICK 이다.
+- 표지: 시작 때 `READ_BUDGET=<모드>(cap N)`, 끝날 때 `reads=<k>` 를 찍는다.
+- Codex 스킬 거울(`.agent/skills/km-search/SKILL.md`)에도 깃발·모드표·중단 규칙을 같이 넣었다.
+- 시험: 새 `scripts/tests/test_search_read_budget.py`(문구·코드 계약 + 상한 블록 bash 실행) — CI 에 추가.
+- 사용자가 할 일: 플러그인 업데이트 뒤 새 세션. 설정 바꿀 것 없음.
+- 매니페스트 1.8.16→1.8.17(.claude-plugin · .codex-plugin) · `scripts/tests/test_search_tier2_axes.sh` 버전 고정 2줄.
+
 ## 1.8.16 (2026-11-20) — 에이전트 둘이 뜨게: `tools:` 줄 빼기 · `/knowledge-manager` 설명 바로잡기
 - 에이전트 둘(`knowledge-manager` · `knowledge-manager-at`)이 뜨지 않던 것을 고쳤다. 앞머리(frontmatter) `tools:` 줄의 이름이 실제 도구 이름이 아니어서 Claude Code 가 «쓸 도구가 0개»로 보고 에이전트를 띄우지 않았다. 그 줄을 뺐다.
 - 달라지는 점: 이제 두 에이전트는 **세션이 가진 도구를 그대로 물려받는다**(옛 `tools:` 줄이 적으려던 목록보다 넓다 — 세션에 있는 도구는 다 쓸 수 있다). 좁히고 싶으면 설치된 플러그인의 에이전트 파일(`agents/knowledge-manager.md` · `agents/knowledge-manager-at.md`) 앞머리에 `tools:` 줄을 직접 적는다(예: `tools: Read, Write, Bash`). MCP 도구도 쓰려면 `mcp__<서버>__*` 꼴로 함께 적는다. 도구 이름은 대소문자를 구별한다. 플러그인을 업데이트하면 에이전트 파일이 새 버전으로 바뀌므로 직접 적은 `tools:` 줄은 업데이트 뒤 다시 적어야 한다.
